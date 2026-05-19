@@ -4,17 +4,15 @@
 @use "@/styles/common-mixins" as *;
 @use "@/styles/media-mixins" as *;
 
-// All page content stacks above the fixed ambient bubble field
-// (which the AmbientBubbles component pins at z-index: 0).
+// Page content sits in its own stacking context above the page
+// background.
 .page {
   position: relative;
   z-index: 1;
 }
 
-// Hero band (~60vh). The decorative bubbles are no longer anchored
-// here — they live in the page-root fixed AmbientBubbles layer — so
-// this is just the headline/subtitle stage; the journey toggle
-// follows immediately after it.
+// Hero band — full viewport minus the navbar. Just the
+// headline/subtitle stage; the journey sections follow it.
 .heroSection {
   position: relative;
   min-height: calc(100vh - #{$navbar-height});
