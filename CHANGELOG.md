@@ -18,17 +18,21 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   links to the old slugs yet. Completes the English/language-
   neutral URL convention for every public route. Decision in ADR
   0023.
-- **How it works — refreshed.** "Quién es quién" now shows the
-  Lightning, Wapu, and Nostr brand logos instead of generic
-  icons. The "Si comprás un curso" / "Si enseñás algo" step
-  sections were restyled and now animate in on scroll
-  (framer-motion, reduced-motion respected). Copy rewritten to
-  match the live flow: the creator steps are sign-in → set
-  payout in Settings → publish via the create-course form (no
-  store-builder/slug-claim step, which never existed), and every
-  surface that promised Nostr DM delivery now points to in-app
-  order history (the DM path was removed). Wapu glossary blurb
-  reworded.
+- **How it works — refreshed.** A fixed ambient bubble field
+  drifts behind the page (the "Bubble Chamber" backdrop;
+  transform/opacity-only, fewer on mobile, removed under
+  `prefers-reduced-motion`). The two journeys keep the familiar
+  structure — a heading then three steps in a row (a column on
+  mobile) — but each step is now a real `<Polaroid>` (paper +
+  shadow), with a gradient step badge and a view-triggered
+  staggered reveal (no scroll-scrubbing, so it appears reliably
+  on first scroll). "Quién es quién" keeps the Lightning/Wapu/
+  Nostr brand logos and stays static. Copy reflects the live
+  flow: creator steps are sign-in → set payout in Settings →
+  publish via the create-course form (no store-builder/slug-claim
+  step, which never existed), and the removed Nostr-DM delivery
+  path is gone from every surface (in-app order history instead).
+  Wapu glossary blurb reworded.
 - **Features page — corrected copy.** Dropped the "Auto-renovación
   opt-in" card (auto-renewal is deferred from the MVP — ADR 0020)
   and the "Marketplace o self-host" card (the per-merchant

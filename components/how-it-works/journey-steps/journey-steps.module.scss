@@ -1,0 +1,184 @@
+@use "@/styles/colors" as *;
+@use "@/styles/spacing" as *;
+@use "@/styles/typography" as *;
+@use "@/styles/media-mixins" as *;
+
+// Shared heading — used by both the static fallback and the pinned
+// stage (where it's a `motion.h2` whose opacity/translate scrub in).
+.title {
+  margin: 0 0 $spacing-48;
+  text-align: center;
+  font-family: $font-family-display;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  letter-spacing: $letter-spacing-heading;
+  color: $color-text-primary;
+}
+
+// ---------------------------------------------------------------------------
+// Static fallback — plain staggered row, view-revealed. Server / no-JS,
+// reduced-motion, and narrow viewports land here.
+// ---------------------------------------------------------------------------
+
+.section {
+  position: relative;
+  padding: $spacing-64 0;
+
+  @include mobile {
+    padding: $spacing-48 0;
+  }
+}
+
+.inner {
+  max-width: $container-max-width;
+  margin: 0 auto;
+  padding: 0 $container-padding;
+}
+
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: $spacing-32;
+
+  @include mobile {
+    flex-direction: column;
+    align-items: center;
+    gap: $spacing-24;
+  }
+}
+
+.gridCard {
+  position: relative;
+  list-style: none;
+  display: flex;
+}
+
+// ---------------------------------------------------------------------------
+// Pinned scroll experience — a tall track with a sticky 100vh stage.
+// Scroll progress over the track drives the bubble-burst sequence.
+// ---------------------------------------------------------------------------
+
+// ~2.6 viewports of scrub past the pin: a short lead, the step
+// spans, a tiny settled tail. Long enough that the bubble burst
+// reads at a quick scroll, short enough to avoid dead scroll
+// between the two journeys. Tuned alongside the timeline constants
+// in index.tsx — change them together.
+.track {
+  position: relative;
+  height: 360vh;
+
+  // Defensive: if CSS-only reduced-motion ever wins over the JS
+  // fallback, collapse the track so nothing is scroll-trapped.
+  @media (prefers-reduced-motion: reduce) {
+    height: auto;
+  }
+}
+
+.sticky {
+  position: sticky;
+  // Pinned just below the fixed navbar and centered in the rest of
+  // the viewport — no dead space above or below, nothing tucked
+  // under the navbar.
+  top: $navbar-height;
+  height: calc(100vh - #{$navbar-height});
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+
+  @media (prefers-reduced-motion: reduce) {
+    position: static;
+    height: auto;
+    overflow: visible;
+  }
+}
+
+.stage {
+  width: 100%;
+  max-width: $container-max-width;
+  margin: 0 auto;
+  padding: 0 $container-padding;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.row {
+  position: relative;
+  // Two rows of two — steps 1-2 then 3-4 — at full polaroid size
+  // (no scaling, so the caption text stays full size). Generous,
+  // asymmetric gaps so the four cards spread into the wide stage
+  // instead of clustering in the middle.
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  justify-content: center;
+  align-items: start;
+  row-gap: $spacing-40;
+  column-gap: $spacing-80;
+}
+
+// Footprint is reserved by the always-present (just transparent)
+// polaroid inside `.card`, so the row never reflows as steps form.
+.slot {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+// Bubble + scatter overlay, centered on the slot. Absolute so it
+// never contributes to layout.
+.burstLayer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+}
+
+// Motion wrapper around the platform `<Bubble>` (which is absolute,
+// top:0/left:0, and sized to match this box).
+.bubbleWrap {
+  position: relative;
+  flex-shrink: 0;
+  will-change: transform, opacity;
+}
+
+// The step number sitting inside the bubble — big and heavy so it
+// reads against the translucent bubble surface.
+.bubbleNumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-family: $font-family-display;
+  font-weight: $font-weight-extrabold;
+  font-size: $font-size-2xl;
+  line-height: 1;
+  color: $color-text-primary;
+}
+
+// Scatter-particle wrapper. Centered on the slot via 50%/50% + the
+// negative margins set inline; the burst translate rides on top.
+.particle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  will-change: transform, opacity;
+}
+
+.card {
+  position: relative;
+  z-index: 1;
+  transform-origin: center;
+  will-change: transform, opacity;
+}
