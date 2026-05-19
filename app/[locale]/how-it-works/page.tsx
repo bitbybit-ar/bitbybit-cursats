@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/card";
 import { Polaroid } from "@/components/ui/polaroid";
 import { Button } from "@/components/ui/button";
 import { alternatesFor } from "@/lib/seo";
-import { AmbientBubbles } from "@/components/how-it-works/ambient-bubbles";
 import { JourneySteps } from "@/components/how-it-works/journey-steps";
 import styles from "./page.module.scss";
 
@@ -49,12 +48,14 @@ export default async function HowItWorksPage({ params }: Props) {
     { title: t("buyers.step1Title"), body: t("buyers.step1Body") },
     { title: t("buyers.step2Title"), body: t("buyers.step2Body") },
     { title: t("buyers.step3Title"), body: t("buyers.step3Body") },
+    { title: t("buyers.step4Title"), body: t("buyers.step4Body") },
   ];
 
   const creatorSteps = [
     { title: t("creators.step1Title"), body: t("creators.step1Body") },
     { title: t("creators.step2Title"), body: t("creators.step2Body") },
     { title: t("creators.step3Title"), body: t("creators.step3Body") },
+    { title: t("creators.step4Title"), body: t("creators.step4Body") },
   ];
 
   // Glossary cards — one Polaroid per payment-stack actor, each
@@ -86,10 +87,6 @@ export default async function HowItWorksPage({ params }: Props) {
 
   return (
     <>
-      {/* Layer 1 — fixed full-viewport ambient field, behind all
-          content (page wrapper claims z-index: 1 above it). */}
-      <AmbientBubbles />
-
       <div className={styles.page}>
         <section className={styles.heroSection}>
           <div className={styles.heroInner}>

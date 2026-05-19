@@ -115,9 +115,11 @@
       "step1Title": "Pick one",
       "step1Body": "Browse the catalog, open the offering, and check the price in sats and pesos. No account required.",
       "step2Title": "Pay with Lightning",
-      "step2Body": "Scan the QR with your Lightning wallet or copy the invoice. We detect the payment automatically and take you to the receipt.",
+      "step2Body": "Scan the QR with your Lightning wallet or copy the invoice. We detect the payment automatically and take you to the receipt. The receipt is a permanent URL — save it.",
       "step3Title": "Get what you bought",
-      "step3Body": "A redemption code or a direct download, depending on the offering. The receipt is a permanent URL — save it. If you connect your Nostr, you can also see your purchases from the platform."
+      "step3Body": "A redemption code or a direct download, depending on the offering.",
+      "step4Title": "Track your purchases",
+      "step4Body": "If you connect your Nostr, you can also see your purchases from the platform."
     },
     "creators": {
       "title": "If you teach something",
@@ -126,7 +128,9 @@
       "step2Title": "Set up how you get paid",
       "step2Body": "In Settings you add your Lightning Address (if you already live in sats) or your CBU/alias to get paid in pesos via Wapu. It's the only thing you need before publishing.",
       "step3Title": "Publish your course",
-      "step3Body": "Tap \"Publish your course\", fill in the form, and submit. When someone buys it and pays with Lightning, the money goes straight to where you set it up — the platform never touches it."
+      "step3Body": "Tap \"Publish your course\", fill in the form, and submit.",
+      "step4Title": "Get paid directly",
+      "step4Body": "When someone buys it and pays with Lightning, the money goes straight to where you set it up — the platform never touches it."
     },
     "glossary": {
       "title": "Who's who",

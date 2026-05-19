@@ -115,9 +115,11 @@
       "step1Title": "Elegís",
       "step1Body": "Entrás al catálogo, abrís la oferta y mirás el precio en sats y en pesos. No hace falta crear cuenta.",
       "step2Title": "Pagás con Lightning",
-      "step2Body": "Escaneás el QR con tu wallet Lightning o copiás la invoice. Detectamos el pago automáticamente y te llevamos al recibo.",
+      "step2Body": "Escaneás el QR con tu wallet Lightning o copiás la invoice. Detectamos el pago automáticamente y te llevamos al recibo. El recibo es una URL permanente — guardala.",
       "step3Title": "Recibís tu compra",
-      "step3Body": "Un código de canje o una descarga directa, según la oferta. El recibo es una URL permanente — guardala. Si conectás tu Nostr, además podés ver tus compras desde la plataforma."
+      "step3Body": "Un código de canje o una descarga directa, según la oferta.",
+      "step4Title": "Seguís tus compras",
+      "step4Body": "Si conectás tu Nostr, además podés ver tus compras desde la plataforma."
     },
     "creators": {
       "title": "Si enseñás algo",
@@ -126,7 +128,9 @@
       "step2Title": "Configurás cómo cobrar",
       "step2Body": "En Settings cargás tu Lightning Address (si ya vivís en sats) o tu CBU/alias para cobrar en pesos vía Wapu. Es el único requisito antes de publicar.",
       "step3Title": "Publicás tu curso",
-      "step3Body": "Tocás \"Publicá tu curso\", completás el formulario y lo enviás. Cuando alguien lo compra y paga con Lightning, el dinero va directo a donde lo configuraste — la plataforma no lo toca."
+      "step3Body": "Tocás \"Publicá tu curso\", completás el formulario y lo enviás.",
+      "step4Title": "Cobrás directo",
+      "step4Body": "Cuando alguien lo compra y paga con Lightning, el dinero va directo a donde lo configuraste — la plataforma no lo toca."
     },
     "glossary": {
       "title": "Quién es quién",
