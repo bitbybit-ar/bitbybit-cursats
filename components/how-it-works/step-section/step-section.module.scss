@@ -1,0 +1,122 @@
+@use "@/styles/colors" as *;
+@use "@/styles/spacing" as *;
+@use "@/styles/typography" as *;
+@use "@/styles/media-mixins" as *;
+
+.section {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-64 $spacing-24;
+  overflow: hidden;
+}
+
+// Layer 2 — parallax numeral. Flex-centered so the only transform on
+// the element is Framer's scroll-linked `y` (no CSS translate to
+// fight). Faint, decorative, non-selectable, behind the bubble.
+.numeral {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: $font-family-display;
+  font-weight: $font-weight-extrabold;
+  font-size: clamp(8rem, 30vw, 22rem);
+  line-height: 1;
+  color: alpha($color-primary, 0.08);
+  user-select: none;
+  pointer-events: none;
+}
+
+// Layer 3 — the bubble. Radial gradient + upper-left inner highlight
+// + soft drop shadow give it dimension. Sits above the numeral.
+.bubble {
+  position: relative;
+  z-index: 1;
+  width: min(58vw, 600px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(
+    circle at 32% 28%,
+    alpha($static-white, 0.5),
+    alpha($color-primary, 0.1) 55%,
+    alpha($color-primary, 0.04) 78%
+  );
+  border: 1px solid alpha($static-white, 0.25);
+  box-shadow:
+    0 24px 60px alpha($color-primary, 0.18),
+    inset 8px 8px 22px alpha($static-white, 0.4),
+    inset -10px -10px 28px alpha($color-primary, 0.1);
+
+  @include mobile {
+    width: min(86vw, 420px);
+  }
+}
+
+// Bespoke Polaroid (mirrors the shared ui/polaroid look with the
+// same paper + navy-ink tokens) so the caption can be a real motion
+// subtree for the line-by-line stagger.
+.polaroid {
+  width: 280px;
+  max-width: 70%;
+  background: $color-polaroid-bg;
+  padding: $spacing-12 $spacing-12 $spacing-24;
+  border-radius: 4px;
+  box-shadow:
+    0 4px 12px alpha($static-black, 0.08),
+    0 16px 32px alpha($static-black, 0.12);
+  color: $static-navy;
+
+  @include mobile {
+    width: 220px;
+    max-width: 78%;
+  }
+}
+
+.frame {
+  aspect-ratio: 1;
+  width: 100%;
+  background: $gray-100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: $spacing-16;
+  color: $color-primary;
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.caption {
+  text-align: center;
+  padding: 0 $spacing-8;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-8;
+}
+
+.title {
+  margin: 0;
+  font-family: $font-family-display;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $static-navy;
+}
+
+.body {
+  margin: 0;
+  font-size: $font-size-sm;
+  line-height: 1.4;
+  color: alpha($static-navy, 0.7);
+}

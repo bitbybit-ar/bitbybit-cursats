@@ -1,0 +1,38 @@
+@use "@/styles/colors" as *;
+
+// Fixed, full-viewport, behind everything. The page stacks content
+// above this with its own z-index; here we just claim the backdrop
+// and never eat pointer events.
+.field {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+// Each bubble: a glassmorphic disc. Size / horizontal position /
+// opacity are static inline styles; only transform animates. The
+// brand-tinted radial gradient + 1px ring + inner top-left highlight
+// give it dimension while staying faint in both themes.
+.bubble {
+  position: absolute;
+  top: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 30% 30%,
+    alpha($color-primary, 0.35),
+    alpha($color-primary, 0.06) 55%,
+    transparent 72%
+  );
+  border: 1px solid alpha($color-primary, 0.15);
+  box-shadow: inset 2px 2px 6px alpha($static-white, 0.22);
+}
+
+// Defense in depth — JS already returns null under reduced motion,
+// but if the layer is ever rendered we still kill it here.
+@media (prefers-reduced-motion: reduce) {
+  .field {
+    display: none;
+  }
+}

@@ -110,6 +110,11 @@
       "title": "<gradient>Sats</gradient> para todos. <gradient>Pesos</gradient> para los que los necesitan.",
       "subtitle": "Cursats conecta a quien quiere aprender con quien quiere enseñar. Lightning para pagar; sats o pesos para cobrar — el profe elige. La plataforma se sale del medio."
     },
+    "journey": {
+      "buyerLabel": "Compro",
+      "teacherLabel": "Enseño",
+      "ariaLabel": "Elegí tu camino"
+    },
     "buyers": {
       "title": "Si comprás un curso",
       "step1Title": "Elegís",

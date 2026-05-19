@@ -110,6 +110,11 @@
       "title": "<gradient>Sats</gradient> for everyone. <gradient>Pesos</gradient> for those who need them.",
       "subtitle": "Cursats connects people who want to learn with people who want to teach. Lightning for payments; sats or pesos for payouts — the teacher decides. The platform stays out of the way."
     },
+    "journey": {
+      "buyerLabel": "I buy",
+      "teacherLabel": "I teach",
+      "ariaLabel": "Choose your path"
+    },
     "buyers": {
       "title": "If you're buying a course",
       "step1Title": "Pick one",

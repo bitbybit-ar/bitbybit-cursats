@@ -18,17 +18,25 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   links to the old slugs yet. Completes the English/language-
   neutral URL convention for every public route. Decision in ADR
   0023.
-- **How it works — refreshed.** "Quién es quién" now shows the
-  Lightning, Wapu, and Nostr brand logos instead of generic
-  icons. The "Si comprás un curso" / "Si enseñás algo" step
-  sections were restyled and now animate in on scroll
-  (framer-motion, reduced-motion respected). Copy rewritten to
-  match the live flow: the creator steps are sign-in → set
-  payout in Settings → publish via the create-course form (no
-  store-builder/slug-claim step, which never existed), and every
-  surface that promised Nostr DM delivery now points to in-app
-  order history (the DM path was removed). Wapu glossary blurb
-  reworded.
+- **How it works — "Bubble Chamber" redesign.** The page is now a
+  scroll-driven journey: a pill toggle ("Compro" / "Enseño",
+  ARIA tablist, keyboard-navigable, sliding Framer `layoutId`
+  indicator) switches between the buyer and teacher journeys,
+  cross-faded with `AnimatePresence`. The active journey is
+  mirrored to `?role=` (shareable, survives refresh). Each step
+  is its own full-height section: a fixed ambient bubble field
+  drifts behind everything, a giant blocky numeral parallaxes on
+  scroll, and the step inflates into view as a bubble holding a
+  Polaroid with a staggered caption. Transform/opacity-only,
+  fewer bubbles on mobile, and `prefers-reduced-motion` disables
+  the ambient field and collapses sections to plain fades.
+  "Quién es quién" keeps the Lightning/Wapu/Nostr brand logos and
+  stays static. Copy still reflects the live flow: creator steps
+  are sign-in → set payout in Settings → publish via the
+  create-course form (no store-builder/slug-claim step, which
+  never existed), and the removed Nostr-DM delivery path is gone
+  from every surface (in-app order history instead). Wapu
+  glossary blurb reworded.
 - **Features page — corrected copy.** Dropped the "Auto-renovación
   opt-in" card (auto-renewal is deferred from the MVP — ADR 0020)
   and the "Marketplace o self-host" card (the per-merchant

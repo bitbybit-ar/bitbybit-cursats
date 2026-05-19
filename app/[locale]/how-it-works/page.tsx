@@ -6,8 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Polaroid } from "@/components/ui/polaroid";
 import { Button } from "@/components/ui/button";
 import { alternatesFor } from "@/lib/seo";
-import { HowItWorksBubbles } from "./bubbles";
-import { HowItWorksSteps } from "./steps";
+import { AmbientBubbles } from "@/components/how-it-works/ambient-bubbles";
+import { HowItWorksJourney } from "@/components/how-it-works/how-it-works-journey";
 import styles from "./page.module.scss";
 
 // "Quién es quién" brand logos, vendored into `public/images/logos`
@@ -84,31 +84,39 @@ export default async function HowItWorksPage({ params }: Props) {
     },
   ];
 
+  const journeyLabels = {
+    buyer: t("journey.buyerLabel"),
+    teacher: t("journey.teacherLabel"),
+    aria: t("journey.ariaLabel"),
+  };
+
   return (
     <>
-      <section className={styles.heroSection}>
-        <HowItWorksBubbles />
-        <div className={styles.heroInner}>
-          <header className={styles.hero}>
-            <h1 className={styles.heroTitle}>
-              {t.rich("hero.title", {
-                gradient: (chunks) => (
-                  <span className={styles.gradientWord}>{chunks}</span>
-                ),
-              })}
-            </h1>
-            <p className={styles.heroSubtitle}>{t("hero.subtitle")}</p>
-          </header>
-        </div>
-      </section>
+      {/* Layer 1 — fixed full-viewport ambient field, behind all
+          content (page wrapper claims z-index: 1 above it). */}
+      <AmbientBubbles />
 
-      <Section>
-        <HowItWorksSteps title={t("buyers.title")} steps={buyerSteps} />
-      </Section>
+      <div className={styles.page}>
+        <section className={styles.heroSection}>
+          <div className={styles.heroInner}>
+            <header className={styles.hero}>
+              <h1 className={styles.heroTitle}>
+                {t.rich("hero.title", {
+                  gradient: (chunks) => (
+                    <span className={styles.gradientWord}>{chunks}</span>
+                  ),
+                })}
+              </h1>
+              <p className={styles.heroSubtitle}>{t("hero.subtitle")}</p>
+            </header>
+          </div>
+        </section>
 
-      <Section>
-        <HowItWorksSteps title={t("creators.title")} steps={creatorSteps} />
-      </Section>
+        <HowItWorksJourney
+          labels={journeyLabels}
+          buyerSteps={buyerSteps}
+          teacherSteps={creatorSteps}
+        />
 
       <Section>
         <h2 className={styles.sectionTitle}>{t("glossary.title")}</h2>
@@ -169,6 +177,7 @@ export default async function HowItWorksPage({ params }: Props) {
           </div>
         </div>
       </Section>
+      </div>
     </>
   );
 }

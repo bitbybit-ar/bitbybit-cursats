@@ -1,0 +1,56 @@
+@use "@/styles/colors" as *;
+@use "@/styles/spacing" as *;
+@use "@/styles/typography" as *;
+
+.track {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-4;
+  padding: $spacing-4;
+  border-radius: 999px;
+  background: alpha($color-text-primary, 0.06);
+  border: 1px solid alpha($color-text-primary, 0.1);
+}
+
+.tab {
+  position: relative;
+  appearance: none;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: $spacing-12 $spacing-24;
+  border-radius: 999px;
+  font-family: $font-family-display;
+  font-weight: $font-weight-bold;
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  transition: color 0.2s ease;
+
+  &[aria-selected="true"] {
+    color: $static-white;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $color-primary;
+    outline-offset: 2px;
+  }
+}
+
+// The single sliding pill behind the active tab (Framer layoutId).
+.indicator {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 999px;
+  background-image: linear-gradient(
+    135deg,
+    $color-primary 0%,
+    $color-secondary 100%
+  );
+  box-shadow: 0 4px 14px alpha($color-primary, 0.32);
+}
+
+.label {
+  position: relative;
+  z-index: 1;
+}

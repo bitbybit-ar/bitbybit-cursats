@@ -4,29 +4,29 @@
 @use "@/styles/common-mixins" as *;
 @use "@/styles/media-mixins" as *;
 
-// Hero is its own `<section>` (not the shared `<Section>` primitive)
-// because it needs a position:relative full-bleed surface for the
-// decorative bubble layer to anchor against.
+// All page content stacks above the fixed ambient bubble field
+// (which the AmbientBubbles component pins at z-index: 0).
+.page {
+  position: relative;
+  z-index: 1;
+}
+
+// Hero band (~60vh). The decorative bubbles are no longer anchored
+// here — they live in the page-root fixed AmbientBubbles layer — so
+// this is just the headline/subtitle stage; the journey toggle
+// follows immediately after it.
 .heroSection {
   position: relative;
-  overflow: hidden;
   min-height: 60vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: $spacing-100 0;
+  padding: $spacing-100 0 $spacing-48;
 
   @include mobile {
     min-height: 50vh;
-    padding: $spacing-64 0;
+    padding: $spacing-64 0 $spacing-32;
   }
-}
-
-.bubbles {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
 }
 
 .heroInner {
@@ -98,74 +98,12 @@
   color: $color-text-primary;
 }
 
-// Numbered step cards. Surface treatment is the shared <Card>
-// primitive; these rules are the grid, the per-card inner stack,
-// and the gradient number badge. The reveal-on-scroll motion lives
-// in `steps.tsx` (framer-motion) — nothing here animates so the
-// CSS stays the static fallback.
-.steps {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: $spacing-24;
+// The buyer/creator step cards moved to the Bubble Chamber
+// components (`components/how-it-works/*`); their styles live in
+// those modules now. What stays here is the static closing:
+// glossary, custody, and CTA.
 
-  @include mobile {
-    grid-template-columns: 1fr;
-    gap: $spacing-20;
-  }
-}
-
-.stepItem {
-  height: 100%;
-}
-
-.stepCard {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-12;
-  height: 100%;
-}
-
-// Gradient disc badge — same primary→secondary ramp as the hero
-// gradient word so the two surfaces stay in the same family. White
-// glyph + soft primary shadow lifts it off the card.
-.stepNumber {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: $spacing-48;
-  height: $spacing-48;
-  border-radius: 50%;
-  background-image: linear-gradient(
-    135deg,
-    $color-primary 0%,
-    $color-secondary 100%
-  );
-  color: $static-white;
-  font-family: $font-family-display;
-  font-weight: $font-weight-bold;
-  font-size: $font-size-lg;
-  box-shadow: 0 6px 16px alpha($color-primary, 30%);
-}
-
-.stepTitle {
-  margin: 0;
-  font-family: $font-family-display;
-  font-size: $font-size-lg;
-  font-weight: $font-weight-bold;
-  color: $color-text-primary;
-}
-
-.stepBody {
-  margin: 0;
-  font-size: $font-size-body;
-  line-height: $line-height-base;
-  color: $color-text-secondary;
-}
-
-// Glossary now uses the shared <Polaroid> primitive — this rule is
+// Glossary uses the shared <Polaroid> primitive — this rule is
 // just the wrapping board (centered, wraps to a column on mobile)
 // and the icon tint applied to each polaroid's frame.
 .glossary {
