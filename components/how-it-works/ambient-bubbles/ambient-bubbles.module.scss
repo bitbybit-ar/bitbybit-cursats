@@ -20,13 +20,15 @@
   top: 0;
   border-radius: 50%;
   background: radial-gradient(
-    circle at 30% 30%,
-    alpha($color-primary, 0.35),
-    alpha($color-primary, 0.06) 55%,
-    transparent 72%
+    circle at 32% 28%,
+    alpha($static-white, 0.7),
+    alpha($color-primary, 0.32) 52%,
+    alpha($color-primary, 0.12) 78%
   );
-  border: 1px solid alpha($color-primary, 0.15);
-  box-shadow: inset 2px 2px 6px alpha($static-white, 0.22);
+  border: 1px solid alpha($static-white, 0.5);
+  box-shadow:
+    inset 4px 4px 10px alpha($static-white, 0.45),
+    0 4px 14px alpha($color-primary, 0.14);
 }
 
 // Defense in depth — JS already returns null under reduced motion,

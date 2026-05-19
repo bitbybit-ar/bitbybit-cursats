@@ -22,10 +22,10 @@ function makeBubbles(count: number): BubbleConfig[] {
   return Array.from({ length: count }, (_, id) => ({
     id,
     leftVw: Math.random() * 100,
-    size: 20 + Math.random() * 100, // 20–120px
+    size: 28 + Math.random() * 104, // 28–132px
     duration: 15 + Math.random() * 25, // 15–40s
     delay: -Math.random() * 40, // negative → field is mid-cycle on mount
-    opacity: 0.05 + Math.random() * 0.15, // 0.05–0.2
+    opacity: 0.22 + Math.random() * 0.33, // 0.22–0.55 (actually visible)
     sway: 12 + Math.random() * 28, // px of horizontal drift
   }));
 }

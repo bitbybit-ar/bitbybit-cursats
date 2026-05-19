@@ -7,7 +7,7 @@ import { Polaroid } from "@/components/ui/polaroid";
 import { Button } from "@/components/ui/button";
 import { alternatesFor } from "@/lib/seo";
 import { AmbientBubbles } from "@/components/how-it-works/ambient-bubbles";
-import { HowItWorksJourney } from "@/components/how-it-works/how-it-works-journey";
+import { JourneySteps } from "@/components/how-it-works/journey-steps";
 import styles from "./page.module.scss";
 
 // "Quién es quién" brand logos, vendored into `public/images/logos`
@@ -84,12 +84,6 @@ export default async function HowItWorksPage({ params }: Props) {
     },
   ];
 
-  const journeyLabels = {
-    buyer: t("journey.buyerLabel"),
-    teacher: t("journey.teacherLabel"),
-    aria: t("journey.ariaLabel"),
-  };
-
   return (
     <>
       {/* Layer 1 — fixed full-viewport ambient field, behind all
@@ -112,10 +106,16 @@ export default async function HowItWorksPage({ params }: Props) {
           </div>
         </section>
 
-        <HowItWorksJourney
-          labels={journeyLabels}
-          buyerSteps={buyerSteps}
-          teacherSteps={creatorSteps}
+        <JourneySteps
+          variant="buyer"
+          title={t("buyers.title")}
+          steps={buyerSteps}
+        />
+
+        <JourneySteps
+          variant="teacher"
+          title={t("creators.title")}
+          steps={creatorSteps}
         />
 
       <Section>

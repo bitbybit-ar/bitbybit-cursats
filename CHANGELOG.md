@@ -18,25 +18,21 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   links to the old slugs yet. Completes the English/language-
   neutral URL convention for every public route. Decision in ADR
   0023.
-- **How it works — "Bubble Chamber" redesign.** The page is now a
-  scroll-driven journey: a pill toggle ("Compro" / "Enseño",
-  ARIA tablist, keyboard-navigable, sliding Framer `layoutId`
-  indicator) switches between the buyer and teacher journeys,
-  cross-faded with `AnimatePresence`. The active journey is
-  mirrored to `?role=` (shareable, survives refresh). Each step
-  is its own full-height section: a fixed ambient bubble field
-  drifts behind everything, a giant blocky numeral parallaxes on
-  scroll, and the step inflates into view as a bubble holding a
-  Polaroid with a staggered caption. Transform/opacity-only,
-  fewer bubbles on mobile, and `prefers-reduced-motion` disables
-  the ambient field and collapses sections to plain fades.
-  "Quién es quién" keeps the Lightning/Wapu/Nostr brand logos and
-  stays static. Copy still reflects the live flow: creator steps
-  are sign-in → set payout in Settings → publish via the
-  create-course form (no store-builder/slug-claim step, which
-  never existed), and the removed Nostr-DM delivery path is gone
-  from every surface (in-app order history instead). Wapu
-  glossary blurb reworded.
+- **How it works — refreshed.** A fixed ambient bubble field
+  drifts behind the page (the "Bubble Chamber" backdrop;
+  transform/opacity-only, fewer on mobile, removed under
+  `prefers-reduced-motion`). The two journeys keep the familiar
+  structure — a heading then three steps in a row (a column on
+  mobile) — but each step is now a real `<Polaroid>` (paper +
+  shadow), with a gradient step badge and a view-triggered
+  staggered reveal (no scroll-scrubbing, so it appears reliably
+  on first scroll). "Quién es quién" keeps the Lightning/Wapu/
+  Nostr brand logos and stays static. Copy reflects the live
+  flow: creator steps are sign-in → set payout in Settings →
+  publish via the create-course form (no store-builder/slug-claim
+  step, which never existed), and the removed Nostr-DM delivery
+  path is gone from every surface (in-app order history instead).
+  Wapu glossary blurb reworded.
 - **Features page — corrected copy.** Dropped the "Auto-renovación
   opt-in" card (auto-renewal is deferred from the MVP — ADR 0020)
   and the "Marketplace o self-host" card (the per-merchant

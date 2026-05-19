@@ -1,0 +1,87 @@
+@use "@/styles/colors" as *;
+@use "@/styles/spacing" as *;
+@use "@/styles/typography" as *;
+@use "@/styles/media-mixins" as *;
+
+.section {
+  position: relative;
+  padding: $spacing-64 0;
+
+  @include mobile {
+    padding: $spacing-48 0;
+  }
+}
+
+.inner {
+  max-width: $container-max-width;
+  margin: 0 auto;
+  padding: 0 $container-padding;
+}
+
+.title {
+  margin: 0 0 $spacing-32;
+  text-align: center;
+  font-family: $font-family-display;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  letter-spacing: $letter-spacing-heading;
+  color: $color-text-primary;
+}
+
+// Row on desktop, column on mobile. <Polaroid> sets its own width;
+// this is just the track + the moderate gap (the cards used to live
+// in 100vh sections — they're tight now).
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: $spacing-32;
+
+  @include mobile {
+    flex-direction: column;
+    align-items: center;
+    gap: $spacing-24;
+  }
+}
+
+.card {
+  position: relative;
+  list-style: none;
+  display: flex;
+}
+
+// Gradient step badge pinned to the Polaroid's corner — the same
+// primary→secondary ramp as the hero gradient word so the surfaces
+// stay one family.
+.badge {
+  position: absolute;
+  top: -$spacing-12;
+  left: -$spacing-12;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: $spacing-48;
+  height: $spacing-48;
+  border-radius: 50%;
+  background-image: linear-gradient(
+    135deg,
+    $color-primary 0%,
+    $color-secondary 100%
+  );
+  color: $static-white;
+  font-family: $font-family-display;
+  font-weight: $font-weight-bold;
+  font-size: $font-size-lg;
+  box-shadow: 0 6px 16px alpha($color-primary, 0.35);
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
