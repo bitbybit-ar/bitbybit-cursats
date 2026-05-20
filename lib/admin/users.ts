@@ -381,3 +381,22 @@ export function pickPayoutAlias(user: User): string | null {
   }
   return null;
 }
+
+/**
+ * True when the user has the payout destination required by their
+ * current `payout_method` filled in.
+ *
+ *   - cbu_alias        → at least one of `cbu` / `alias`
+ *   - lightning_address → `lightning_address` present
+ *
+ * Sellers must satisfy this before they can create an offering;
+ * a checkout against an unconfigured seller would already be
+ * rejected downstream, but failing early at create-time avoids
+ * publishing an unsellable course.
+ */
+export function hasPayoutConfigured(user: User): boolean {
+  if (user.payout_method === "lightning_address") {
+    return Boolean(user.lightning_address?.trim());
+  }
+  return Boolean(user.cbu?.trim() || user.alias?.trim());
+}

@@ -8,6 +8,7 @@ import {
 import {
   getLightningClient,
   LightningMintError,
+  type LightningMintErrorCode,
 } from "@/lib/lightning";
 import { pickPayoutAlias } from "@/lib/admin/users";
 import { convertPrice } from "@/lib/exchange-rate";
@@ -49,7 +50,17 @@ export type CreateOrderError =
   | "lightning_mint_failed";
 
 export class OrderCreateError extends Error {
-  constructor(public readonly code: CreateOrderError) {
+  constructor(
+    public readonly code: CreateOrderError,
+    /**
+     * When `code === "lightning_mint_failed"`, the underlying
+     * LightningMintError code rides along so the checkout API can
+     * surface a specific reason (lnurl_unreachable vs lnurl_no_lud21
+     * vs …) to the buyer instead of a generic "unavailable". Unset
+     * for non-LN failure modes.
+     */
+    public readonly lightning_code?: LightningMintErrorCode
+  ) {
     super(code);
     this.name = "OrderCreateError";
   }
@@ -227,7 +238,7 @@ async function fundDirectLightningOrder(opts: {
     );
   } catch (err) {
     if (err instanceof LightningMintError) {
-      throw new OrderCreateError("lightning_mint_failed");
+      throw new OrderCreateError("lightning_mint_failed", err.code);
     }
     throw err;
   }

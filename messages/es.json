@@ -322,6 +322,10 @@
     "offeringUnavailable": "Esta oferta ya no está disponible.",
     "offeringSoldOut": "El curso se quedó sin cupos. Pedile al instructor que genere más códigos.",
     "checkoutFailed": "No pudimos generar la invoice. Probá de nuevo en un momento.",
+    "sellerLightningInvalidAddress": "La Lightning Address del vendedor no tiene un formato válido. Avisale o probá con otro curso.",
+    "sellerLightningUnreachable": "El proveedor Lightning del vendedor no responde. Probá de nuevo en un minuto.",
+    "sellerLightningNoLud21": "El proveedor Lightning del vendedor no soporta LUD-21. No podemos verificar el pago — avisale para que cambie de proveedor.",
+    "sellerLightningMalformed": "El proveedor Lightning del vendedor devolvió una respuesta inválida. Avisale o probá con otro curso.",
     "network": "No pudimos conectarnos. Revisá tu conexión y reintentá.",
     "notFound": "No encontramos lo que buscabas."
   },
@@ -347,7 +351,11 @@
   "createCourse": {
     "metadataTitle": "Nuevo curso",
     "title": "Nuevo curso",
-    "subtitle": "Definí los detalles para que el curso aparezca en tu storefront."
+    "subtitle": "Definí los detalles para que el curso aparezca en tu storefront.",
+    "payoutModal": {
+      "title": "Configurá cómo querés cobrar",
+      "intro": "Antes de publicar un curso necesitás un destino de cobro: o un CBU/alias para recibir pesos, o una Lightning Address para recibir sats."
+    }
   },
   "myCourses": {
     "metadataTitle": "Mis cursos",
@@ -440,6 +448,7 @@
       "saving": "Guardando…",
       "saved": "Curso guardado.",
       "saveFailed": "No pudimos guardar el curso. Probá de nuevo.",
+      "payoutNotConfigured": "Configurá cómo querés cobrar antes de crear el curso.",
       "slugTaken": "Ya existe un curso con ese slug.",
       "invalidPriceArs": "El precio en ARS tiene que ser un número entero positivo.",
       "invalidPriceSats": "El precio en sats tiene que ser un número entero positivo.",
@@ -576,6 +585,10 @@
       "lightningAddressFromNostr": "Tomamos esta dirección de tu perfil de Nostr (lud16). Verificala y guardala si querés conservarla.",
       "lightningAddressRequired": "Cargá una Lightning Address para cobrar en sats.",
       "lightningAddressInvalid": "Esa Lightning Address no responde o no soporta LUD-21. Probá con WoS, Strike, Alby Hub, LNbits, ZBD o Primal.",
+      "lightningAddressInvalidFormat": "El formato no es válido. Esperamos usuario@dominio, por ejemplo vos@walletofsatoshi.com.",
+      "lightningAddressUnreachable": "No pudimos contactar a tu proveedor Lightning. Revisá la dirección y probá de nuevo en un momento.",
+      "lightningAddressNoLud21": "Tu proveedor no soporta LUD-21 y sin eso no podemos verificar tus cobros. Probá con WoS, Strike, Alby Hub, LNbits, ZBD o Primal.",
+      "lightningAddressMalformed": "Tu proveedor devolvió una respuesta inválida. Probá con otro proveedor compatible con LUD-21.",
       "sectionPayout": "Cómo cobrás",
       "sectionPayoutHint": "Elegí en qué moneda recibís tus ventas. Podés cambiar el método más adelante; los datos quedan acá y no aparecen en ningún lado del comprador.",
       "payoutMethod": "Método de cobro",

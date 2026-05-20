@@ -11,13 +11,41 @@ import {
   ShareOnNostrModal,
   type ShareContext,
 } from "@/components/share/share-on-nostr-modal";
+import {
+  PayoutSetupModal,
+  type PayoutSavedValues,
+} from "@/components/courses/payout-setup-modal";
 import { useSignerContext } from "@/lib/contexts/signer-context";
 import type { Offering } from "@/lib/admin/offerings";
 import styles from "./offering-form.module.scss";
 
+type PayoutMethod = "cbu_alias" | "lightning_address";
+
+export interface OfferingFormPayoutState {
+  cbu: string;
+  alias: string;
+  lightningAddress: string;
+  payoutMethod: PayoutMethod;
+}
+
 interface OfferingFormProps {
   /** When provided, the form pre-populates and submits a PATCH. */
   offering?: Offering;
+  /**
+   * Current seller payout state from the user row. Used on create to
+   * gate submission behind a payout-setup modal so the offering does
+   * not get published unsellable. Optional because the edit-mode
+   * call site does not need it (an existing offering implies the
+   * seller already cleared this gate at create time).
+   */
+  payoutState?: OfferingFormPayoutState;
+}
+
+function isPayoutConfigured(state: OfferingFormPayoutState): boolean {
+  if (state.payoutMethod === "lightning_address") {
+    return state.lightningAddress.trim().length > 0;
+  }
+  return state.cbu.trim().length > 0 || state.alias.trim().length > 0;
 }
 
 interface OfferingPayload {
@@ -52,7 +80,7 @@ function slugify(title: string): string {
     .slice(0, 80);
 }
 
-export function OfferingForm({ offering }: OfferingFormProps) {
+export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
   const t = useTranslations("myCourses.form");
   const tCommon = useTranslations("common");
   const tErr = useTranslations("errors");
@@ -69,6 +97,15 @@ export function OfferingForm({ offering }: OfferingFormProps) {
   const [shareContext, setShareContext] = useState<ShareContext | null>(
     null,
   );
+
+  // Local mirror of the seller's payout state so the popup can update
+  // it in place after a successful save without forcing a server
+  // round-trip. Edit mode has no gate (existing offering implies the
+  // seller already cleared it at create time), so the prop is optional.
+  const [currentPayout, setCurrentPayout] = useState<
+    OfferingFormPayoutState | null
+  >(payoutState ?? null);
+  const [showPayoutModal, setShowPayoutModal] = useState(false);
 
   const isEdit = offering !== undefined;
 
@@ -109,19 +146,16 @@ export function OfferingForm({ offering }: OfferingFormProps) {
     setSlugManuallyEdited(true);
   }
 
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (isPending) return;
-
+  function buildPayload(): OfferingPayload | null {
     const priceAmountNum = Number.parseInt(priceAmount, 10);
     if (Number.isNaN(priceAmountNum) || priceAmountNum <= 0) {
       showToast(t("invalidPriceAmount"), "error");
-      return;
+      return null;
     }
 
     if (imageUrl.trim() === "") {
       showToast(t("imageRequired"), "error");
-      return;
+      return null;
     }
 
     let codeCountNum: number | undefined;
@@ -133,16 +167,16 @@ export function OfferingForm({ offering }: OfferingFormProps) {
         codeCountNum > 10000
       ) {
         showToast(t("invalidCodeCount"), "error");
-        return;
+        return null;
       }
     }
 
     if (type === "download" && downloadUrl.trim() === "") {
       showToast(t("downloadUrlRequired"), "error");
-      return;
+      return null;
     }
 
-    const payload: OfferingPayload = {
+    return {
       slug: slug.trim(),
       type,
       title: title.trim(),
@@ -153,7 +187,9 @@ export function OfferingForm({ offering }: OfferingFormProps) {
       download_url: type === "download" ? downloadUrl.trim() : null,
       code_count: codeCountNum,
     };
+  }
 
+  async function submitOffering(payload: OfferingPayload) {
     setIsPending(true);
     try {
       const url = isEdit
@@ -170,6 +206,14 @@ export function OfferingForm({ offering }: OfferingFormProps) {
         };
         if (res.status === 401 || res.status === 404) {
           router.push("/");
+          return;
+        }
+        if (data.error === "payout_not_configured") {
+          // BE caught a payout gap the FE check missed (e.g. stale
+          // payoutState prop). Surface the modal so the seller can
+          // recover without leaving the page.
+          setShowPayoutModal(true);
+          showToast(t("payoutNotConfigured"), "error");
           return;
         }
         if (data.error === "slug_taken") {
@@ -207,6 +251,44 @@ export function OfferingForm({ offering }: OfferingFormProps) {
     }
   }
 
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (isPending) return;
+
+    const payload = buildPayload();
+    if (!payload) return;
+
+    // Pre-check seller's payout state on create. Edit-mode skips
+    // the gate (existing offering already passed at create time).
+    if (!isEdit && currentPayout && !isPayoutConfigured(currentPayout)) {
+      setShowPayoutModal(true);
+      return;
+    }
+
+    await submitOffering(payload);
+  }
+
+  function handlePayoutSaved(next: PayoutSavedValues) {
+    // Merge the freshly-saved fields onto the existing payout state
+    // (lightning_address lives on the profile form and is unchanged
+    // by this modal — preserve whatever value we already had).
+    setCurrentPayout((prev) => ({
+      cbu: next.cbu,
+      alias: next.alias,
+      lightningAddress: prev?.lightningAddress ?? "",
+      payoutMethod: next.payoutMethod,
+    }));
+    setShowPayoutModal(false);
+
+    // Replay the submission with the just-saved values. If the user
+    // picked the LN rail but has no LN address, PayoutForm's own
+    // validation would have blocked the save — so reaching this
+    // point means the merged state passes `isPayoutConfigured`.
+    const payload = buildPayload();
+    if (!payload) return;
+    void submitOffering(payload);
+  }
+
   async function handleArchive() {
     if (!offering) return;
     if (isArchiving) return;
@@ -232,7 +314,8 @@ export function OfferingForm({ offering }: OfferingFormProps) {
   }
 
   return (
-    <form className={styles.form} onSubmit={handleSubmit}>
+    <>
+      <form className={styles.form} onSubmit={handleSubmit}>
       <section className={styles.section}>
         <header className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>{t("sectionBasics")}</h2>
@@ -500,6 +583,11 @@ export function OfferingForm({ offering }: OfferingFormProps) {
         ) : null}
       </div>
 
+      </form>
+
+      {/* Modals are siblings of the form, not children — PayoutSetupModal
+          embeds the settings PayoutForm (its own <form>), so nesting it
+          inside <form> would be invalid HTML and confuse Enter-key submit. */}
       {shareContext ? (
         <ShareOnNostrModal
           context={shareContext}
@@ -510,7 +598,18 @@ export function OfferingForm({ offering }: OfferingFormProps) {
           }}
         />
       ) : null}
-    </form>
+
+      {showPayoutModal && currentPayout ? (
+        <PayoutSetupModal
+          initialCbu={currentPayout.cbu}
+          initialAlias={currentPayout.alias}
+          initialPayoutMethod={currentPayout.payoutMethod}
+          currentLightningAddress={currentPayout.lightningAddress}
+          onSaved={handlePayoutSaved}
+          onClose={() => setShowPayoutModal(false)}
+        />
+      ) : null}
+    </>
   );
 }
 

@@ -10,6 +10,10 @@ import {
   _resetWapuClientForTests,
   type WapuWebhookEvent,
 } from "@/lib/wapu";
+import {
+  MockLightningClient,
+  _setLightningClientForTests,
+} from "@/lib/lightning";
 import { POST } from "@/app/api/wapu/webhook/route";
 
 const WEBHOOK_URL = "https://cursats.test/api/wapu/webhook";
@@ -186,6 +190,11 @@ describe("POST /api/wapu/webhook — rejections", () => {
 // settlement track.
 describe("POST /api/wapu/webhook — rail guard (direct_lightning)", () => {
   it("404s when the order's rail is direct_lightning, leaving the row pending", async () => {
+    // getLightningClient() now always returns RealLightningClient,
+    // which would fail on the synthetic `alice@strike.me` address
+    // below. Inject the mock so createOrder mints deterministically.
+    _setLightningClientForTests(new MockLightningClient());
+
     const user = await seedUser({
       // Switch rail to LN; createOrder will stamp the new order
       // with rail=direct_lightning.
