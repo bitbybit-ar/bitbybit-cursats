@@ -1,12 +1,18 @@
-import { and, asc, desc, eq, ilike, isNull, or, sql, type SQL } from "drizzle-orm";
-import { getDb } from "@/lib/db";
-import { offerings, users } from "@/lib/db/schema";
-import { convertPrice, getSatsPerArs } from "@/lib/exchange-rate";
 import {
-  findMockOfferingByUserAndSlug,
-  findMockStorefront,
-  highlightedCourses,
-} from "@/lib/mock/highlighted-courses";
+  and,
+  asc,
+  desc,
+  eq,
+  ilike,
+  isNull,
+  notInArray,
+  or,
+  sql,
+  type SQL,
+} from "drizzle-orm";
+import { getDb } from "@/lib/db";
+import { offerings, orders, users } from "@/lib/db/schema";
+import { getSatsPerArs } from "@/lib/exchange-rate";
 import type { OfferingTypeFilter, SortKey } from "@/lib/explore-params";
 
 export type Offering = typeof offerings.$inferSelect;
@@ -29,14 +35,28 @@ export interface OfferingWithSeller {
   };
 }
 
+function toOfferingWithSeller(row: {
+  offering: Offering;
+  seller: typeof users.$inferSelect;
+}): OfferingWithSeller {
+  return {
+    offering: row.offering,
+    seller: {
+      id: row.seller.id,
+      slug: row.seller.slug,
+      display_name: row.seller.display_name,
+      avatar_url: row.seller.avatar_url,
+      banner_url: row.seller.banner_url,
+      bio: row.seller.bio,
+    },
+  };
+}
+
 /**
  * Discovery home with search/filter/sort/pagination. The page reads
  * `searchParams` and hands them here normalized; this function applies
  * them, returning the slice for the requested page plus the total row
  * count so the caller can render a pager.
- *
- * In demo mode (no `DATABASE_URL` or empty catalog), the mock
- * `highlightedCourses` set is filtered and sorted in-memory.
  */
 export interface DiscoveryQuery {
   q?: string;
@@ -106,87 +126,72 @@ export async function listDiscoveryOfferingsPaged(
         .where(whereClause),
     ]);
 
-    if (rowsRaw.length === 0 && totalRaw[0].value === 0) {
-      return filterMocks(highlightedCourses, opts);
-    }
-
     return {
-      rows: rowsRaw.map((r) => ({
-        offering: r.offering,
-        seller: {
-          id: r.seller.id,
-          slug: r.seller.slug,
-          display_name: r.seller.display_name,
-          avatar_url: r.seller.avatar_url,
-          banner_url: r.seller.banner_url,
-          bio: r.seller.bio,
-        },
-      })),
+      rows: rowsRaw.map(toOfferingWithSeller),
       total: totalRaw[0].value,
     };
-  } catch {
-    return filterMocks(highlightedCourses, opts);
+  } catch (err) {
+    console.error("listDiscoveryOfferingsPaged failed", err);
+    return { rows: [], total: 0 };
   }
 }
 
-async function filterMocks(
-  mocks: OfferingWithSeller[],
-  opts: DiscoveryQuery
-): Promise<{ rows: OfferingWithSeller[]; total: number }> {
-  const sort: SortKey = opts.sort ?? "newest";
-  const page = Math.max(1, opts.page ?? 1);
-  const pageSize = Math.max(1, opts.pageSize ?? 12);
-  const q = opts.q?.trim().toLowerCase();
+/**
+ * Landing-page highlight rail: up to `limit` offerings ranked by paid
+ * order count, topped up with the newest active offerings when fewer
+ * than `limit` have sales yet. Returns an empty array on a fresh
+ * install (or on DB error) so the landing can hide the section.
+ */
+export async function listHighlightedOfferings(
+  limit = 3
+): Promise<OfferingWithSeller[]> {
+  try {
+    const db = getDb();
+    const baseConditions = and(
+      eq(users.active, true),
+      isNull(offerings.archived_at)
+    );
 
-  let filtered = mocks.filter((row) => {
-    if (opts.type && row.offering.type !== opts.type) return false;
-    if (q) {
-      const haystack = [
-        row.offering.title,
-        row.offering.description,
-        row.seller.display_name,
-      ]
-        .join("\n")
-        .toLowerCase();
-      if (!haystack.includes(q)) return false;
-    }
-    return true;
-  });
+    const topSellers = await db
+      .select({ offering: offerings, seller: users })
+      .from(offerings)
+      .innerJoin(users, eq(offerings.user_id, users.id))
+      .innerJoin(
+        orders,
+        and(eq(orders.offering_id, offerings.id), eq(orders.status, "paid"))
+      )
+      .where(baseConditions)
+      .groupBy(offerings.id, users.id)
+      .orderBy(desc(sql<number>`count(${orders.id})`), desc(offerings.created_at))
+      .limit(limit);
 
-  // Same ARS-normalisation as the SQL path so mock and live results
-  // sort consistently when DATABASE_URL is missing.
-  const arsEquivCache = new Map<string, number>();
-  await Promise.all(
-    filtered.map(async (row) => {
-      const ars =
-        row.offering.price_currency === "ars"
-          ? row.offering.price_amount
-          : await convertPrice(row.offering.price_amount, "sats", "ars");
-      arsEquivCache.set(row.offering.id, ars);
-    }),
-  );
+    const picked = topSellers.map(toOfferingWithSeller);
+    if (picked.length >= limit) return picked;
 
-  filtered = [...filtered].sort((a, b) => {
-    if (sort === "price_asc")
-      return (arsEquivCache.get(a.offering.id) ?? 0) - (arsEquivCache.get(b.offering.id) ?? 0);
-    if (sort === "price_desc")
-      return (arsEquivCache.get(b.offering.id) ?? 0) - (arsEquivCache.get(a.offering.id) ?? 0);
-    const aTime = new Date(a.offering.created_at).getTime();
-    const bTime = new Date(b.offering.created_at).getTime();
-    return sort === "oldest" ? aTime - bTime : bTime - aTime;
-  });
+    const excludeIds = picked.map((r) => r.offering.id);
+    const newest = await db
+      .select({ offering: offerings, seller: users })
+      .from(offerings)
+      .innerJoin(users, eq(offerings.user_id, users.id))
+      .where(
+        excludeIds.length > 0
+          ? and(baseConditions, notInArray(offerings.id, excludeIds))
+          : baseConditions
+      )
+      .orderBy(desc(offerings.created_at))
+      .limit(limit - picked.length);
 
-  const total = filtered.length;
-  const offset = (page - 1) * pageSize;
-  return { rows: filtered.slice(offset, offset + pageSize), total };
+    return [...picked, ...newest.map(toOfferingWithSeller)];
+  } catch (err) {
+    console.error("listHighlightedOfferings failed", err);
+    return [];
+  }
 }
 
 /**
  * Single user's public storefront listing — active rows in
  * insertion order so the seller's first listing stays at the top
- * until they archive it. Returns the narrow seller card shape used
- * by buyer-facing pages (matches `OfferingWithSeller.seller`) so
- * the mock fallback can satisfy the same type.
+ * until they archive it.
  */
 export async function listOfferingsForUserSlug(
   userSlug: string
@@ -201,7 +206,7 @@ export async function listOfferingsForUserSlug(
       .from(users)
       .where(and(eq(users.slug, userSlug), eq(users.active, true)))
       .limit(1);
-    if (!seller) return findMockStorefront(userSlug);
+    if (!seller) return null;
 
     const rows = await db
       .select()
@@ -222,8 +227,9 @@ export async function listOfferingsForUserSlug(
       },
       offerings: rows,
     };
-  } catch {
-    return findMockStorefront(userSlug);
+  } catch (err) {
+    console.error("listOfferingsForUserSlug failed", err);
+    return null;
   }
 }
 
@@ -252,22 +258,11 @@ export async function getOfferingByUserAndSlug(
         )
       )
       .limit(1);
-    if (!row) {
-      return findMockOfferingByUserAndSlug(userSlug, offeringSlug);
-    }
-    return {
-      offering: row.offering,
-      seller: {
-        id: row.seller.id,
-        slug: row.seller.slug,
-        display_name: row.seller.display_name,
-        avatar_url: row.seller.avatar_url,
-        banner_url: row.seller.banner_url,
-        bio: row.seller.bio,
-      },
-    };
-  } catch {
-    return findMockOfferingByUserAndSlug(userSlug, offeringSlug);
+    if (!row) return null;
+    return toOfferingWithSeller(row);
+  } catch (err) {
+    console.error("getOfferingByUserAndSlug failed", err);
+    return null;
   }
 }
 

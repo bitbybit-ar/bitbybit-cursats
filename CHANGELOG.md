@@ -24,6 +24,24 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   anywhere else) and now mirrors the how-it-works glossary
   description. Delivery answer drops the Nostr DM fallback, which
   was removed across the app (in-app receipt URL only).
+- **Landing's highlighted-courses rail reads real data.** The
+  rail no longer ships hardcoded sample courses. It now queries
+  Postgres for up to three offerings ranked by paid-order count,
+  topped up with the newest active offerings when fewer than three
+  have sales yet. With nothing eligible (fresh install, every
+  seller archived), the whole section is hidden — the landing
+  flows hero → motivation without a placeholder block. The home
+  page switched from `force-static` to `revalidate = 60` so the
+  rail picks up new sales/offerings within a minute while the
+  page itself stays cached.
+- **Mock-data fallbacks removed across buyer surfaces.** The
+  explore grid, seller storefront, and offering detail no longer
+  fall back to the demo "Satoshi" / "Pampa" catalog when the DB
+  is empty or unreachable. Each surface now renders its real
+  empty/404 state (existing i18n copy in
+  `catalog.list.empty/noMatches` and `storefront.empty`). DB
+  errors log to the server console and return empty results
+  instead of silently substituting fake content.
 - **Public content pages are English-slugged.** `/como-funciona`
   → `/how-it-works` and `/caracteristicas` → `/features`. Clean
   pre-launch rename — no back-compat redirect, since nothing
