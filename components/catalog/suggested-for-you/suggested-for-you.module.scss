@@ -1,0 +1,66 @@
+@use "@/styles/colors" as *;
+@use "@/styles/spacing" as *;
+@use "@/styles/typography" as *;
+@use "@/styles/media-mixins" as *;
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-24;
+  margin-top: $spacing-48;
+
+  @include mobile {
+    margin-top: $spacing-32;
+  }
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-4;
+}
+
+.title {
+  margin: 0;
+  font-family: $font-family-display;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-extrabold;
+  letter-spacing: $letter-spacing-tight;
+  color: $color-text-primary;
+  line-height: $line-height-tight;
+}
+
+.subtitle {
+  margin: 0;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+}
+
+// Same breakpoint cadence as the landing's highlighted-courses
+// rail: 1-up phones, 2-up tablet, 3-up desktop. With limit=3 the
+// rail rarely wraps; if a caller passes limit=4 the desktop grid
+// still wraps cleanly because the cards have a sane min-width.
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $spacing-24;
+
+  @include tabletAndUp {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include desktop {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  margin-top: $spacing-8;
+}
+
+.exploreButton {
+  text-transform: uppercase;
+  letter-spacing: $letter-spacing-wide;
+}
