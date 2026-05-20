@@ -276,11 +276,12 @@ describe("MockLightningClient minSendable / maxSendable", () => {
 describe("getLightningClient factory", () => {
   beforeEach(() => {
     _resetLightningClientForTests();
-    delete process.env.LIGHTNING_USE_REAL_CLIENT;
   });
 
-  it("returns the mock by default", () => {
-    expect(getLightningClient()).toBeInstanceOf(MockLightningClient);
+  it("returns the real client (never the mock) without an explicit injection", () => {
+    // Production must talk to the seller's actual Lightning Address.
+    // The mock is only reachable through _setLightningClientForTests.
+    expect(getLightningClient()).not.toBeInstanceOf(MockLightningClient);
   });
 
   it("memoises the instance", () => {

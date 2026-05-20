@@ -155,9 +155,23 @@ export function ProfileForm({
         if (res.status === 400) {
           const json = (await res.json().catch(() => null)) as {
             error?: string;
+            reason?: string;
           } | null;
           if (json?.error === "lightning_address_invalid") {
-            showToast(t("lightningAddressInvalid"), "error");
+            // Each reason maps to a distinct seller-facing message —
+            // "your provider doesn't speak LUD-21" is actionable
+            // (switch providers); "unreachable" is transient (retry).
+            const reasonKey: Record<string, string> = {
+              invalid_address: "lightningAddressInvalidFormat",
+              lnurl_unreachable: "lightningAddressUnreachable",
+              lnurl_no_lud21: "lightningAddressNoLud21",
+              lnurl_invalid_response: "lightningAddressMalformed",
+              bolt11_no_payment_hash: "lightningAddressMalformed",
+            };
+            const key =
+              (json.reason && reasonKey[json.reason]) ||
+              "lightningAddressInvalid";
+            showToast(t(key), "error");
             return;
           }
         }

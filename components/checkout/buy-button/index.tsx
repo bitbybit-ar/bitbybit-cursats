@@ -38,6 +38,7 @@ export function BuyButton({ offeringId, soldOut = false }: BuyButtonProps) {
         const data = (await res.json().catch(() => ({}))) as {
           error?: string;
           reason?: string;
+          lightning_reason?: string;
         };
         // 409 with reason=offering_sold_out happens when the pool
         // emptied between page load and click (race against
@@ -46,6 +47,20 @@ export function BuyButton({ offeringId, soldOut = false }: BuyButtonProps) {
         // next nav.
         if (data.reason === "offering_sold_out") {
           showToast(tErrors("offeringSoldOut"), "error");
+        } else if (data.lightning_reason) {
+          // The seller's LN provider rejected the mint. Be candid —
+          // the buyer can't fix it, but knowing it's a seller-side
+          // wallet problem (not the buyer's network) lets them
+          // decide whether to retry or pick a different course.
+          const lnKey: Record<string, string> = {
+            invalid_address: "sellerLightningInvalidAddress",
+            lnurl_unreachable: "sellerLightningUnreachable",
+            lnurl_no_lud21: "sellerLightningNoLud21",
+            lnurl_invalid_response: "sellerLightningMalformed",
+            bolt11_no_payment_hash: "sellerLightningMalformed",
+          };
+          const key = lnKey[data.lightning_reason] ?? "offeringUnavailable";
+          showToast(tErrors(key), "error");
         } else if (
           res.status === 404 ||
           data.error === "offering_unavailable"

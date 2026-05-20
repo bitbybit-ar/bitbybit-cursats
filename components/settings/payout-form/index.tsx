@@ -26,6 +26,17 @@ interface PayoutFormProps {
    * and (when relevant) a pointer back to Profile.
    */
   currentLightningAddress: string;
+  /**
+   * When provided, replaces the default `router.refresh()` after a
+   * successful save. The payout-setup modal in the create-course
+   * flow uses this to close itself and continue the parent form
+   * submission with the freshly-saved values.
+   */
+  onSaved?: (next: {
+    cbu: string;
+    alias: string;
+    payoutMethod: PayoutMethod;
+  }) => void;
 }
 
 function emptyToNull(value: string): string | null {
@@ -38,6 +49,7 @@ export function PayoutForm({
   initialAlias,
   initialPayoutMethod,
   currentLightningAddress,
+  onSaved,
 }: PayoutFormProps) {
   const t = useTranslations("settings.form");
   const tCommon = useTranslations("common");
@@ -132,7 +144,15 @@ export function PayoutForm({
         return;
       }
       showToast(t("saved"), "success");
-      router.refresh();
+      if (onSaved) {
+        onSaved({
+          cbu: cbu.trim(),
+          alias: alias.trim(),
+          payoutMethod,
+        });
+      } else {
+        router.refresh();
+      }
     } catch {
       showToast(tErr("network"), "error");
     } finally {

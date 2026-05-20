@@ -322,6 +322,10 @@
     "offeringUnavailable": "This offering is no longer available.",
     "offeringSoldOut": "This course is sold out. Ask the instructor to mint more codes.",
     "checkoutFailed": "We could not create the invoice. Try again in a moment.",
+    "sellerLightningInvalidAddress": "The seller's Lightning Address is invalid. Let them know or pick a different course.",
+    "sellerLightningUnreachable": "The seller's Lightning provider isn't responding. Try again in a minute.",
+    "sellerLightningNoLud21": "The seller's Lightning provider doesn't support LUD-21. We can't verify payment — let them know they need a different provider.",
+    "sellerLightningMalformed": "The seller's Lightning provider returned an invalid response. Let them know or pick a different course.",
     "network": "Connection failed. Check your network and try again.",
     "notFound": "We couldn't find what you were looking for."
   },
@@ -347,7 +351,11 @@
   "createCourse": {
     "metadataTitle": "New course",
     "title": "New course",
-    "subtitle": "Set the details so the course shows up in your storefront."
+    "subtitle": "Set the details so the course shows up in your storefront.",
+    "payoutModal": {
+      "title": "Set up how you want to get paid",
+      "intro": "Before publishing a course you need a payout destination: either a CBU/alias to receive Argentine pesos, or a Lightning Address to receive sats."
+    }
   },
   "myCourses": {
     "metadataTitle": "My courses",
@@ -440,6 +448,7 @@
       "saving": "Saving…",
       "saved": "Course saved.",
       "saveFailed": "Couldn't save the course. Try again.",
+      "payoutNotConfigured": "Set up how you want to get paid before creating the course.",
       "slugTaken": "A course with that slug already exists.",
       "invalidPriceArs": "ARS price must be a positive integer.",
       "invalidPriceSats": "Sats price must be a positive integer.",
@@ -576,6 +585,10 @@
       "lightningAddressFromNostr": "We pulled this address from your Nostr profile (lud16). Review and save it if you want to keep it.",
       "lightningAddressRequired": "Add a Lightning Address to receive sats.",
       "lightningAddressInvalid": "That Lightning Address didn't respond or doesn't support LUD-21. Try WoS, Strike, Alby Hub, LNbits, ZBD or Primal.",
+      "lightningAddressInvalidFormat": "That doesn't look like a Lightning Address. Expected user@domain, e.g. you@walletofsatoshi.com.",
+      "lightningAddressUnreachable": "We couldn't reach your Lightning provider. Check the address and try again in a moment.",
+      "lightningAddressNoLud21": "Your provider doesn't support LUD-21, and without it we can't verify your payouts. Try WoS, Strike, Alby Hub, LNbits, ZBD or Primal.",
+      "lightningAddressMalformed": "Your provider returned an invalid response. Try a different LUD-21-compatible provider.",
       "sectionPayout": "How you get paid",
       "sectionPayoutHint": "Pick the currency you receive your sales in. You can switch later. The details stay here and never show up anywhere on the buyer side.",
       "payoutMethod": "Payout method",

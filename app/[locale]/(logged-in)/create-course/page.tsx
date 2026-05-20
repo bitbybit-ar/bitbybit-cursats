@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { OfferingForm } from "@/components/courses/offering-form";
+import { requirePanelUser } from "@/lib/admin/panel-context";
 import styles from "./page.module.scss";
 
 export const dynamic = "force-dynamic";
@@ -29,13 +30,21 @@ export default async function NewOfferingPage({
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("createCourse");
+  const { user } = await requirePanelUser();
 
   return (
     <>
       <h1 className={styles.title}>{t("title")}</h1>
       <p className={styles.subtitle}>{t("subtitle")}</p>
 
-      <OfferingForm />
+      <OfferingForm
+        payoutState={{
+          cbu: user.cbu ?? "",
+          alias: user.alias ?? "",
+          lightningAddress: user.lightning_address ?? "",
+          payoutMethod: user.payout_method,
+        }}
+      />
     </>
   );
 }
