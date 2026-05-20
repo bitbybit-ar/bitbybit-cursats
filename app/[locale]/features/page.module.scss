@@ -28,6 +28,9 @@
   font-size: $font-size-subtitle;
   color: $color-text-secondary;
   line-height: $line-height-base;
+  // `\n` in the translation breaks the two thoughts onto separate
+  // lines without forcing markup into the message string.
+  white-space: pre-line;
 }
 
 // Pinboard layout for the polaroids. Wrap+gap with extra horizontal

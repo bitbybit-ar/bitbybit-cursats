@@ -157,8 +157,8 @@
     "metadataTitle": "Features",
     "metadataDescription": "Lo que ofrece Cursats: dos formas de cobrar (sats o pesos), sin custodia, login Nostr opcional, entrega in-app y más.",
     "hero": {
-      "title": "Lo que ofrece Cursats",
-      "subtitle": "Lo mínimo necesario para vender clases con sats — ya sea que quieras cobrar en pesos o quedarte en sats."
+      "title": "Lo que ofrece <brand></brand>",
+      "subtitle": "Pensado para docentes que enseñan en Argentina.\nPesos a tu CBU o sats a tu Lightning, vos elegís."
     },
     "items": {
       "twoRailsTitle": "Dos formas de cobrar",

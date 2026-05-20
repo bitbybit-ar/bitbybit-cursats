@@ -12,6 +12,31 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Features page — visual refresh.** New aspirational hero
+  subtitle ("Pensado para docentes que enseñan en Argentina…")
+  and a styled CURSATS wordmark in the title (CUR in primary,
+  SATS in the brand gradient — same treatment as the navbar).
+  Each of the nine feature polaroids gets a meaningful frame
+  illustration: seven custom SVG scenes (split-bolt rails,
+  buyer↔seller direct, mosaic-face anonymity, phone with
+  QR-receipt, account dashboard, code-or-download, marketplace
+  stalls + "add yours" badge) sized to fill more of the polaroid
+  frame, plus the Lightning and Nostr brand logos for the
+  instant-payment and Nostr-login cards. Page now wraps in
+  `<Container>` per the documented chrome pattern.
+- **Shared `<Wordmark />` component.** The CUR/SATS gradient
+  wordmark used by the navbar and footer was duplicated in two
+  module SCSS files; extracted to `components/common/wordmark/`
+  with a single gradient source of truth. Navbar, footer, and
+  the features hero all consume the same component.
+- **`<Section />` is leaner.** Dropped the internal `.container`
+  wrapper div and the `alternate` background prop — both were
+  legacy from when Section was a standalone page primitive.
+  With the documented "Container is the page wrapper, Section
+  goes inside" rule, the inner wrapper duplicated Container's
+  max-width and padding. Pages that still use Section standalone
+  (`faq`, `[userSlug]`, `how-it-works`) need a follow-up
+  Container wrap.
 - **FAQ — refreshed copy and hero.** Title is now "FAQs" with the
   same animated brand gradient used on the landing and how-it-
   works heroes; the helper line ("missing something?") is its own

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter, usePathname } from "@/i18n/routing";
 import { LogoBlocks } from "@/components/common/logo-blocks";
+import { Wordmark } from "@/components/common/wordmark";
 import { Avatar } from "@/components/common/avatar";
 import { LocaleThemeToggle } from "@/components/layout/locale-theme-toggle";
 import { MobileMenu } from "@/components/layout/mobile-menu";
@@ -80,10 +81,7 @@ export function Navbar() {
         <div className={styles.inner}>
           <Link href="/" className={styles.logo} aria-label="Cursats">
             <LogoBlocks />
-            <span className={styles.logoText}>
-              <span className={styles.logoTextPrimary}>CUR</span>
-              <span className={styles.logoTextGradient}>SATS</span>
-            </span>
+            <Wordmark />
           </Link>
 
           <div className={styles.links}>

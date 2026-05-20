@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
 import { Polaroid } from "@/components/ui/polaroid";
-import {
-  BellIcon,
-  BoltIcon,
-  BookIcon,
-  CoinIcon,
-  EyeOffIcon,
-  KeyIcon,
-  SettingsIcon,
-  ShoppingBagIcon,
-  UserIcon,
-} from "@/components/icons";
+import { Wordmark } from "@/components/common/wordmark";
+import { TwoRails } from "@/components/features/illustrations/two-rails";
+import { NoCustody } from "@/components/features/illustrations/no-custody";
+import { AnonymousByDefault } from "@/components/features/illustrations/anonymous-by-default";
+import { NostrLogo } from "@/components/features/illustrations/nostr-logo";
+import { DeliveryInApp } from "@/components/features/illustrations/delivery-in-app";
+import { LightningLogo } from "@/components/features/illustrations/lightning-logo";
+import { CreatorAccount } from "@/components/features/illustrations/creator-account";
+import { CodesOrDownloads } from "@/components/features/illustrations/codes-or-downloads";
+import { OpenMarketplace } from "@/components/features/illustrations/open-marketplace";
 import { alternatesFor } from "@/lib/seo";
 import styles from "./page.module.scss";
 
@@ -23,20 +23,22 @@ type Props = {
 export const dynamic = "force-static";
 
 // One polaroid per feature. Each gets:
-// - A meaningful icon (key for "no custody", eye-off for "anonymous"…).
+// - An illustration (composed SVG scene) or a single-glyph icon. The
+//   `size` field is the render size in px; illustrations get a larger
+//   value so they fill more of the polaroid frame like a photo.
 // - A colored frame tone — cycled across the brand + accent palette
 //   so the 9 polaroids read as a cheerful pinboard, not a uniform grid.
 // - A rotation that alternates so the row reads as pinned tiles.
 const FEATURES = [
-  { key: "twoRails", icon: CoinIcon, tone: "blue", rotation: "left" },
-  { key: "noCustody", icon: KeyIcon, tone: "gold", rotation: "right" },
-  { key: "anonymousByDefault", icon: EyeOffIcon, tone: "pink", rotation: "left" },
-  { key: "optionalNostrLogin", icon: UserIcon, tone: "nostr", rotation: "right" },
-  { key: "deliveryInApp", icon: BellIcon, tone: "cyan", rotation: "left" },
-  { key: "oneShot", icon: BoltIcon, tone: "orange", rotation: "right" },
-  { key: "creatorAccount", icon: SettingsIcon, tone: "blue", rotation: "left" },
-  { key: "codesOrDownloads", icon: BookIcon, tone: "lime", rotation: "right" },
-  { key: "openMarketplace", icon: ShoppingBagIcon, tone: "gold", rotation: "left" },
+  { key: "twoRails", icon: TwoRails, tone: "blue", rotation: "left", size: 200 },
+  { key: "noCustody", icon: NoCustody, tone: "gold", rotation: "right", size: 200 },
+  { key: "anonymousByDefault", icon: AnonymousByDefault, tone: "pink", rotation: "left", size: 200 },
+  { key: "optionalNostrLogin", icon: NostrLogo, tone: "nostr", rotation: "right", size: 160 },
+  { key: "deliveryInApp", icon: DeliveryInApp, tone: "cyan", rotation: "left", size: 200 },
+  { key: "oneShot", icon: LightningLogo, tone: "orange", rotation: "right", size: 160 },
+  { key: "creatorAccount", icon: CreatorAccount, tone: "blue", rotation: "left", size: 200 },
+  { key: "codesOrDownloads", icon: CodesOrDownloads, tone: "lime", rotation: "right", size: 200 },
+  { key: "openMarketplace", icon: OpenMarketplace, tone: "gold", rotation: "left", size: 200 },
 ] as const;
 
 export async function generateMetadata({
@@ -57,16 +59,15 @@ export default async function FeaturesPage({ params }: Props) {
   const t = await getTranslations("features");
 
   return (
-    <>
+    <Container>
+      <header className={styles.hero}>
+        <h1 className={styles.heroTitle}>
+            {t.rich("hero.title", { brand: () => <Wordmark /> })}
+        </h1>
+        <p className={styles.heroSubtitle}>{t("hero.subtitle")}</p>
+      </header>
       <Section>
-        <header className={styles.hero}>
-          <h1 className={styles.heroTitle}>{t("hero.title")}</h1>
-          <p className={styles.heroSubtitle}>{t("hero.subtitle")}</p>
-        </header>
-      </Section>
-
-      <Section>
-        <ul className={styles.board} aria-label={t("hero.title")}>
+        <ul className={styles.board}>
           {FEATURES.map((feature) => {
             const Icon = feature.icon;
             return (
@@ -77,7 +78,7 @@ export default async function FeaturesPage({ params }: Props) {
                     <span
                       className={`${styles.featureIcon} ${styles[`tone-${feature.tone}`]}`}
                     >
-                      <Icon size={64} />
+                      <Icon size={feature.size} />
                     </span>
                   }
                 >
@@ -89,6 +90,6 @@ export default async function FeaturesPage({ params }: Props) {
           })}
         </ul>
       </Section>
-    </>
+    </Container>
   );
 }

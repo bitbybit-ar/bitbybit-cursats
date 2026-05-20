@@ -157,8 +157,8 @@
     "metadataTitle": "Features",
     "metadataDescription": "What Cursats offers: two ways to get paid (sats or pesos), no custody, optional Nostr login, in-app delivery, and more.",
     "hero": {
-      "title": "What Cursats offers",
-      "subtitle": "The minimum needed to sell classes in sats — whether you want to cash out in pesos or stay in sats."
+      "title": "What <brand></brand> offers",
+      "subtitle": "Built for educators teaching from Argentina.\nPesos to your CBU or sats to your Lightning — your call."
     },
     "items": {
       "twoRailsTitle": "Two ways to get paid",

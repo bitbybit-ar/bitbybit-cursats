@@ -2,19 +2,17 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import styles from "./section.module.scss";
 
-export interface SectionProps extends React.HTMLAttributes<HTMLElement> {
-  alternate?: boolean;
-}
+export type SectionProps = React.HTMLAttributes<HTMLElement>;
 
 export const Section = React.forwardRef<HTMLElement, SectionProps>(
-  ({ className, alternate = false, children, ...props }, ref) => {
+  ({ className, children, ...props }, ref) => {
     return (
       <section
         ref={ref}
-        className={cn(styles.section, alternate && styles.alternate, className)}
+        className={cn(styles.section, className)}
         {...props}
       >
-        <div className={styles.container}>{children}</div>
+        {children}
       </section>
     );
   },

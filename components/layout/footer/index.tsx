@@ -1,6 +1,7 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/routing";
 import { LogoBlocks } from "@/components/common/logo-blocks";
+import { Wordmark } from "@/components/common/wordmark";
 import { GithubIcon } from "@/components/icons";
 import styles from "./footer.module.scss";
 
@@ -12,10 +13,7 @@ export function Footer() {
       <div className={styles.inner}>
         <div className={styles.brand}>
           <LogoBlocks />
-          <span className={styles.brandText}>
-            <span className={styles.brandTextPrimary}>CUR</span>
-            <span className={styles.brandTextGradient}>SATS</span>
-          </span>
+          <Wordmark />
         </div>
 
         <nav className={styles.links} aria-label={t("ariaLabel")}>
