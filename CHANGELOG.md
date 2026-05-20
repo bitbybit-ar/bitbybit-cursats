@@ -12,6 +12,98 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **`/explore` is personalised for signed-in users.** When a
+  logged-in buyer hits `/explore` with no filter / sort / search
+  active, a "Suggested for you" rail of four cards now sits above
+  the main grid (driven by `listRecommendedOfferings`). The rail
+  itself renders only on page 1, but the picked offering ids are
+  excluded from the main grid on every page — the buyer never sees
+  a recommended course duplicated as they paginate. Filtering or
+  sorting flips the page back to the canonical, unpersonalised
+  view (a deliberate query overrides personalisation). Anonymous
+  viewers and the previous experience are unchanged.
+  `listDiscoveryOfferingsPaged` gained an
+  `excludeOfferingIds` option (with `notInArray` applied to both
+  the row select and the total count so the pager math stays
+  right); `SuggestedForYou` learned an optional `result` prop so
+  the page can call `listRecommendedOfferings` itself and pass the
+  rows down (needed because the rail and the grid share the
+  exclusion set). New i18n key `catalog.list.moreToExplore`. ADR
+  0024.
+
+- **`/purchases` redesigned.** The page that signed-in buyers land
+  on after login is no longer a sparse list — it now adapts to
+  whether the buyer has any history. With nothing bought yet, an
+  empty-hero block ("You haven't bought any courses yet") sits
+  above a "Suggested for you" rail driven by the new
+  `listRecommendedOfferings` (falls through to the marketplace
+  highlights for a fresh buyer). With history, each order renders
+  as a denser row with a 56px cover thumbnail, the course title,
+  a seller byline (avatar + name, linking to `/[userSlug]`), the
+  date · sats meta, the status pill, and a CTA pair: a primary
+  link (Open course / View receipt / Continue checkout —
+  whichever fits the order's status) and a secondary "Course
+  page" link to the public listing. Pagination is server-side
+  (12 per page, reuses `components/catalog/explore-pager`); a
+  status filter (All / Paid / Pending / Failed) and a debounced
+  title-or-teacher search round out the controls — both
+  stateless, encoded into `?status=` and `?q=` so URLs stay
+  shareable. New `lib/purchases-params.ts` mirrors the shape of
+  `lib/explore-params.ts`. The previous N+1 (one
+  `getOfferingById` call per row) is replaced by a single
+  `listPurchasesPaged` in `lib/orders.ts` that joins offerings +
+  sellers in one shot. New i18n keys under `account.*`
+  (`emptyHero.{title,body}`, `filters.*`, `searchPlaceholder`,
+  `openCourse`, `viewReceipt`, `viewListing`, `continueCheckout`,
+  `noMatches`). The bottom of the populated page renders the same
+  `SuggestedForYou` component with `excludeOfferingIds` set to the
+  current page's offerings so the rail doesn't re-surface what the
+  buyer is already looking at.
+
+### Added
+
+- **Personalised recommendations module.** New
+  `lib/recommendations.ts:listRecommendedOfferings({ pubkey, limit,
+  excludeOfferingIds })` ranks active offerings by tag overlap with
+  the buyer's most recent paid orders (capped at 10) and, as a
+  secondary signal, by whether the offering's seller appears in the
+  buyer's purchase history. Tag overlap scores 2× per intersecting
+  tag; seller match scores 1; ties break by recency. Already-touched
+  offerings (any status) and the buyer's own listings are excluded.
+  When the personalised slice is short, the result tops up with
+  `listHighlightedOfferings`. The returned `fallback` discriminator
+  (`tags | sellers | highlights | mixed`) lets the UI pick a
+  context-aware subtitle. A new server component
+  `components/catalog/suggested-for-you/` consumes the module and
+  reuses `OfferingCard`, returning `null` when there are no rows
+  so the rail vanishes rather than rendering an awkward empty
+  state. A session-gated `GET /api/recommendations` route handler
+  (private 60s cache, optional `?limit=` and `?exclude=`) exposes
+  the same data for future client-side surfaces. New
+  `recommendations.*` i18n namespace in both `messages/es.json` and
+  `messages/en.json`. Foundation for the upcoming `/purchases`
+  redesign and the personalised `/explore` ordering for logged-in
+  users. ADR 0024.
+
+- **Tags on offerings.** Sellers can now label each course with up
+  to eight kebab-case tags from the create/edit form (a chip-input
+  field below the description; Enter or comma commits a chip,
+  backspace on an empty draft removes the most recent one). Tags
+  show as pill chips on `OfferingCard` (max three rendered) and
+  each chip links to `/explore?q=<tag>` so a buyer can pivot from a
+  course to its peers in one click. The `/explore` search bar
+  picks up tags transparently — typing `yoga` now matches courses
+  tagged `yoga` in addition to the existing title / description /
+  seller-name ILIKE branches. Validation in
+  `lib/admin/offerings.ts` (`TagSchema`, `TagsSchema`,
+  `MAX_TAGS_PER_OFFERING = 8`, `normalizeTags`); schema migration
+  `0009_offering_tags.sql` adds the `tags text[]` column and a GIN
+  index. Decision in ADR 0024. Foundation for the upcoming
+  suggested-for-you rail on `/purchases` and the personalised
+  `/explore` ordering for logged-in users.
+
+### Changed
+
 - **Features page — deck-deal animation.** The polaroid grid now
   sets up like a hand of cards. On desktop the nine cards stack at
   the top-left where "Dos formas de cobrar" lands, then spring out
