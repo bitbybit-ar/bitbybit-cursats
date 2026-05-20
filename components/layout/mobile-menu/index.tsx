@@ -127,7 +127,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
               >
                 {t(section.id)}
               </a>
-            ),
+            )
           )}
         </nav>
 

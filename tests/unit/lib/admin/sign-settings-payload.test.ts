@@ -44,7 +44,10 @@ describe("admin/sign-settings-payload", () => {
 
   it("buildSettingsAuthEvent stamps a current created_at within a few seconds", () => {
     const before = Math.floor(Date.now() / 1000);
-    const event = buildSettingsAuthEvent("https://cursats.test", "0".repeat(64));
+    const event = buildSettingsAuthEvent(
+      "https://cursats.test",
+      "0".repeat(64)
+    );
     const after = Math.floor(Date.now() / 1000);
     expect(event.created_at).toBeGreaterThanOrEqual(before);
     expect(event.created_at).toBeLessThanOrEqual(after + 1);

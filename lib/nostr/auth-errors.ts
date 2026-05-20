@@ -24,10 +24,7 @@ export type LoginErrorKey =
   | "error";
 
 /** Keys defined under the `reSignIn` namespace. Reserved for future use. */
-export type ReSignInErrorKey =
-  | "extensionRejected"
-  | "mismatch"
-  | "authFailed";
+export type ReSignInErrorKey = "extensionRejected" | "mismatch" | "authFailed";
 
 export const loginError = (key: LoginErrorKey): AuthError => ({
   namespace: "login",
@@ -50,8 +47,6 @@ export function isSignerCancellation(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
   const msg = err.message.toLowerCase();
   return (
-    msg.includes("rejected") ||
-    msg.includes("denied") ||
-    msg.includes("cancel")
+    msg.includes("rejected") || msg.includes("denied") || msg.includes("cancel")
   );
 }

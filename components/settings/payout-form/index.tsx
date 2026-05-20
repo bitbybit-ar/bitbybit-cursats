@@ -88,10 +88,7 @@ export function PayoutForm({
       };
 
       if (requiresReSign) {
-        const url = new URL(
-          "/api/settings",
-          window.location.origin,
-        ).toString();
+        const url = new URL("/api/settings", window.location.origin).toString();
         const payloadHash = await hashSettingsBody(serialized);
         const unsigned = buildSettingsAuthEvent(url, payloadHash);
         try {

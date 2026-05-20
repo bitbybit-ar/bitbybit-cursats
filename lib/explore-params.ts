@@ -55,9 +55,7 @@ export function parseExploreParams(raw: Raw | undefined): ExploreParams {
 
   const pageRaw = Number.parseInt(readFirst(r, "page") ?? "1", 10);
   const page =
-    Number.isFinite(pageRaw) && pageRaw >= 1
-      ? Math.min(pageRaw, MAX_PAGE)
-      : 1;
+    Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.min(pageRaw, MAX_PAGE) : 1;
 
   return { q, type, sort, page };
 }

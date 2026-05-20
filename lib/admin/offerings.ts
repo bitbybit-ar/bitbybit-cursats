@@ -113,25 +113,18 @@ export const UpdateOfferingSchema = OfferingCommonFields.partial().superRefine(
         });
       }
     }
-  },
+  }
 );
 
 export type CreateOfferingInput = z.infer<typeof CreateOfferingSchema>;
 export type UpdateOfferingInput = z.infer<typeof UpdateOfferingSchema>;
 
-export async function listAllOfferings(
-  userId: string
-): Promise<Offering[]> {
+export async function listAllOfferings(userId: string): Promise<Offering[]> {
   const db = getDb();
   return db
     .select()
     .from(offerings)
-    .where(
-      and(
-        eq(offerings.user_id, userId),
-        isNull(offerings.archived_at)
-      )
-    )
+    .where(and(eq(offerings.user_id, userId), isNull(offerings.archived_at)))
     .orderBy(desc(offerings.created_at));
 }
 
@@ -142,12 +135,7 @@ export async function listArchivedOfferings(
   return db
     .select()
     .from(offerings)
-    .where(
-      and(
-        eq(offerings.user_id, userId),
-        isNotNull(offerings.archived_at)
-      )
-    )
+    .where(and(eq(offerings.user_id, userId), isNotNull(offerings.archived_at)))
     .orderBy(desc(offerings.archived_at));
 }
 
@@ -159,12 +147,7 @@ export async function getOfferingForAdmin(
   const [row] = await db
     .select()
     .from(offerings)
-    .where(
-      and(
-        eq(offerings.user_id, userId),
-        eq(offerings.slug, slug)
-      )
-    )
+    .where(and(eq(offerings.user_id, userId), eq(offerings.slug, slug)))
     .limit(1);
   return row ?? null;
 }
@@ -182,9 +165,7 @@ export async function getOfferingForAdminById(
   const [row] = await db
     .select()
     .from(offerings)
-    .where(
-      and(eq(offerings.user_id, userId), eq(offerings.id, id))
-    )
+    .where(and(eq(offerings.user_id, userId), eq(offerings.id, id)))
     .limit(1);
   return row ?? null;
 }
@@ -208,12 +189,7 @@ export async function createOfferingForAdmin(
   const [existing] = await db
     .select({ id: offerings.id })
     .from(offerings)
-    .where(
-      and(
-        eq(offerings.user_id, userId),
-        eq(offerings.slug, input.slug)
-      )
-    )
+    .where(and(eq(offerings.user_id, userId), eq(offerings.slug, input.slug)))
     .limit(1);
   if (existing) return { ok: false, reason: "slug_taken" };
 
@@ -279,12 +255,7 @@ export async function updateOfferingForAdmin(
     const [conflict] = await db
       .select({ id: offerings.id })
       .from(offerings)
-      .where(
-        and(
-          eq(offerings.user_id, userId),
-          eq(offerings.slug, patch.slug)
-        )
-      )
+      .where(and(eq(offerings.user_id, userId), eq(offerings.slug, patch.slug)))
       .limit(1);
     if (conflict && conflict.id !== id) {
       return { ok: false, reason: "slug_taken" };
@@ -307,9 +278,7 @@ export async function updateOfferingForAdmin(
           : patch.download_url,
       updated_at: new Date(),
     })
-    .where(
-      and(eq(offerings.user_id, userId), eq(offerings.id, id))
-    )
+    .where(and(eq(offerings.user_id, userId), eq(offerings.id, id)))
     .returning();
 
   // Compute a small diff summary for the audit row. We DO NOT
@@ -317,12 +286,13 @@ export async function updateOfferingForAdmin(
   // audit log — those are large and the row is recoverable from
   // the offerings table anyway. We do record which fields
   // changed, so a future "what did they edit?" reviewer can scan.
-  const changedKeys = (Object.keys(patch) as Array<keyof UpdateOfferingInput>)
-    .filter(
-      (k) =>
-        patch[k] !== undefined &&
-        JSON.stringify(patch[k]) !== JSON.stringify(existing[k as keyof Offering])
-    );
+  const changedKeys = (
+    Object.keys(patch) as Array<keyof UpdateOfferingInput>
+  ).filter(
+    (k) =>
+      patch[k] !== undefined &&
+      JSON.stringify(patch[k]) !== JSON.stringify(existing[k as keyof Offering])
+  );
   await writeAuditLog({
     user_id: userId,
     actor_pubkey: actorPubkey,
@@ -358,9 +328,7 @@ export async function archiveOfferingForAdmin(
   const [row] = await db
     .update(offerings)
     .set({ archived_at: new Date(), updated_at: new Date() })
-    .where(
-      and(eq(offerings.user_id, userId), eq(offerings.id, id))
-    )
+    .where(and(eq(offerings.user_id, userId), eq(offerings.id, id)))
     .returning();
 
   await writeAuditLog({
@@ -394,7 +362,7 @@ export async function mintCodesForOffering(
   userId: string,
   id: string,
   count: number,
-  actorPubkey: string,
+  actorPubkey: string
 ): Promise<MintCodesResult> {
   if (count <= 0 || count > CODE_MAX_MINT) {
     return { ok: false, reason: "too_many" };
@@ -409,9 +377,7 @@ export async function mintCodesForOffering(
   // (the charset is large enough that a collision is astronomically
   // unlikely, but the Set is free insurance).
   const fresh = mintCodes(count);
-  const merged = Array.from(
-    new Set([...(existing.code_pool ?? []), ...fresh]),
-  );
+  const merged = Array.from(new Set([...(existing.code_pool ?? []), ...fresh]));
 
   const [row] = await db
     .update(offerings)

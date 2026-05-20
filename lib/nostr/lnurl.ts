@@ -34,7 +34,7 @@ export class LnurlError extends Error {
  * Resolve a Lightning address (user@domain) to its LNURL-pay endpoint metadata.
  */
 export async function fetchLnurlPayEndpoint(
-  lightningAddress: string,
+  lightningAddress: string
 ): Promise<LnurlPayResponse> {
   const [user, domain] = lightningAddress.split("@");
   if (!user || !domain) {
@@ -63,7 +63,7 @@ export async function fetchLnurlPayEndpoint(
 export async function fetchInvoice(
   callback: string,
   amountSats: number,
-  comment?: string,
+  comment?: string
 ): Promise<string> {
   const url = new URL(callback);
   url.searchParams.set("amount", String(amountSats * 1000)); // millisats

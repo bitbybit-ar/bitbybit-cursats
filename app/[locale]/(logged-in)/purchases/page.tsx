@@ -58,57 +58,54 @@ export default async function MisComprasPage({
   );
 
   return (
-      <>
-        <header className={styles.header}>
-          <div>
-            <h1 className={styles.title}>{t("title")}</h1>
-            <p className={styles.subtitle}>{t("subtitle")}</p>
-          </div>
-        </header>
+    <>
+      <header className={styles.header}>
+        <div>
+          <h1 className={styles.title}>{t("title")}</h1>
+          <p className={styles.subtitle}>{t("subtitle")}</p>
+        </div>
+      </header>
 
-        {orders.length === 0 ? (
-          <Card variant="default" className={styles.empty}>
-            <p>{t("empty")}</p>
-            <Link href="/" className={styles.emptyLink}>
-              {t("browseCatalog")} <ArrowRightIcon size={16} />
-            </Link>
-          </Card>
-        ) : (
-          <ul className={styles.list}>
-            {orders.map((order, i) => {
-              const offering = offerings[i];
-              return (
-                <li key={order.id} className={styles.item}>
-                  <Link
-                    href={`/receipt/${order.id}`}
-                    className={styles.row}
-                  >
-                    <div className={styles.rowMain}>
-                      <span className={styles.rowTitle}>
-                        {offering?.title ?? t("unknownOffering")}
-                      </span>
-                      <span className={styles.rowMeta}>
-                        {dateFormatter.format(order.created_at)} ·{" "}
-                        {order.amount_sats.toLocaleString(
-                          locale === "es" ? "es-AR" : "en-US"
-                        )}{" "}
-                        sats
-                      </span>
-                    </div>
-                    <span
-                      className={`${styles.status} ${
-                        styles[`status-${order.status}`]
-                      }`}
-                    >
-                      {tStatus(order.status)}
+      {orders.length === 0 ? (
+        <Card variant="default" className={styles.empty}>
+          <p>{t("empty")}</p>
+          <Link href="/" className={styles.emptyLink}>
+            {t("browseCatalog")} <ArrowRightIcon size={16} />
+          </Link>
+        </Card>
+      ) : (
+        <ul className={styles.list}>
+          {orders.map((order, i) => {
+            const offering = offerings[i];
+            return (
+              <li key={order.id} className={styles.item}>
+                <Link href={`/receipt/${order.id}`} className={styles.row}>
+                  <div className={styles.rowMain}>
+                    <span className={styles.rowTitle}>
+                      {offering?.title ?? t("unknownOffering")}
                     </span>
-                    <ArrowRightIcon size={16} />
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </>
-    );
+                    <span className={styles.rowMeta}>
+                      {dateFormatter.format(order.created_at)} ·{" "}
+                      {order.amount_sats.toLocaleString(
+                        locale === "es" ? "es-AR" : "en-US"
+                      )}{" "}
+                      sats
+                    </span>
+                  </div>
+                  <span
+                    className={`${styles.status} ${
+                      styles[`status-${order.status}`]
+                    }`}
+                  >
+                    {tStatus(order.status)}
+                  </span>
+                  <ArrowRightIcon size={16} />
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </>
+  );
 }

@@ -66,9 +66,7 @@ export function OfferingForm({ offering }: OfferingFormProps) {
   // modal instead of immediately navigating away. The modal owns
   // the redirect via its `onClose` callback. Null on edit-mode
   // success (no share prompt for housekeeping edits).
-  const [shareContext, setShareContext] = useState<ShareContext | null>(
-    null,
-  );
+  const [shareContext, setShareContext] = useState<ShareContext | null>(null);
 
   const isEdit = offering !== undefined;
 
@@ -84,9 +82,7 @@ export function OfferingForm({ offering }: OfferingFormProps) {
   const [type, setType] = useState<"code" | "download">(
     offering?.type ?? "code"
   );
-  const [description, setDescription] = useState(
-    offering?.description ?? ""
-  );
+  const [description, setDescription] = useState(offering?.description ?? "");
   const [priceAmount, setPriceAmount] = useState(
     offering ? String(offering.price_amount) : ""
   );
@@ -95,9 +91,7 @@ export function OfferingForm({ offering }: OfferingFormProps) {
   );
   const [imageUrl, setImageUrl] = useState(offering?.image_url ?? "");
   const [codeCount, setCodeCount] = useState("10");
-  const [downloadUrl, setDownloadUrl] = useState(
-    offering?.download_url ?? ""
-  );
+  const [downloadUrl, setDownloadUrl] = useState(offering?.download_url ?? "");
 
   function handleTitleChange(next: string) {
     setTitle(next);
@@ -184,9 +178,9 @@ export function OfferingForm({ offering }: OfferingFormProps) {
         // Fresh create — pause on this page so the share modal can
         // mount. The modal's onClose handles the redirect once the
         // seller either publishes or dismisses.
-        const data = (await res.json().catch(() => null)) as
-          | { offering?: { slug?: string } }
-          | null;
+        const data = (await res.json().catch(() => null)) as {
+          offering?: { slug?: string };
+        } | null;
         const offeringSlug = data?.offering?.slug ?? payload.slug;
         setShareContext({
           kind: "course-created",
@@ -397,9 +391,7 @@ export function OfferingForm({ offering }: OfferingFormProps) {
             />
             <span>
               <strong>{t("typeDownload")}</strong>
-              <span className={styles.radioHint}>
-                {t("typeDownloadHint")}
-              </span>
+              <span className={styles.radioHint}>{t("typeDownloadHint")}</span>
             </span>
           </label>
           {isEdit ? (
@@ -482,11 +474,7 @@ export function OfferingForm({ offering }: OfferingFormProps) {
 
       <div className={styles.actions}>
         <Button type="submit" variant="primary" disabled={isPending}>
-          {isPending
-            ? t("saving")
-            : isEdit
-              ? t("saveEdit")
-              : t("saveCreate")}
+          {isPending ? t("saving") : isEdit ? t("saveEdit") : t("saveCreate")}
         </Button>
         {isEdit ? (
           <Button

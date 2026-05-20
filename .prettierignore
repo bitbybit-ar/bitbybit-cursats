@@ -19,3 +19,9 @@ tsconfig.tsbuildinfo
 # Pre-minified
 *.min.js
 *.min.css
+
+# Markdown is hand-wrapped prose. Prettier loses list-item
+# continuation indents when an inline code span breaks across
+# lines, which silently broke CLAUDE.md when we first ran it.
+# Docs are human-reviewed; auto-formatting adds little value.
+*.md

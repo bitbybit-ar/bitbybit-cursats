@@ -38,10 +38,7 @@ export function DangerZoneForm() {
     if (isDeleting) return;
     setIsDeleting(true);
     try {
-      const url = new URL(
-        "/api/settings",
-        window.location.origin,
-      ).toString();
+      const url = new URL("/api/settings", window.location.origin).toString();
       // DELETE has no body — sign the empty-body hash so the server
       // can verify with the same payload-hash check it uses on PATCH.
       const payloadHash = await hashSettingsBody("");

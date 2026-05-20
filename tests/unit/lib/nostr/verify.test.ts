@@ -1,6 +1,10 @@
 // @vitest-environment node
 import { describe, it, expect } from "vitest";
-import { finalizeEvent, generateSecretKey, getPublicKey } from "nostr-tools/pure";
+import {
+  finalizeEvent,
+  generateSecretKey,
+  getPublicKey,
+} from "nostr-tools/pure";
 import { validateNip98AuthEvent } from "@/lib/nostr/verify";
 
 const URL_UNDER_TEST = "https://cursats.test/api/auth/nostr";

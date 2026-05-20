@@ -12,13 +12,11 @@ const SATS_PER_BTC = 100_000_000;
 const STATIC_FALLBACK = SATS_PER_BTC / 110_000_000; // ≈ 0.9090909
 
 function mockFetchOk(body: unknown) {
-  return vi
-    .spyOn(globalThis, "fetch")
-    .mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => body,
-    } as Response);
+  return vi.spyOn(globalThis, "fetch").mockResolvedValue({
+    ok: true,
+    status: 200,
+    json: async () => body,
+  } as Response);
 }
 
 describe("exchange-rate/getSatsPerArs", () => {

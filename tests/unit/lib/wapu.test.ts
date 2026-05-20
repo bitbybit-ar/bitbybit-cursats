@@ -24,9 +24,7 @@ describe("MockWapuClient/createDirectPayment + funding", () => {
     expect(funding.amount_sats).toBeGreaterThan(0);
     expect(funding.bolt11).toMatch(/^lnbc\d+n1mock/);
     expect(funding.payment_hash).toMatch(/^[0-9a-f]{64}$/);
-    expect(funding.expires_at).toBeGreaterThan(
-      Math.floor(Date.now() / 1000)
-    );
+    expect(funding.expires_at).toBeGreaterThan(Math.floor(Date.now() / 1000));
   });
 
   it("issues unique tentative uuids and payment hashes", async () => {

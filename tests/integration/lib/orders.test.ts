@@ -489,11 +489,7 @@ describe("orders/drawAndAssignCode", () => {
     // Smoke test for the optimistic-concurrency loop: kick off two
     // draws against the same offering in parallel; both must land
     // on different codes and the pool must shrink by exactly two.
-    const offering = await seedCodeOfferingWithPool([
-      "X1",
-      "X2",
-      "X3",
-    ]);
+    const offering = await seedCodeOfferingWithPool(["X1", "X2", "X3"]);
     const a = await createOrder({
       offering_id: offering.id,
       pubkey: null,

@@ -72,9 +72,9 @@ export function FeatureDeck({ slots }: FeatureDeckProps) {
   const [mounted, setMounted] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const [inView, setInView] = useState(false);
-  const [offsets, setOffsets] = useState<Map<string, { dx: number; dy: number }>>(
-    new Map(),
-  );
+  const [offsets, setOffsets] = useState<
+    Map<string, { dx: number; dy: number }>
+  >(new Map());
   const [delays, setDelays] = useState<Map<string, number>>(new Map());
 
   const trackRef = useRef<HTMLDivElement>(null);
@@ -170,7 +170,7 @@ export function FeatureDeck({ slots }: FeatureDeckProps) {
           }
         }
       },
-      { threshold: 0.15 },
+      { threshold: 0.15 }
     );
     io.observe(target);
     return () => io.disconnect();
@@ -256,9 +256,7 @@ export function FeatureDeck({ slots }: FeatureDeckProps) {
                   className={styles.dealWrap}
                   initial={{ x: offset.dx, y: offset.dy }}
                   animate={
-                    inView
-                      ? { x: 0, y: 0 }
-                      : { x: offset.dx, y: offset.dy }
+                    inView ? { x: 0, y: 0 } : { x: offset.dx, y: offset.dy }
                   }
                   transition={{
                     type: "spring",

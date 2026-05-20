@@ -1,9 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect } from "vitest";
-import {
-  Hex64Schema,
-  LightningAddressSchema,
-} from "@/lib/schemas/primitives";
+import { Hex64Schema, LightningAddressSchema } from "@/lib/schemas/primitives";
 
 describe("Hex64Schema (sanity check that the existing schema still parses)", () => {
   it("accepts a 64-char hex string and lowercases", () => {

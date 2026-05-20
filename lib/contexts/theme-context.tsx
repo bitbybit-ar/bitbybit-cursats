@@ -1,7 +1,10 @@
 "use client";
 
 import React from "react";
-import { ThemeProvider as NextThemesProvider, useTheme as useNextTheme } from "next-themes";
+import {
+  ThemeProvider as NextThemesProvider,
+  useTheme as useNextTheme,
+} from "next-themes";
 
 interface ThemeProviderProps {
   children: React.ReactNode;

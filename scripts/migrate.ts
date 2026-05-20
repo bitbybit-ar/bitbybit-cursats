@@ -66,9 +66,7 @@ function assertMonotonicMigrationTimestamps(): void {
 // skips from any cause (watermark drift, manual journal edits,
 // cross-DB URL mismatches). Without this, a misconfigured run can
 // exit 0 with the schema out of sync.
-async function assertJournalIsComplete(
-  db: NeonHttpDatabase
-): Promise<void> {
+async function assertJournalIsComplete(db: NeonHttpDatabase): Promise<void> {
   const migrations = readMigrationFiles({
     migrationsFolder: MIGRATIONS_FOLDER,
   });

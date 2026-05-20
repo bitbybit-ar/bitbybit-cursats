@@ -10,10 +10,7 @@ import {
   waitForConnection,
   connectWithBunkerURL,
 } from "@/lib/nostr/nip46-login";
-import {
-  type SignerHandle,
-  makeNip46Signer,
-} from "@/lib/nostr/signers";
+import { type SignerHandle, makeNip46Signer } from "@/lib/nostr/signers";
 import {
   type AuthError,
   loginError,
@@ -90,9 +87,7 @@ export function NostrConnectPanel({
   const [bunkerUrl, setBunkerUrl] = useState("");
   const [isCopied, setIsCopied] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
-  const [authChallengeUrl, setAuthChallengeUrl] = useState<string | null>(
-    null
-  );
+  const [authChallengeUrl, setAuthChallengeUrl] = useState<string | null>(null);
   const [showSlowHint, setShowSlowHint] = useState(false);
   const [remainingMs, setRemainingMs] = useState(NIP46_TIMEOUT_MS);
 
@@ -112,9 +107,7 @@ export function NostrConnectPanel({
   }, [onSigner, onError, expectedPubkey]);
 
   const abortRef = useRef<AbortController | null>(null);
-  const slowHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  );
+  const slowHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const clearSlowHint = useCallback(() => {
@@ -289,12 +282,7 @@ export function NostrConnectPanel({
     return (
       <div className={styles.expired}>
         <p>{t("connectExpired")}</p>
-        <Button
-          type="button"
-          variant="primary"
-          size="sm"
-          onClick={startScan}
-        >
+        <Button type="button" variant="primary" size="sm" onClick={startScan}>
           {t("connectRetry")}
         </Button>
       </div>

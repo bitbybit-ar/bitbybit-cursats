@@ -52,10 +52,7 @@ export const payoutMethod = pgEnum("payout_method", [
 // creation from the seller's then-current `payout_method`. We
 // snapshot it on the order so a user flipping their rail later
 // does not retroactively change the receipt of an already-paid order.
-export const orderRail = pgEnum("order_rail", [
-  "wapu_ars",
-  "direct_lightning",
-]);
+export const orderRail = pgEnum("order_rail", ["wapu_ars", "direct_lightning"]);
 
 // --- Users ---
 // One row per signed-in account. Keyed by Nostr pubkey — the user's
@@ -93,9 +90,7 @@ export const users = pgTable(
     // Which rail this user uses to receive funds (when selling).
     // ADR 0015. 'cbu_alias' preserves prior behavior on migration;
     // users who want sats flip the radio in the settings page.
-    payout_method: payoutMethod("payout_method")
-      .notNull()
-      .default("cbu_alias"),
+    payout_method: payoutMethod("payout_method").notNull().default("cbu_alias"),
     features_autorenewal: boolean("features_autorenewal")
       .notNull()
       .default(false),

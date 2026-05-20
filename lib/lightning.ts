@@ -69,7 +69,10 @@ export type LightningMintErrorCode =
   | "bolt11_no_payment_hash";
 
 export class LightningMintError extends Error {
-  constructor(public readonly code: LightningMintErrorCode, message?: string) {
+  constructor(
+    public readonly code: LightningMintErrorCode,
+    message?: string
+  ) {
     super(message ?? code);
     this.name = "LightningMintError";
   }
@@ -207,10 +210,7 @@ function isPrivateOrLocalHost(hostname: string): boolean {
  */
 export function extractPaymentHash(invoice: string): string | null {
   try {
-    const { words } = bech32.decode(
-      invoice as `${string}1${string}`,
-      2000
-    );
+    const { words } = bech32.decode(invoice as `${string}1${string}`, 2000);
 
     // Skip 7 timestamp words; stop before the last 104 signature words.
     let pos = 7;
@@ -278,9 +278,7 @@ export class MockLightningClient implements LightningClient {
   private readonly settled = new Set<string>();
   private mintCounter = 0;
 
-  async resolveAddress(
-    address: string
-  ): Promise<LightningAddressMetadata> {
+  async resolveAddress(address: string): Promise<LightningAddressMetadata> {
     const parsed = parseLightningAddress(address);
     if (!parsed) {
       throw new LightningMintError("invalid_address", address);
@@ -370,9 +368,7 @@ export class MockLightningClient implements LightningClient {
 const LNURL_FETCH_TIMEOUT_MS = 6_000;
 
 class RealLightningClient implements LightningClient {
-  async resolveAddress(
-    address: string
-  ): Promise<LightningAddressMetadata> {
+  async resolveAddress(address: string): Promise<LightningAddressMetadata> {
     const parsed = parseLightningAddress(address);
     if (!parsed) {
       throw new LightningMintError("invalid_address", address);
@@ -417,10 +413,7 @@ class RealLightningClient implements LightningClient {
     const amount_msat = amount_sats * 1000;
     // Validate amount against the provider's advertised range
     // before we burn a network round-trip on a guaranteed reject.
-    if (
-      amount_msat < meta.minSendable ||
-      amount_msat > meta.maxSendable
-    ) {
+    if (amount_msat < meta.minSendable || amount_msat > meta.maxSendable) {
       throw new LightningMintError("lnurl_invalid_response", address);
     }
     // SSRF guard on the callback URL (provider-controlled). A
@@ -435,10 +428,7 @@ class RealLightningClient implements LightningClient {
     }
     let body: unknown;
     try {
-      body = await fetchJsonWithTimeout(
-        url.toString(),
-        LNURL_FETCH_TIMEOUT_MS
-      );
+      body = await fetchJsonWithTimeout(url.toString(), LNURL_FETCH_TIMEOUT_MS);
     } catch {
       throw new LightningMintError("lnurl_unreachable", address);
     }
@@ -490,10 +480,7 @@ class RealLightningClient implements LightningClient {
     }
     let body: unknown;
     try {
-      body = await fetchJsonWithTimeout(
-        verify_url,
-        LNURL_FETCH_TIMEOUT_MS
-      );
+      body = await fetchJsonWithTimeout(verify_url, LNURL_FETCH_TIMEOUT_MS);
     } catch {
       // A transient failure must NOT mark the order paid. Treat it
       // as "not settled yet" and let the buyer page poll again.

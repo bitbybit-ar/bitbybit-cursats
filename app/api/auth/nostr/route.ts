@@ -3,7 +3,12 @@ import { cookies } from "next/headers";
 import { validateNip98AuthEvent } from "@/lib/nostr/verify";
 import { parseNostrAuthHeader } from "@/lib/nostr/http-auth";
 import { createSession, SESSION_COOKIE_NAME } from "@/lib/auth";
-import { LocaleSchema, SignerTypeSchema, type Locale, type SignerType } from "@/lib/schemas/auth";
+import {
+  LocaleSchema,
+  SignerTypeSchema,
+  type Locale,
+  type SignerType,
+} from "@/lib/schemas/auth";
 import { SESSION_INACTIVITY_MINUTES } from "@/lib/auth-constants";
 import { fetchKind0Profile } from "@/lib/nostr/profile";
 import { ensureUserForPubkey } from "@/lib/admin/users";

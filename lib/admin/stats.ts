@@ -55,12 +55,7 @@ export async function getAdminOverview(
     db
       .select({ count: count() })
       .from(orders)
-      .where(
-        and(
-          eq(orders.user_id, userId),
-          eq(orders.status, "pending")
-        )
-      ),
+      .where(and(eq(orders.user_id, userId), eq(orders.status, "pending"))),
     db
       .select({ count: count() })
       .from(orders)

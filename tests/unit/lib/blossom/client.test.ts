@@ -52,7 +52,10 @@ describe("blossom/readBlossomServers", () => {
     // Empty / unset → DEFAULT_BLOSSOM_SERVERS so the offering form
     // works without forcing every contributor to copy a value out
     // of .env.example. Operators who care override via the env var.
-    const defaults = ["https://blossom.primal.net", "https://cdn.satellite.earth"];
+    const defaults = [
+      "https://blossom.primal.net",
+      "https://cdn.satellite.earth",
+    ];
     expect(readBlossomServers(undefined)).toEqual(defaults);
     expect(readBlossomServers("")).toEqual(defaults);
     // Whitespace-only and a comma-list of empty entries should both
@@ -66,11 +69,7 @@ describe("blossom/readBlossomServers", () => {
       readBlossomServers(
         " https://a.example, https://b.example , , https://c.example "
       )
-    ).toEqual([
-      "https://a.example",
-      "https://b.example",
-      "https://c.example",
-    ]);
+    ).toEqual(["https://a.example", "https://b.example", "https://c.example"]);
   });
 });
 
@@ -171,9 +170,11 @@ describe("blossom/uploadToBlossom", () => {
 
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ sha256: sha }), { status: 200 })
-      )
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify({ sha256: sha }), { status: 200 })
+        )
     );
 
     const result = await uploadToBlossom(file, {

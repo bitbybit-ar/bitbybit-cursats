@@ -9,7 +9,10 @@ import { ZapModal } from "@/components/landing/zap-modal";
 import styles from "./support-bitbybit.module.scss";
 
 const PROJECT_REPOS = [
-  { key: "cursatsRepo", url: "https://github.com/bitbybit-ar/bitbybit-cursats" },
+  {
+    key: "cursatsRepo",
+    url: "https://github.com/bitbybit-ar/bitbybit-cursats",
+  },
   { key: "arenaRepo", url: "https://github.com/bitbybit-ar/bitbybit-arena" },
   { key: "habitsRepo", url: "https://github.com/bitbybit-ar/bitbybit-habits" },
 ] as const;

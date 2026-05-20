@@ -40,8 +40,7 @@ const TEST_SATS_PER_ARS = 4;
 // WILL drift from the market over time, which is why it is the last
 // resort and its use is logged. Refresh occasionally.
 const STATIC_FALLBACK_ARS_PER_BTC = 110_000_000;
-const STATIC_FALLBACK_SATS_PER_ARS =
-  SATS_PER_BTC / STATIC_FALLBACK_ARS_PER_BTC;
+const STATIC_FALLBACK_SATS_PER_ARS = SATS_PER_BTC / STATIC_FALLBACK_ARS_PER_BTC;
 
 // Sanity bounds on the upstream ARS/BTC figure. Wide on purpose — the
 // point is to reject `0`, `NaN`, negatives and obvious garbage, not to
@@ -102,7 +101,7 @@ export async function getSatsPerArs(): Promise<number> {
       console.error(
         "[exchange-rate] live fetch failed; serving last good rate",
         lastGoodRate,
-        err,
+        err
       );
       // Re-arm the TTL so we retry on the next window rather than on
       // every single request while upstream is down.
@@ -112,7 +111,7 @@ export async function getSatsPerArs(): Promise<number> {
     console.error(
       "[exchange-rate] live fetch failed and no cached rate; using static fallback",
       STATIC_FALLBACK_SATS_PER_ARS,
-      err,
+      err
     );
     return STATIC_FALLBACK_SATS_PER_ARS;
   }
@@ -153,9 +152,7 @@ async function fetchSatsPerArs(): Promise<number> {
     arsPerBtc < MIN_ARS_PER_BTC ||
     arsPerBtc > MAX_ARS_PER_BTC
   ) {
-    throw new Error(
-      `exchange_rate_out_of_bounds: ars_per_btc=${arsPerBtc}`,
-    );
+    throw new Error(`exchange_rate_out_of_bounds: ars_per_btc=${arsPerBtc}`);
   }
   const satsPerArs = SATS_PER_BTC / arsPerBtc;
   if (!Number.isFinite(satsPerArs) || satsPerArs <= 0) {
@@ -179,7 +176,7 @@ function readArsPerBtc(body: unknown): number {
 export async function convertPrice(
   amount: number,
   from: "ars" | "sats",
-  to: "ars" | "sats",
+  to: "ars" | "sats"
 ): Promise<number> {
   if (from === to) return amount;
   const rate = await getSatsPerArs();

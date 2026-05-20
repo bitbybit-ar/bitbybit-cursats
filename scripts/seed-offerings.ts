@@ -92,10 +92,7 @@ async function main() {
     .limit(1);
   let user = existingUser;
   if (!user) {
-    const [inserted] = await db
-      .insert(users)
-      .values(SEED_USER)
-      .returning();
+    const [inserted] = await db.insert(users).values(SEED_USER).returning();
     user = inserted;
     console.log(`Seed user inserted: slug=${user.slug}`);
   } else {
@@ -110,20 +107,13 @@ async function main() {
     const [existing] = await db
       .select({ id: offerings.id })
       .from(offerings)
-      .where(
-        and(
-          eq(offerings.user_id, user.id),
-          eq(offerings.slug, row.slug)
-        )
-      )
+      .where(and(eq(offerings.user_id, user.id), eq(offerings.slug, row.slug)))
       .limit(1);
     if (existing) {
       skipped += 1;
       continue;
     }
-    await db
-      .insert(offerings)
-      .values({ ...row, user_id: user.id });
+    await db.insert(offerings).values({ ...row, user_id: user.id });
     inserted += 1;
   }
   console.log(

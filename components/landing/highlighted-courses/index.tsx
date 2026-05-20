@@ -20,11 +20,7 @@ export async function HighlightedCourses() {
 
       <div className={styles.grid}>
         {rows.map(({ offering, seller }) => (
-          <OfferingCard
-            key={offering.id}
-            offering={offering}
-            seller={seller}
-          />
+          <OfferingCard key={offering.id} offering={offering} seller={seller} />
         ))}
       </div>
 

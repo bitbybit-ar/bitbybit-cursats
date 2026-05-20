@@ -46,7 +46,10 @@ export function BuyButton({ offeringId, soldOut = false }: BuyButtonProps) {
         // next nav.
         if (data.reason === "offering_sold_out") {
           showToast(tErrors("offeringSoldOut"), "error");
-        } else if (res.status === 404 || data.error === "offering_unavailable") {
+        } else if (
+          res.status === 404 ||
+          data.error === "offering_unavailable"
+        ) {
           showToast(tErrors("offeringUnavailable"), "error");
         } else {
           showToast(tErrors("checkoutFailed"), "error");

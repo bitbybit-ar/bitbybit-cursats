@@ -71,7 +71,7 @@ function stepRanges(i: number, span: number) {
 // Ten particles evenly spaced on a ring — the burst scatter.
 const PARTICLE_ANGLES = Array.from(
   { length: 10 },
-  (_, k) => (k / 10) * Math.PI * 2,
+  (_, k) => (k / 10) * Math.PI * 2
 );
 
 /**
@@ -97,14 +97,14 @@ function Particle({
   const radius = useTransform(
     progress,
     [burstStart, burstEnd],
-    [4, PARTICLE_SPREAD],
+    [4, PARTICLE_SPREAD]
   );
   const x = useTransform(radius, (r) => Math.cos(angle) * r);
   const y = useTransform(radius, (r) => Math.sin(angle) * r);
   const opacity = useTransform(
     progress,
     [burstStart, burstMid, burstEnd],
-    [0, 1, 0],
+    [0, 1, 0]
   );
 
   return (
@@ -159,17 +159,17 @@ function JourneyStep({
   const bubbleY = useTransform(
     progress,
     [r.riseStart, r.riseEnd],
-    ["75vh", "0vh"],
+    ["75vh", "0vh"]
   );
   const bubbleScale = useTransform(
     progress,
     [r.riseStart, r.riseEnd, r.burstStart, r.burstEnd],
-    [0.5, 1, 1, 0.25],
+    [0.5, 1, 1, 0.25]
   );
   const bubbleOpacity = useTransform(
     progress,
     [r.riseStart, r.riseStart + 0.02, r.burstStart, r.burstEnd],
-    [0, 1, 1, 0],
+    [0, 1, 1, 0]
   );
 
   // The polaroid is a two-state element with a WIDE hysteresis
@@ -180,9 +180,7 @@ function JourneyStep({
   // rise. Small down-scroll jitter / rubber-band can never make a
   // shown card disappear, while a genuine scroll-up still reverses
   // it.
-  const [formed, setFormed] = useState(
-    () => progress.get() >= r.burstEnd,
-  );
+  const [formed, setFormed] = useState(() => progress.get() >= r.burstEnd);
   useMotionValueEvent(progress, "change", (v) => {
     if (v >= r.burstEnd) setFormed(true);
     else if (v <= r.riseStart) setFormed(false);
@@ -269,10 +267,7 @@ function PinnedJourney({ variant, title, steps }: JourneyStepsProps) {
     <section ref={trackRef} className={styles.track} aria-label={title}>
       <div className={styles.sticky}>
         <div className={styles.stage}>
-          <motion.h2
-            className={styles.title}
-            style={{ opacity: titleOpacity }}
-          >
+          <motion.h2 className={styles.title} style={{ opacity: titleOpacity }}>
             {title}
           </motion.h2>
           <div className={styles.row}>

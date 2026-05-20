@@ -8,9 +8,21 @@ interface ContainerProps {
   column?: boolean;
 }
 
-export function Container({ children, className, center, column }: ContainerProps) {
+export function Container({
+  children,
+  className,
+  center,
+  column,
+}: ContainerProps) {
   return (
-    <div className={cn(styles.container, center && styles.center, column && styles.column, className)}>
+    <div
+      className={cn(
+        styles.container,
+        center && styles.center,
+        column && styles.column,
+        className
+      )}
+    >
       {children}
     </div>
   );

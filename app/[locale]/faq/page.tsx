@@ -25,9 +25,7 @@ const QUESTION_KEYS = [
   "fees",
 ] as const;
 
-export async function generateMetadata({
-  params,
-}: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "faq" });
   return {

@@ -64,9 +64,7 @@ export function NeedMotivation() {
               </div>
               <div className={styles.caption}>
                 <h3 className={styles.name}>{t(card.titleKey)}</h3>
-                <p className={styles.description}>
-                  {t(card.descriptionKey)}
-                </p>
+                <p className={styles.description}>{t(card.descriptionKey)}</p>
                 <span className={styles.cta}>
                   {t(card.ctaKey)} <ArrowRightIcon size={14} />
                 </span>

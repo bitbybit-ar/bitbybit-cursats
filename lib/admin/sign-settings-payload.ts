@@ -45,7 +45,7 @@ export async function hashSettingsBody(serialized: string): Promise<string> {
 export function buildSettingsAuthEvent(
   url: string,
   payloadHashHex: string,
-  options: { method?: "PATCH" | "DELETE" } = {},
+  options: { method?: "PATCH" | "DELETE" } = {}
 ): UnsignedNostrEvent {
   return {
     kind: NIP98_KIND,

@@ -49,9 +49,7 @@ describe("db/schema users", () => {
     const active = config.columns.find((c) => c.name === "active");
     expect(active?.default).toBe(true);
     expect(active?.notNull).toBe(true);
-    const flag = config.columns.find(
-      (c) => c.name === "features_autorenewal"
-    );
+    const flag = config.columns.find((c) => c.name === "features_autorenewal");
     expect(flag?.default).toBe(false);
     expect(flag?.notNull).toBe(true);
   });

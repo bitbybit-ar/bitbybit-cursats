@@ -59,9 +59,8 @@ export function Modal({
   useEffect(() => {
     const previouslyFocused = document.activeElement as HTMLElement | null;
 
-    const firstFocusable = modalRef.current?.querySelector<HTMLElement>(
-      FOCUSABLE_SELECTOR
-    );
+    const firstFocusable =
+      modalRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
     firstFocusable?.focus();
 
     return () => {
@@ -117,10 +116,7 @@ export function Modal({
       aria-labelledby={title ? titleId : undefined}
       aria-label={title ? undefined : ariaLabel}
     >
-      <div
-        ref={modalRef}
-        className={cn(styles.modal, styles[size], className)}
-      >
+      <div ref={modalRef} className={cn(styles.modal, styles[size], className)}>
         {title && (
           <div className={styles.titleRow}>
             {onBack && (

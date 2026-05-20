@@ -65,8 +65,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
   const cbuChanged =
     parsed.data.cbu !== undefined && parsed.data.cbu !== auth.user.cbu;
   const aliasChanged =
-    parsed.data.alias !== undefined &&
-    parsed.data.alias !== auth.user.alias;
+    parsed.data.alias !== undefined && parsed.data.alias !== auth.user.alias;
   const lightningAddressChanged =
     parsed.data.lightning_address !== undefined &&
     parsed.data.lightning_address !== auth.user.lightning_address;
@@ -89,11 +88,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
   const willUseSatsRail =
     (parsed.data.payout_method ?? auth.user.payout_method) ===
     "lightning_address";
-  if (
-    lightningAddressChanged &&
-    nextLightningAddress &&
-    willUseSatsRail
-  ) {
+  if (lightningAddressChanged && nextLightningAddress && willUseSatsRail) {
     try {
       await getLightningClient().mintInvoice(
         nextLightningAddress,
@@ -130,10 +125,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
     });
     if (!validation.ok) {
       if (validation.reason === "clock") {
-        return NextResponse.json(
-          { error: "auth_clock_skew" },
-          { status: 401 }
-        );
+        return NextResponse.json({ error: "auth_clock_skew" }, { status: 401 });
       }
       return NextResponse.json(
         { error: "auth_invalid_signature", reason: validation.reason },
@@ -142,10 +134,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
     }
 
     if (validation.event.pubkey !== auth.session.pubkey) {
-      return NextResponse.json(
-        { error: "auth_mismatch" },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "auth_mismatch" }, { status: 403 });
     }
 
     signedEventId = validation.event.id;
@@ -192,7 +181,7 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
   if (!header.ok) {
     return NextResponse.json(
       { error: "auth_required", reason: header.reason },
-      { status: 401 },
+      { status: 401 }
     );
   }
 
@@ -206,14 +195,11 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
   });
   if (!validation.ok) {
     if (validation.reason === "clock") {
-      return NextResponse.json(
-        { error: "auth_clock_skew" },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "auth_clock_skew" }, { status: 401 });
     }
     return NextResponse.json(
       { error: "auth_invalid_signature", reason: validation.reason },
-      { status: 400 },
+      { status: 400 }
     );
   }
   if (validation.event.pubkey !== auth.session.pubkey) {

@@ -13,10 +13,7 @@ interface SignOutButtonProps {
   redirectTo?: string;
 }
 
-export function SignOutButton({
-  label,
-  redirectTo = "/",
-}: SignOutButtonProps) {
+export function SignOutButton({ label, redirectTo = "/" }: SignOutButtonProps) {
   const router = useRouter();
   const { signOut } = useSignerContext();
   const [isPending, setIsPending] = useState(false);
