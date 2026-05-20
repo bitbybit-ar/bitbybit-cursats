@@ -31,20 +31,72 @@ export const dynamic = "force-static";
 //   so the 9 polaroids read as a cheerful pinboard, not a uniform grid.
 // - A rotation that alternates so the row reads as pinned tiles.
 const FEATURES = [
-  { key: "twoRails", icon: TwoRails, tone: "blue", rotation: "left", size: 200 },
-  { key: "noCustody", icon: NoCustody, tone: "gold", rotation: "right", size: 200 },
-  { key: "anonymousByDefault", icon: AnonymousByDefault, tone: "pink", rotation: "left", size: 200 },
-  { key: "optionalNostrLogin", icon: NostrLogo, tone: "nostr", rotation: "right", size: 160 },
-  { key: "deliveryInApp", icon: DeliveryInApp, tone: "cyan", rotation: "left", size: 200 },
-  { key: "oneShot", icon: LightningLogo, tone: "orange", rotation: "right", size: 160 },
-  { key: "creatorAccount", icon: CreatorAccount, tone: "blue", rotation: "left", size: 200 },
-  { key: "codesOrDownloads", icon: CodesOrDownloads, tone: "lime", rotation: "right", size: 200 },
-  { key: "openMarketplace", icon: OpenMarketplace, tone: "gold", rotation: "left", size: 200 },
+  {
+    key: "twoRails",
+    icon: TwoRails,
+    tone: "blue",
+    rotation: "left",
+    size: 200,
+  },
+  {
+    key: "noCustody",
+    icon: NoCustody,
+    tone: "gold",
+    rotation: "right",
+    size: 200,
+  },
+  {
+    key: "anonymousByDefault",
+    icon: AnonymousByDefault,
+    tone: "pink",
+    rotation: "left",
+    size: 200,
+  },
+  {
+    key: "optionalNostrLogin",
+    icon: NostrLogo,
+    tone: "nostr",
+    rotation: "right",
+    size: 160,
+  },
+  {
+    key: "deliveryInApp",
+    icon: DeliveryInApp,
+    tone: "cyan",
+    rotation: "left",
+    size: 200,
+  },
+  {
+    key: "oneShot",
+    icon: LightningLogo,
+    tone: "orange",
+    rotation: "right",
+    size: 160,
+  },
+  {
+    key: "creatorAccount",
+    icon: CreatorAccount,
+    tone: "blue",
+    rotation: "left",
+    size: 200,
+  },
+  {
+    key: "codesOrDownloads",
+    icon: CodesOrDownloads,
+    tone: "lime",
+    rotation: "right",
+    size: 200,
+  },
+  {
+    key: "openMarketplace",
+    icon: OpenMarketplace,
+    tone: "gold",
+    rotation: "left",
+    size: 200,
+  },
 ] as const;
 
-export async function generateMetadata({
-  params,
-}: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "features" });
   return {
@@ -63,40 +115,39 @@ export default async function FeaturesPage({ params }: Props) {
     <Container>
       <header className={styles.hero}>
         <h1 className={styles.heroTitle}>
-            {t.rich("hero.title", { brand: () => <Wordmark /> })}
+          {t.rich("hero.title", { brand: () => <Wordmark /> })}
         </h1>
         <p className={styles.heroSubtitle}>{t("hero.subtitle")}</p>
       </header>
-      <Section>
-        <FeatureDeck
-          slots={FEATURES.map((feature) => {
-            const Icon = feature.icon;
-            return {
-              key: feature.key,
-              rotation: feature.rotation,
-              // `noCustody` sits visually right where the deck stack
-              // is, so it'd barely animate at its natural row-0
-              // delay. Defer it to the end and pin to bottom.
-              priority: feature.key === "noCustody" ? ("last" as const) : undefined,
-              children: (
-                <Polaroid
-                  rotation={feature.rotation}
-                  frame={
-                    <span
-                      className={`${styles.featureIcon} ${styles[`tone-${feature.tone}`]}`}
-                    >
-                      <Icon size={feature.size} />
-                    </span>
-                  }
-                >
-                  <h2>{t(`items.${feature.key}Title`)}</h2>
-                  <p>{t(`items.${feature.key}Body`)}</p>
-                </Polaroid>
-              ),
-            };
-          })}
-        />
-      </Section>
+      <FeatureDeck
+        slots={FEATURES.map((feature) => {
+          const Icon = feature.icon;
+          return {
+            key: feature.key,
+            rotation: feature.rotation,
+            // `twoRails` sits visually right where the deck stack
+            // is, so it'd barely animate at its natural row-0
+            // delay. Defer it to the end and pin to bottom.
+            priority:
+              feature.key === "twoRails" ? ("last" as const) : undefined,
+            children: (
+              <Polaroid
+                rotation={feature.rotation}
+                frame={
+                  <span
+                    className={`${styles.featureIcon} ${styles[`tone-${feature.tone}`]}`}
+                  >
+                    <Icon size={feature.size} />
+                  </span>
+                }
+              >
+                <h2>{t(`items.${feature.key}Title`)}</h2>
+                <p>{t(`items.${feature.key}Body`)}</p>
+              </Polaroid>
+            ),
+          };
+        })}
+      />
     </Container>
   );
 }
