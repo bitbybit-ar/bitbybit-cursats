@@ -9,7 +9,7 @@ type Props = {
   params: Promise<{ locale: string }>;
 };
 
-export const dynamic = "force-static";
+export const revalidate = 60;
 
 export default async function HomePage({ params }: Props) {
   const { locale } = await params;

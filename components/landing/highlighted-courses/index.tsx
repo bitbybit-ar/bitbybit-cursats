@@ -1,12 +1,15 @@
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import { Section } from "@/components/ui/section";
 import { Button } from "@/components/ui/button";
 import { OfferingCard } from "@/components/catalog/offering-card";
-import { highlightedCourses } from "@/lib/mock/highlighted-courses";
+import { listHighlightedOfferings } from "@/lib/offerings";
 import styles from "./highlighted-courses.module.scss";
 
-export function HighlightedCourses() {
-  const t = useTranslations("landing.highlighted");
+export async function HighlightedCourses() {
+  const rows = await listHighlightedOfferings();
+  if (rows.length === 0) return null;
+
+  const t = await getTranslations("landing.highlighted");
 
   return (
     <Section id="cursos-destacados">
@@ -16,7 +19,7 @@ export function HighlightedCourses() {
       </header>
 
       <div className={styles.grid}>
-        {highlightedCourses.map(({ offering, seller }) => (
+        {rows.map(({ offering, seller }) => (
           <OfferingCard
             key={offering.id}
             offering={offering}
