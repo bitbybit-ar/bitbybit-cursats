@@ -8,7 +8,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: $spacing-16;
-  margin-bottom: $spacing-32;
+  margin-bottom: $spacing-24;
 
   @include mobile {
     flex-direction: column;
@@ -31,20 +31,40 @@
   color: $color-text-secondary;
 }
 
-.empty {
+// --- Empty hero ---
+// Replaces the cramped, centred card the previous empty state used.
+// A taller block with explanatory copy + a single primary CTA sets
+// up the suggestions rail underneath as the next obvious step.
+.emptyHero {
   display: flex;
   flex-direction: column;
   gap: $spacing-12;
-  text-align: center;
   padding: $spacing-32;
-  color: $color-text-secondary;
+  text-align: center;
+  align-items: center;
 }
 
-.emptyLink {
+.emptyHeroTitle {
+  margin: 0;
+  font-family: $font-family-display;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  letter-spacing: $letter-spacing-tight;
+}
+
+.emptyHeroBody {
+  margin: 0;
+  max-width: 480px;
+  color: $color-text-secondary;
+  line-height: $line-height-base;
+}
+
+.emptyHeroCta {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: $spacing-4;
+  margin-top: $spacing-8;
   color: $color-primary;
   font-weight: $font-weight-semibold;
   text-decoration: none;
@@ -54,6 +74,61 @@
   }
 }
 
+// --- Controls row (status tabs + search) ---
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-16;
+  margin-bottom: $spacing-16;
+  flex-wrap: wrap;
+}
+
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: $spacing-4;
+  flex-wrap: wrap;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  padding: $spacing-4 $spacing-12;
+  background: transparent;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-full;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  text-decoration: none;
+  transition: border-color 0.15s ease, color 0.15s ease,
+    background-color 0.15s ease;
+
+  &:hover {
+    color: $color-text-primary;
+    border-color: $color-text-secondary;
+    text-decoration: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $focus-ring;
+    outline-offset: 2px;
+  }
+}
+
+.tabActive {
+  background: $color-primary;
+  border-color: $color-primary;
+  color: $color-bg;
+
+  &:hover {
+    color: $color-bg;
+    border-color: $color-primary;
+  }
+}
+
+// --- Row list ---
 .list {
   list-style: none;
   margin: 0;
@@ -67,33 +142,77 @@
   margin: 0;
 }
 
+// A single purchase row. Horizontal flex on desktop (thumb → main →
+// status pill → actions); stacks on mobile so each affordance gets
+// its own row.
 .row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 56px 1fr auto auto;
   align-items: center;
   gap: $spacing-16;
-  padding: $spacing-16 $spacing-20;
-  background: $color-surface;
-  border: 1px solid $color-border;
-  border-radius: $border-radius-md;
-  text-decoration: none;
-  color: $color-text-primary;
-  transition: border-color 0.15s ease, transform 0.15s ease;
+  padding: $spacing-16;
 
-  &:hover {
-    border-color: $color-primary;
-    transform: translateY(-1px);
+  @include mobile {
+    grid-template-columns: 56px 1fr auto;
+    grid-template-areas:
+      "thumb main status"
+      "actions actions actions";
+    gap: $spacing-12;
   }
+}
+
+.thumbLink {
+  display: block;
+  text-decoration: none;
+
+  @include mobile {
+    grid-area: thumb;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $focus-ring;
+    outline-offset: 4px;
+    border-radius: $border-radius-md;
+  }
+}
+
+.thumb {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: $border-radius-md;
+  overflow: hidden;
+  background: $color-bg-3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.thumbImg {
+  object-fit: cover;
+}
+
+.thumbFallback {
+  font-family: $font-family-display;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-secondary;
 }
 
 .rowMain {
   display: flex;
   flex-direction: column;
   gap: $spacing-2;
-  flex: 1;
   min-width: 0;
+
+  @include mobile {
+    grid-area: main;
+  }
 }
 
 .rowTitle {
+  margin: 0;
+  font-size: $font-size-base;
   font-weight: $font-weight-semibold;
   color: $color-text-primary;
   overflow: hidden;
@@ -101,9 +220,71 @@
   white-space: nowrap;
 }
 
-.rowMeta {
-  font-size: $font-size-xs;
+.rowTitleLink {
+  color: inherit;
+  text-decoration: none;
+
+  &:hover {
+    color: $color-primary;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $focus-ring;
+    outline-offset: 2px;
+    border-radius: $border-radius-xs;
+  }
+}
+
+.byline {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-4;
   color: $color-text-secondary;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  text-decoration: none;
+  align-self: flex-start;
+
+  &:hover {
+    text-decoration: none;
+
+    .bylineName {
+      color: $color-primary;
+    }
+  }
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: $color-bg-3;
+  border: 1px solid $color-border;
+  color: $color-text-secondary;
+  flex-shrink: 0;
+}
+
+.avatarImg {
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+}
+
+.bylineName {
+  transition: color 0.15s ease;
+}
+
+.rowMeta {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: $spacing-4;
+  color: $color-text-secondary;
+  font-size: $font-size-xs;
 }
 
 .status {
@@ -115,6 +296,11 @@
   border-radius: $border-radius-sm;
   background: $color-bg-2;
   color: $color-text-secondary;
+
+  @include mobile {
+    grid-area: status;
+    justify-self: end;
+  }
 }
 
 .status-paid {
@@ -131,4 +317,63 @@
 .status-refunded {
   background: color-mix(in srgb, $color-error 15%, transparent);
   color: $color-error;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: $spacing-12;
+
+  @include mobile {
+    grid-area: actions;
+    justify-content: space-between;
+    border-top: 1px solid $color-border;
+    padding-top: $spacing-12;
+  }
+}
+
+.actionPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-4;
+  color: $color-secondary;
+  font-weight: $font-weight-semibold;
+  font-size: $font-size-sm;
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover {
+    color: $color-secondary-hover;
+    text-decoration: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $focus-ring;
+    outline-offset: 2px;
+    border-radius: $border-radius-xs;
+  }
+}
+
+.actionSecondary {
+  color: $color-text-secondary;
+  font-size: $font-size-xs;
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover {
+    color: $color-text-primary;
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $focus-ring;
+    outline-offset: 2px;
+    border-radius: $border-radius-xs;
+  }
+}
+
+.noMatches {
+  padding: $spacing-24;
+  text-align: center;
+  color: $color-text-secondary;
 }
