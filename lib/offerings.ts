@@ -35,7 +35,7 @@ export interface OfferingWithSeller {
   };
 }
 
-function toOfferingWithSeller(row: {
+export function toOfferingWithSeller(row: {
   offering: Offering;
   seller: typeof users.$inferSelect;
 }): OfferingWithSeller {
@@ -64,6 +64,13 @@ export interface DiscoveryQuery {
   sort?: SortKey;
   page?: number;
   pageSize?: number;
+  /**
+   * Offering ids the caller already plans to render elsewhere on
+   * the page (e.g. the personalised rail on `/explore` for
+   * logged-in users). Excluded from both the page slice AND the
+   * total count so the pager math stays correct. ADR 0024.
+   */
+  excludeOfferingIds?: string[];
 }
 
 export async function listDiscoveryOfferingsPaged(
@@ -74,6 +81,7 @@ export async function listDiscoveryOfferingsPaged(
   const pageSize = Math.max(1, opts.pageSize ?? 12);
   const offset = (page - 1) * pageSize;
   const q = opts.q?.trim();
+  const excludeIds = opts.excludeOfferingIds ?? [];
 
   try {
     const db = getDb();
@@ -82,14 +90,23 @@ export async function listDiscoveryOfferingsPaged(
       isNull(offerings.archived_at),
     ];
     if (opts.type) conditions.push(eq(offerings.type, opts.type));
+    if (excludeIds.length > 0) {
+      conditions.push(notInArray(offerings.id, excludeIds));
+    }
     if (q) {
       // Escape LIKE metacharacters so a `%` in user input matches
       // literally instead of acting as a wildcard.
       const pattern = `%${q.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
+      // Tag matches are exact rather than ILIKE — tags are
+      // constrained kebab-case (see `TagSchema` in
+      // `lib/admin/offerings.ts`), so a partial LIKE would create
+      // noisy cross-tag hits ("art" would match "martial-arts").
+      // The GIN index makes `= ANY(tags)` cheap. ADR 0024.
       const search = or(
         ilike(offerings.title, pattern),
         ilike(offerings.description, pattern),
-        ilike(users.display_name, pattern)
+        ilike(users.display_name, pattern),
+        sql`${q.toLowerCase()} = ANY(${offerings.tags})`
       );
       if (search) conditions.push(search);
     }

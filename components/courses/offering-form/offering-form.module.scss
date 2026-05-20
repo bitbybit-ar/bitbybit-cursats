@@ -197,6 +197,102 @@
   color: $color-text-secondary;
 }
 
+// Tag chip input. Visually behaves like `.input` (same background,
+// border, focus ring) but wraps a horizontal flex of chips + a
+// growing text input so chips and the cursor share the same row.
+.chipInput {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $spacing-8;
+  padding: $spacing-8 $spacing-12;
+  min-height: 44px;
+  background: $color-bg;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  cursor: text;
+  transition:
+    border-color 0.15s ease,
+    outline-color 0.15s ease;
+
+  &:hover {
+    border-color: $color-text-secondary;
+  }
+
+  // Lift the focus ring onto the wrapper when the inner input is
+  // focused so the whole chip surface reads as one control.
+  &:focus-within {
+    border-color: $color-primary;
+    outline: 2px solid $focus-ring;
+    outline-offset: 1px;
+  }
+}
+
+.chipInputField {
+  flex: 1;
+  min-width: 120px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font-family: $font-family-base;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  background: transparent;
+  outline: none;
+
+  &::placeholder {
+    color: $color-text-secondary;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-4;
+  padding: $spacing-2 $spacing-8;
+  background: alpha($color-primary, 10%);
+  color: $color-primary;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  border-radius: $border-radius-full;
+  line-height: 1.4;
+}
+
+.chipLabel {
+  white-space: nowrap;
+}
+
+.chipRemove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: $font-size-sm;
+  line-height: 1;
+  border-radius: $border-radius-full;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background: alpha($color-primary, 20%);
+  }
+
+  &:focus-visible {
+    outline: 2px solid $focus-ring;
+    outline-offset: 1px;
+  }
+}
+
 .row {
   display: grid;
   grid-template-columns: 1fr 1fr;

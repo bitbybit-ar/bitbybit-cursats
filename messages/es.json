@@ -221,7 +221,8 @@
       "heading": "Explorá cursos",
       "empty": "Todavía no hay clases ni materiales publicados. Volvé en un rato.",
       "noMatches": "Ningún curso coincide con tus filtros. Probá quitando alguno.",
-      "results": "{count, plural, =0 {Sin resultados} one {1 curso} other {# cursos}}"
+      "results": "{count, plural, =0 {Sin resultados} one {1 curso} other {# cursos}}",
+      "moreToExplore": "Más para explorar"
     },
     "card": {
       "view": "Ver detalle"
@@ -245,6 +246,14 @@
       "next": "Siguiente",
       "position": "Página {page} de {total}"
     }
+  },
+  "recommendations": {
+    "title": "Sugerencias para vos",
+    "subtitleTags": "Basadas en las etiquetas de tus compras recientes.",
+    "subtitleSellers": "Más cursos de docentes a los que ya les compraste.",
+    "subtitleHighlights": "Lo que está sonando ahora en el marketplace.",
+    "subtitleMixed": "Elegidos a partir de tus intereses y de lo que está sonando.",
+    "exploreMore": "Ver más"
   },
   "offering": {
     "details": "Qué incluye",
@@ -410,6 +419,13 @@
       "typeDownloadHint": "El comprador descarga un archivo después del pago.",
       "title": "Título",
       "description": "Descripción",
+      "tags": "Etiquetas",
+      "tagsPlaceholder": "Sumá una etiqueta y apretá Enter",
+      "tagsHint": "Palabras clave cortas que describen el curso. Los compradores buscan por etiqueta y las usamos para sugerir cursos a quienes inician sesión.",
+      "tagsExample": "yoga, meditación, lightning, programación",
+      "tagsHelp": "Hasta {max} etiquetas. Solo minúsculas, números y guiones.",
+      "tagsMax": "Podés sumar hasta {max} etiquetas.",
+      "tagsRemove": "Quitar {tag}",
       "priceArs": "Precio (ARS)",
       "priceSats": "Precio fijo (sats)",
       "priceSatsHint": "Si lo dejás vacío, calculamos el precio en sats al momento de la compra.",
@@ -624,7 +640,25 @@
     "subtitle": "Tus compras asociadas a esta identidad Nostr.",
     "empty": "Todavía no tenés compras en esta identidad.",
     "browseCatalog": "Ver el catálogo",
-    "unknownOffering": "Oferta desconocida"
+    "unknownOffering": "Oferta desconocida",
+    "emptyHero": {
+      "title": "Todavía no compraste ningún curso",
+      "body": "Cuando compres un curso te aparece acá — el comprobante, los códigos de canje y los enlaces de descarga en un mismo lugar."
+    },
+    "filters": {
+      "all": "Todos",
+      "paid": "Pagados",
+      "pending": "Pendientes",
+      "failed": "Fallidos"
+    },
+    "filtersLabel": "Filtrar por estado",
+    "searchLabel": "Buscar en tus compras",
+    "searchPlaceholder": "Buscar por título o docente",
+    "noMatches": "No hay compras que coincidan con estos filtros.",
+    "openCourse": "Abrir curso",
+    "viewReceipt": "Ver comprobante",
+    "viewListing": "Página del curso",
+    "continueCheckout": "Continuar pago"
   },
   "orderStatus": {
     "pending": "Pendiente",

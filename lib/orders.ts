@@ -1,4 +1,4 @@
-import { and, eq, desc, sql } from "drizzle-orm";
+import { and, eq, desc, ilike, sql, type SQL } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { orders, offerings, users } from "@/lib/db/schema";
 import { getWapuClient, type DirectPaymentFunding } from "@/lib/wapu";
@@ -336,6 +336,121 @@ export async function listOrdersByPubkey(
     .where(eq(orders.pubkey, pubkey))
     .orderBy(desc(orders.created_at))
     .limit(limit);
+}
+
+/**
+ * Paged history view for `/purchases`. Joins offering + seller once
+ * (instead of N round-trips to `getOfferingById` per row) so the
+ * page can render a richer row (thumbnail, seller byline, status)
+ * without scaling cost in proportion to the order list.
+ *
+ * Filters:
+ *   * `status`: `undefined` → all; otherwise a single
+ *     `orders.status` value.
+ *   * `q`: matches offering title OR seller display name (ILIKE,
+ *     metacharacters escaped). Mirrors the discovery search's
+ *     buyer-recognisable axes.
+ *
+ * Returns rows in `created_at DESC` order plus the total filtered
+ * count for the pager.
+ */
+export type PurchasedOrder = typeof orders.$inferSelect;
+export interface PurchaseRow {
+  order: PurchasedOrder;
+  offering: {
+    id: string;
+    slug: string;
+    title: string;
+    image_url: string | null;
+    type: typeof offerings.$inferSelect.type;
+  };
+  seller: {
+    slug: string;
+    display_name: string;
+    avatar_url: string | null;
+  };
+}
+
+export interface ListPurchasesPagedOpts {
+  pubkey: string;
+  status?: PurchasedOrder["status"];
+  q?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export async function listPurchasesPaged(
+  opts: ListPurchasesPagedOpts
+): Promise<{ rows: PurchaseRow[]; total: number }> {
+  const page = Math.max(1, opts.page ?? 1);
+  const pageSize = Math.max(1, opts.pageSize ?? 12);
+  const offset = (page - 1) * pageSize;
+  const q = opts.q?.trim();
+
+  try {
+    const db = getDb();
+    const conditions: SQL[] = [eq(orders.pubkey, opts.pubkey)];
+    if (opts.status) conditions.push(eq(orders.status, opts.status));
+    if (q) {
+      // Escape LIKE metacharacters so a literal `%` doesn't wildcard.
+      const pattern = `%${q.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
+      const search = sql`(${ilike(offerings.title, pattern)} OR ${ilike(
+        users.display_name,
+        pattern
+      )})`;
+      conditions.push(search);
+    }
+    const whereClause = and(...conditions);
+
+    const [rowsRaw, totalRaw] = await Promise.all([
+      db
+        .select({
+          order: orders,
+          offering_id: offerings.id,
+          offering_slug: offerings.slug,
+          offering_title: offerings.title,
+          offering_image_url: offerings.image_url,
+          offering_type: offerings.type,
+          seller_slug: users.slug,
+          seller_display_name: users.display_name,
+          seller_avatar_url: users.avatar_url,
+        })
+        .from(orders)
+        .innerJoin(offerings, eq(orders.offering_id, offerings.id))
+        .innerJoin(users, eq(offerings.user_id, users.id))
+        .where(whereClause)
+        .orderBy(desc(orders.created_at))
+        .limit(pageSize)
+        .offset(offset),
+      db
+        .select({ value: sql<number>`count(*)::int` })
+        .from(orders)
+        .innerJoin(offerings, eq(orders.offering_id, offerings.id))
+        .innerJoin(users, eq(offerings.user_id, users.id))
+        .where(whereClause),
+    ]);
+
+    const rows: PurchaseRow[] = rowsRaw.map((r) => ({
+      order: r.order,
+      offering: {
+        id: r.offering_id,
+        slug: r.offering_slug,
+        title: r.offering_title,
+        image_url: r.offering_image_url,
+        type: r.offering_type,
+      },
+      seller: {
+        slug: r.seller_slug,
+        display_name: r.seller_display_name,
+        avatar_url: r.seller_avatar_url,
+      },
+    }));
+
+    return { rows, total: totalRaw[0].value };
+  } catch (err) {
+    console.error("listPurchasesPaged failed", err);
+    return { rows: [], total: 0 };
+  }
 }
 
 export type ClaimOrderResult =

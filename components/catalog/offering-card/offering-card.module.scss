@@ -158,6 +158,42 @@
   overflow: hidden;
 }
 
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-4;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tagItem {
+  margin: 0;
+  padding: 0;
+}
+
+.tag {
+  display: inline-block;
+  padding: $spacing-2 $spacing-8;
+  background: alpha($color-primary, 8%);
+  color: $color-primary;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  border-radius: $border-radius-full;
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background: alpha($color-primary, 16%);
+    text-decoration: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $focus-ring;
+    outline-offset: 2px;
+  }
+}
+
 .typeLabel {
   margin: 0;
   color: $color-text-secondary;
