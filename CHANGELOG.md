@@ -12,6 +12,18 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **FAQ — refreshed copy and hero.** Title is now "FAQs" with the
+  same animated brand gradient used on the landing and how-it-
+  works heroes; the helper line ("missing something?") is its own
+  paragraph and links the word "GitHub" to the cursats repo.
+  Lightning is now described as a second layer on top of Bitcoin
+  (not just "the payment network"). Wallet answer no longer
+  recommends LaWallet, since the project isn't fully working yet
+  — any Lightning wallet is fine. Wapu blurb drops the "sponsor
+  of Hackathon #3" framing (the UI has no hackathon context
+  anywhere else) and now mirrors the how-it-works glossary
+  description. Delivery answer drops the Nostr DM fallback, which
+  was removed across the app (in-app receipt URL only).
 - **Public content pages are English-slugged.** `/como-funciona`
   → `/how-it-works` and `/caracteristicas` → `/features`. Clean
   pre-launch rename — no back-compat redirect, since nothing
