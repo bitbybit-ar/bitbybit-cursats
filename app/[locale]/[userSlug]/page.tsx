@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
 import { OfferingCard } from "@/components/catalog/offering-card";
 import { Avatar } from "@/components/common/avatar";
@@ -39,40 +40,38 @@ export default async function SellerStorePage({ params }: Props) {
   const t = await getTranslations("storefront");
 
   return (
-    <>
-      <Section className={styles.heroSection}>
-        <div
-          className={styles.hero}
-          data-has-banner={seller.banner_url ? "true" : "false"}
-        >
-          {seller.banner_url ? (
-            <Image
-              src={seller.banner_url}
-              alt=""
-              fill
-              sizes="100vw"
-              className={styles.bannerImage}
-              priority
-            />
+    <Container>
+      <div
+        className={styles.hero}
+        data-has-banner={seller.banner_url ? "true" : "false"}
+      >
+        {seller.banner_url ? (
+          <Image
+            src={seller.banner_url}
+            alt=""
+            fill
+            sizes="100vw"
+            className={styles.bannerImage}
+            priority
+          />
+        ) : null}
+        <div className={styles.heroOverlay} />
+        <div className={styles.heroContent}>
+          <Avatar
+            src={seller.avatar_url}
+            alt=""
+            name={seller.display_name}
+            size="lg"
+            className={styles.heroAvatar}
+          />
+          <h1 className={styles.title}>{seller.display_name}</h1>
+          {seller.bio ? (
+            <p className={styles.bio}>{seller.bio}</p>
           ) : null}
-          <div className={styles.heroOverlay} />
-          <div className={styles.heroContent}>
-            <Avatar
-              src={seller.avatar_url}
-              alt=""
-              name={seller.display_name}
-              size="lg"
-              className={styles.heroAvatar}
-            />
-            <h1 className={styles.title}>{seller.display_name}</h1>
-            {seller.bio ? (
-              <p className={styles.bio}>{seller.bio}</p>
-            ) : null}
-          </div>
         </div>
-      </Section>
+      </div>
 
-      <Section alternate className={styles.offeringsSection}>
+      <Section className={styles.offeringsSection}>
         <h2 className={styles.listHeading}>{t("offeringsHeading")}</h2>
         {offerings.length === 0 ? (
           <p className={styles.empty}>{t("empty")}</p>
@@ -92,6 +91,6 @@ export default async function SellerStorePage({ params }: Props) {
           </div>
         )}
       </Section>
-    </>
+    </Container>
   );
 }

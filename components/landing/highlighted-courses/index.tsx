@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { Section } from "@/components/ui/section";
+import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
 import { OfferingCard } from "@/components/catalog/offering-card";
 import { listHighlightedOfferings } from "@/lib/offerings";
@@ -12,7 +12,7 @@ export async function HighlightedCourses() {
   const t = await getTranslations("landing.highlighted");
 
   return (
-    <Section id="cursos-destacados">
+    <Container className={styles.container}>
       <header className={styles.header}>
         <h2 className={styles.title}>{t("title")}</h2>
         <p className={styles.subtitle}>{t("subtitle")}</p>
@@ -38,7 +38,7 @@ export async function HighlightedCourses() {
           {t("exploreMore")}
         </Button>
       </div>
-    </Section>
+    </Container>
   );
 }
 

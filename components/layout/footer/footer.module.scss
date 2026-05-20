@@ -31,31 +31,7 @@
   display: flex;
   align-items: center;
   gap: $spacing-8;
-}
-
-.brandText {
-  font-family: $font-display;
-  font-weight: $font-weight-extrabold;
   font-size: $font-size-sm;
-  color: $color-text-primary;
-}
-
-.brandTextPrimary {
-  color: $color-text-primary;
-}
-
-// Mirrors `.logoTextGradient` in the navbar so the wordmark reads the
-// same in both places — same three brand hues as LogoBlocks.
-.brandTextGradient {
-  background: linear-gradient(
-    90deg,
-    $color-primary 0%,
-    $color-secondary 50%,
-    $accent-pink 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
 }
 
 .links {

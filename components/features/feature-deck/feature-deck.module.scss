@@ -1,0 +1,40 @@
+@use "@/styles/spacing" as *;
+@use "@/styles/media-mixins" as *;
+
+// Pinboard layout — identical to the previous standalone board so
+// the static branch reads the same as before the deck was added.
+.board {
+  list-style: none;
+  margin: 0;
+  padding: $spacing-24 0 $spacing-16;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: $spacing-48 $spacing-32;
+
+  @include mobile {
+    flex-direction: column;
+    align-items: center;
+    gap: $spacing-32;
+  }
+}
+
+.boardItem {
+  flex: 0 0 auto;
+}
+
+.track {
+  position: relative;
+}
+
+// Animated mode: no extra padding above the grid. The deck origin
+// is the first slot itself, so the cards stack on top of where the
+// first card lands and fan outward to fill the grid.
+.animated {
+  padding-top: 0;
+}
+
+.dealWrap {
+  will-change: transform;
+}

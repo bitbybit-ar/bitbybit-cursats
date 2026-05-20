@@ -1,6 +1,7 @@
 @use "@/styles/colors" as *;
 @use "@/styles/spacing" as *;
 @use "@/styles/typography" as *;
+@use "@/styles/common-mixins" as *;
 @use "@/styles/media-mixins" as *;
 
 .hero {
@@ -26,11 +27,52 @@
   line-height: $line-height-tight;
 }
 
+// Animated brand gradient — same recipe as the landing/how-it-works
+// heroes so the three surfaces feel like one family. Wrap target
+// words in `<gradient>` inside the i18n string and `t.rich` paints
+// them.
+.gradientWord {
+  display: inline-block;
+  background-image: linear-gradient(
+    135deg,
+    $color-primary 0%,
+    $color-secondary 45%,
+    $accent-pink 100%
+  );
+  background-size: 200% 200%;
+  animation: faqGradient 6s ease infinite;
+  @include gradient-text;
+}
+
+@keyframes faqGradient {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
 .heroSubtitle {
   margin: 0;
   font-size: $font-size-subtitle;
   color: $color-text-secondary;
   line-height: $line-height-base;
+}
+
+// Inline link inside the subtitle's "missing something?" line. Bold +
+// primary so it reads as a link without underlining (the underline
+// appears on hover/focus for affordance).
+.heroLink {
+  color: $color-primary;
+  font-weight: $font-weight-bold;
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: underline;
+  }
 }
 
 // Accordion list. Plain `<details>` so the markup stays accessible
@@ -147,5 +189,10 @@
 
   .details::details-content {
     transition: none;
+  }
+
+  .gradientWord {
+    animation: none;
+    background-position: 0% 50%;
   }
 }

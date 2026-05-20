@@ -53,32 +53,6 @@
   justify-self: start;
 }
 
-.logoText {
-  font-family: $font-display;
-  font-weight: $font-weight-extrabold;
-  letter-spacing: $letter-spacing-tight;
-}
-
-.logoTextPrimary {
-  color: $color-text-primary;
-}
-
-// "SATS" half of the wordmark — picks up the same three brand hues
-// the LogoBlocks stack uses (blue → lime → pink) so the wordmark and
-// the block stack read as one mark. `background-clip: text` paints
-// the gradient onto the glyphs; the transparent `color` exposes it.
-.logoTextGradient {
-  background: linear-gradient(
-    90deg,
-    $color-primary 0%,
-    $color-secondary 50%,
-    $accent-pink 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
 // Center cell — visible only on tablet+. Mobile hides the links
 // entirely so the right cluster can claim the freed column.
 .links {

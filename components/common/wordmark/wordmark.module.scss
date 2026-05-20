@@ -1,0 +1,28 @@
+@use "@/styles/colors" as *;
+@use "@/styles/typography" as *;
+
+.wordmark {
+  font-family: $font-display;
+  font-weight: $font-weight-extrabold;
+  letter-spacing: $letter-spacing-tight;
+  line-height: 1;
+}
+
+.primary {
+  color: $color-text-primary;
+}
+
+// `background-clip: text` paints the gradient onto the glyphs; the
+// transparent `color` exposes it. Same three hues the LogoBlocks
+// stack uses, so wordmark and block-stack read as one mark.
+.gradient {
+  background: linear-gradient(
+    90deg,
+    $color-primary 0%,
+    $color-secondary 50%,
+    $accent-pink 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}

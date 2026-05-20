@@ -3,6 +3,17 @@
 @use "@/styles/typography" as *;
 @use "@/styles/media-mixins" as *;
 
+// Container ships a `min-height: 100vh` (full-bleed page chrome).
+// On tablet that leaves a big empty trough below the rail when only
+// 1–2 courses are featured, so drop the floor and let the content's
+// natural height set the box. `!important` because the override
+// lives in a different CSS module than the Container itself.
+.container {
+  @include tablet {
+    min-height: 0 !important;
+  }
+}
+
 .header {
   text-align: center;
   margin-bottom: $spacing-32;
