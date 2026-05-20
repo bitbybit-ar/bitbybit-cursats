@@ -4,7 +4,7 @@
 .section {
   padding: $spacing-100 0;
 
-  @include mobile {
+  @include mobileAndTablet {
     padding: $spacing-64 0;
   }
 }

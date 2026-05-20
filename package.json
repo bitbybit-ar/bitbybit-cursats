@@ -15,6 +15,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed-offerings.ts",
+    "db:unseed": "tsx scripts/unseed-offerings.ts",
     "db:studio": "drizzle-kit studio",
     "test:db:migrate": "MIGRATE_ENV_FILE=.env.test tsx scripts/migrate.ts"
   },

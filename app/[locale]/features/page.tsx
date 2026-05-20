@@ -4,6 +4,7 @@ import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
 import { Polaroid } from "@/components/ui/polaroid";
 import { Wordmark } from "@/components/common/wordmark";
+import { FeatureDeck } from "@/components/features/feature-deck";
 import { TwoRails } from "@/components/features/illustrations/two-rails";
 import { NoCustody } from "@/components/features/illustrations/no-custody";
 import { AnonymousByDefault } from "@/components/features/illustrations/anonymous-by-default";
@@ -67,11 +68,17 @@ export default async function FeaturesPage({ params }: Props) {
         <p className={styles.heroSubtitle}>{t("hero.subtitle")}</p>
       </header>
       <Section>
-        <ul className={styles.board}>
-          {FEATURES.map((feature) => {
+        <FeatureDeck
+          slots={FEATURES.map((feature) => {
             const Icon = feature.icon;
-            return (
-              <li key={feature.key} className={styles.boardItem}>
+            return {
+              key: feature.key,
+              rotation: feature.rotation,
+              // `noCustody` sits visually right where the deck stack
+              // is, so it'd barely animate at its natural row-0
+              // delay. Defer it to the end and pin to bottom.
+              priority: feature.key === "noCustody" ? ("last" as const) : undefined,
+              children: (
                 <Polaroid
                   rotation={feature.rotation}
                   frame={
@@ -85,10 +92,10 @@ export default async function FeaturesPage({ params }: Props) {
                   <h2>{t(`items.${feature.key}Title`)}</h2>
                   <p>{t(`items.${feature.key}Body`)}</p>
                 </Polaroid>
-              </li>
-            );
+              ),
+            };
           })}
-        </ul>
+        />
       </Section>
     </Container>
   );

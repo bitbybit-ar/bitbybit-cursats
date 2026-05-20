@@ -11,6 +11,10 @@
   max-width: 720px;
   margin: 0 auto;
   padding: $spacing-32 0;
+
+  @include mobile {
+    padding: 0;
+  }
 }
 
 .heroTitle {
@@ -31,30 +35,6 @@
   // `\n` in the translation breaks the two thoughts onto separate
   // lines without forcing markup into the message string.
   white-space: pre-line;
-}
-
-// Pinboard layout for the polaroids. Wrap+gap with extra horizontal
-// breathing room so the rotation overhang doesn't visually clip into
-// neighbours. Mobile collapses to a centered column.
-.board {
-  list-style: none;
-  margin: 0;
-  padding: $spacing-24 0 $spacing-16;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: center;
-  gap: $spacing-48 $spacing-32;
-
-  @include mobile {
-    flex-direction: column;
-    align-items: center;
-    gap: $spacing-32;
-  }
-}
-
-.boardItem {
-  flex: 0 0 auto;
 }
 
 // Icon centered in the polaroid frame. Each tone class swaps the

@@ -12,6 +12,23 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Features page — deck-deal animation.** The polaroid grid now
+  sets up like a hand of cards. On desktop the nine cards stack at
+  the top-left where "Dos formas de cobrar" lands, then spring out
+  to fill the 3×3 grid in a row-alternating sequence (L→R, R→L,
+  L→R). "Sin custodia" — which sits visually on top of the deck
+  origin — is pinned to the bottom of the stack and deals last so
+  it's unmistakably the closer. Total deal time ~4s with a soft
+  spring (stiffness 35). Mobile and tablet get a per-card fade-up
+  cascade instead (a single column or 2-col grid can't host a deck
+  animation cleanly). `prefers-reduced-motion`, SSR, and first
+  client paint all render the static board for hydration safety.
+  Knock-on tweaks: hero padding drops to zero on mobile; `<Section />`
+  padding tightens to `$spacing-64` on tablet (was only mobile);
+  `<HighlightedCourses />` releases its 100vh `min-height` on
+  tablet so a 1-2 course rail doesn't leave a trough below it; the
+  `[userSlug]` storefront page is wrapped in `<Container>` per the
+  chrome pattern.
 - **Features page — visual refresh.** New aspirational hero
   subtitle ("Pensado para docentes que enseñan en Argentina…")
   and a styled CURSATS wordmark in the title (CUR in primary,
@@ -35,8 +52,7 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   With the documented "Container is the page wrapper, Section
   goes inside" rule, the inner wrapper duplicated Container's
   max-width and padding. Pages that still use Section standalone
-  (`faq`, `[userSlug]`, `how-it-works`) need a follow-up
-  Container wrap.
+  (`faq`, `how-it-works`) need a follow-up Container wrap.
 - **FAQ — refreshed copy and hero.** Title is now "FAQs" with the
   same animated brand gradient used on the landing and how-it-
   works heroes; the helper line ("missing something?") is its own

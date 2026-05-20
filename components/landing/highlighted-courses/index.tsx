@@ -12,7 +12,7 @@ export async function HighlightedCourses() {
   const t = await getTranslations("landing.highlighted");
 
   return (
-    <Container>
+    <Container className={styles.container}>
       <header className={styles.header}>
         <h2 className={styles.title}>{t("title")}</h2>
         <p className={styles.subtitle}>{t("subtitle")}</p>
