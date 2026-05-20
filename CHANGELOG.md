@@ -12,6 +12,16 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Specific error messages for failed Lightning Address checks.**
+  When a seller's Lightning Address fails the settings-time probe
+  or a buyer's mint at checkout, the UI now surfaces the underlying
+  reason (invalid format, provider unreachable, no LUD-21 support,
+  malformed response) instead of a generic "invalid" / "unavailable"
+  toast. The buyer-side messages are candid about the seller's
+  wallet being the problem so buyers know to retry vs pick a
+  different course. Plumbed via a new `lightning_code` field on
+  `OrderCreateError` and a `lightning_reason` field on the
+  `/api/checkout` 503 response.
 - **Lightning checkout always mints against the seller's real
   Lightning Address.** `getLightningClient()` no longer branches
   on a `LIGHTNING_USE_REAL_CLIENT` env flag — production, staging,
