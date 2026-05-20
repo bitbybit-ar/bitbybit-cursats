@@ -45,9 +45,7 @@ export function Controls({ current }: ControlsProps) {
     }
     if (search === current.q) return;
     const id = setTimeout(() => {
-      router.replace(
-        buildExploreHref(current, { q: search.trim(), page: 1 })
-      );
+      router.replace(buildExploreHref(current, { q: search.trim(), page: 1 }));
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(id);
   }, [search, current, router]);

@@ -64,7 +64,10 @@ async function seedOrder() {
   return { offeringId: offering.id, orderId: result.order_id };
 }
 
-function buildWebhookRequest(body: string, signature: string | null): NextRequest {
+function buildWebhookRequest(
+  body: string,
+  signature: string | null
+): NextRequest {
   return new NextRequest(WEBHOOK_URL, {
     method: "POST",
     headers: signature

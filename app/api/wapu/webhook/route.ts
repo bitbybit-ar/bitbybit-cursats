@@ -1,11 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getWapuClient } from "@/lib/wapu";
-import {
-  drawAndAssignCode,
-  getOrder,
-  markOrderPaid,
-} from "@/lib/orders";
+import { drawAndAssignCode, getOrder, markOrderPaid } from "@/lib/orders";
 import { getOfferingById } from "@/lib/offerings";
 import { getUserById } from "@/lib/admin/users";
 import { emitNotification } from "@/lib/notifications";
@@ -53,10 +49,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const wapu = getWapuClient();
   if (!wapu.verifyWebhookSignature(rawBody, signature)) {
-    return NextResponse.json(
-      { error: "invalid_signature" },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: "invalid_signature" }, { status: 401 });
   }
 
   let parsed: z.infer<typeof WebhookEventSchema>;

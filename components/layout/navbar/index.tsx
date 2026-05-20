@@ -102,7 +102,7 @@ export function Navbar() {
                 >
                   {t(section.id)}
                 </a>
-              ),
+              )
             )}
           </div>
 

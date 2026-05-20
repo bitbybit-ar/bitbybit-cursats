@@ -16,7 +16,7 @@ const ParamsSchema = z.object({ id: z.string().uuid() });
  */
 export async function GET(
   _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   const auth = await requireUser();
   if (!auth.ok) return auth.response;
@@ -27,10 +27,7 @@ export async function GET(
     return NextResponse.json({ error: "invalid_id" }, { status: 400 });
   }
 
-  const offering = await getOfferingForAdminById(
-    auth.user.id,
-    parsed.data.id,
-  );
+  const offering = await getOfferingForAdminById(auth.user.id, parsed.data.id);
   if (!offering) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }

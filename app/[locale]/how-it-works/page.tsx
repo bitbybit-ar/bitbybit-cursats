@@ -27,9 +27,7 @@ type Props = {
 
 export const dynamic = "force-static";
 
-export async function generateMetadata({
-  params,
-}: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "howItWorks" });
   return {
@@ -115,65 +113,65 @@ export default async function HowItWorksPage({ params }: Props) {
           steps={creatorSteps}
         />
 
-      <Section>
-        <h2 className={styles.sectionTitle}>{t("glossary.title")}</h2>
-        <ul className={styles.glossary} aria-label={t("glossary.title")}>
-          {glossary.map((item) => (
-            <li key={item.title} className={styles.glossaryItem}>
-              <Polaroid
-                rotation={item.rotation}
-                frame={
-                  <span
-                    className={`${styles.glossaryLogo} ${item.frameTone}`}
-                  >
-                    <Image
-                      src={item.logo}
-                      alt={item.title}
-                      width={128}
-                      height={128}
-                      className={styles.glossaryLogoImg}
-                    />
-                  </span>
-                }
+        <Section>
+          <h2 className={styles.sectionTitle}>{t("glossary.title")}</h2>
+          <ul className={styles.glossary} aria-label={t("glossary.title")}>
+            {glossary.map((item) => (
+              <li key={item.title} className={styles.glossaryItem}>
+                <Polaroid
+                  rotation={item.rotation}
+                  frame={
+                    <span
+                      className={`${styles.glossaryLogo} ${item.frameTone}`}
+                    >
+                      <Image
+                        src={item.logo}
+                        alt={item.title}
+                        width={128}
+                        height={128}
+                        className={styles.glossaryLogoImg}
+                      />
+                    </span>
+                  }
+                >
+                  <h3>{item.title}</h3>
+                  <p>{item.body}</p>
+                </Polaroid>
+              </li>
+            ))}
+          </ul>
+        </Section>
+
+        <Section>
+          <Card variant="highlight" className={styles.custodyCard}>
+            <h2 className={styles.custodyTitle}>{t("custody.title")}</h2>
+            <p className={styles.custodyBody}>{t("custody.body")}</p>
+          </Card>
+        </Section>
+
+        <Section>
+          <div className={styles.ctaBlock}>
+            <h2 className={styles.sectionTitle}>{t("cta.title")}</h2>
+            <div className={styles.ctaButtons}>
+              <Button
+                href="/explore"
+                variant="primary"
+                size="lg"
+                className={styles.cta}
               >
-                <h3>{item.title}</h3>
-                <p>{item.body}</p>
-              </Polaroid>
-            </li>
-          ))}
-        </ul>
-      </Section>
-
-      <Section>
-        <Card variant="highlight" className={styles.custodyCard}>
-          <h2 className={styles.custodyTitle}>{t("custody.title")}</h2>
-          <p className={styles.custodyBody}>{t("custody.body")}</p>
-        </Card>
-      </Section>
-
-      <Section>
-        <div className={styles.ctaBlock}>
-          <h2 className={styles.sectionTitle}>{t("cta.title")}</h2>
-          <div className={styles.ctaButtons}>
-            <Button
-              href="/explore"
-              variant="primary"
-              size="lg"
-              className={styles.cta}
-            >
-              {t("cta.explore")}
-            </Button>
-            <Button
-              href="/create-course"
-              variant="primary"
-              size="lg"
-              className={`${styles.cta} ${styles.ctaSoft}`}
-            >
-              {t("cta.publish")}
-            </Button>
+                {t("cta.explore")}
+              </Button>
+              <Button
+                href="/create-course"
+                variant="primary"
+                size="lg"
+                className={`${styles.cta} ${styles.ctaSoft}`}
+              >
+                {t("cta.publish")}
+              </Button>
+            </div>
           </div>
-        </div>
-      </Section>
+        </Section>
       </div>
     </>
   );

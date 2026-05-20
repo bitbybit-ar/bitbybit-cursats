@@ -87,9 +87,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json(body, { status });
     }
     console.error("[checkout] failed:", err);
-    return NextResponse.json(
-      { error: "checkout_failed" },
-      { status: 502 }
-    );
+    return NextResponse.json({ error: "checkout_failed" }, { status: 502 });
   }
 }

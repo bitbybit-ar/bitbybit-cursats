@@ -80,7 +80,9 @@
   font-family: $font-family-base;
   font-size: $font-size-sm;
   color: $color-text-primary;
-  transition: border-color 0.15s ease, outline-color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    outline-color 0.15s ease;
   box-sizing: border-box;
 
   &::placeholder {

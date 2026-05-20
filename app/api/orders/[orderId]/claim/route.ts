@@ -35,10 +35,7 @@ export async function POST(
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
   if (result.status === "already_claimed") {
-    return NextResponse.json(
-      { error: "already_claimed" },
-      { status: 409 }
-    );
+    return NextResponse.json({ error: "already_claimed" }, { status: 409 });
   }
   return NextResponse.json({
     status: result.status,

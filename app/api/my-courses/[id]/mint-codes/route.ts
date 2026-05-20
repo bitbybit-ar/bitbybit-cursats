@@ -16,7 +16,7 @@ const BodySchema = z.object({
  */
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   const auth = await requireUser();
   if (!auth.ok) return auth.response;
@@ -38,7 +38,7 @@ export async function POST(
   if (!parsedBody.success) {
     return NextResponse.json(
       { error: "invalid_body", issues: parsedBody.error.issues },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -46,7 +46,7 @@ export async function POST(
     auth.user.id,
     parsedParams.data.id,
     parsedBody.data.count,
-    auth.session.pubkey,
+    auth.session.pubkey
   );
   if (!result.ok) {
     if (result.reason === "not_found") {

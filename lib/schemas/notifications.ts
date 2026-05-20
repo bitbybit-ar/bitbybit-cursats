@@ -1,9 +1,6 @@
 import { z } from "zod";
 
-export const notificationKindSchema = z.enum([
-  "order.paid",
-  "sale.received",
-]);
+export const notificationKindSchema = z.enum(["order.paid", "sale.received"]);
 export type NotificationKind = z.infer<typeof notificationKindSchema>;
 
 export const notificationDtoSchema = z.object({

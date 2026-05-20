@@ -68,7 +68,9 @@
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity 120ms ease, visibility 120ms ease;
+  transition:
+    opacity 120ms ease,
+    visibility 120ms ease;
   z-index: 100;
 
   &::after {

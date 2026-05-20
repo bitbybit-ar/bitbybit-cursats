@@ -42,10 +42,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     auth.session.pubkey
   );
   if (!result.ok) {
-    return NextResponse.json(
-      { error: result.reason },
-      { status: 409 }
-    );
+    return NextResponse.json({ error: result.reason }, { status: 409 });
   }
 
   return NextResponse.json({

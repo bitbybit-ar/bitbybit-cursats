@@ -30,7 +30,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (!parsed.success) {
     return NextResponse.json(
       { error: "invalid_body", issues: parsed.error.issues },
-      { status: 400 },
+      { status: 400 }
     );
   }
 

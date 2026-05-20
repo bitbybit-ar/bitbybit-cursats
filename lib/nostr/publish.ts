@@ -13,7 +13,7 @@ import { PUBLIC_RELAYS } from "./relays";
  */
 export async function publishSignedEvent(
   signedEvent: NostrEvent,
-  relayUrls?: string[],
+  relayUrls?: string[]
 ): Promise<void> {
   const urls = relayUrls ?? PUBLIC_RELAYS;
   await publishToRelays(signedEvent, urls);
@@ -21,7 +21,7 @@ export async function publishSignedEvent(
 
 async function publishToRelays(
   event: NostrEvent,
-  relayUrls: readonly string[],
+  relayUrls: readonly string[]
 ): Promise<void> {
   const message = JSON.stringify(["EVENT", event]);
 
@@ -64,7 +64,7 @@ async function publishToRelays(
         } catch {
           resolve();
         }
-      }),
+      })
   );
 
   // Don't block on every relay returning. 3 seconds of any response

@@ -5,7 +5,12 @@ import {
   SESSION_COOKIE_NAME,
   SESSION_INACTIVITY_MINUTES,
 } from "@/lib/auth-constants";
-import { LocaleSchema, SignerTypeSchema, type Locale, type SignerType } from "@/lib/schemas/auth";
+import {
+  LocaleSchema,
+  SignerTypeSchema,
+  type Locale,
+  type SignerType,
+} from "@/lib/schemas/auth";
 
 export { SESSION_COOKIE_NAME };
 
@@ -106,9 +111,7 @@ export async function verifySessionToken(
  * the old `sessionIsAdmin` — the platform-admin role is a separate
  * moderation surface, not the per-user panel.
  */
-export function sessionIsPlatformAdmin(
-  session: AuthSession | null
-): boolean {
+export function sessionIsPlatformAdmin(session: AuthSession | null): boolean {
   if (!session) return false;
   return isPlatformAdminPubkey(session.pubkey);
 }

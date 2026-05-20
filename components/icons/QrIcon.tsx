@@ -1,6 +1,10 @@
 import type { IconProps } from "./types";
 
-export function QrIcon({ size = 24, className, color = "currentColor" }: IconProps) {
+export function QrIcon({
+  size = 24,
+  className,
+  color = "currentColor",
+}: IconProps) {
   return (
     <svg
       width={size}

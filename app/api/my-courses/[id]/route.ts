@@ -47,10 +47,7 @@ export async function PATCH(
     if (result.reason === "not_found") {
       return NextResponse.json({ error: "not_found" }, { status: 404 });
     }
-    return NextResponse.json(
-      { error: result.reason },
-      { status: 409 }
-    );
+    return NextResponse.json({ error: result.reason }, { status: 409 });
   }
 
   return NextResponse.json({
@@ -80,10 +77,7 @@ export async function DELETE(
     if (result.reason === "not_found") {
       return NextResponse.json({ error: "not_found" }, { status: 404 });
     }
-    return NextResponse.json(
-      { error: result.reason },
-      { status: 409 }
-    );
+    return NextResponse.json({ error: result.reason }, { status: 409 });
   }
 
   return NextResponse.json({ ok: true });

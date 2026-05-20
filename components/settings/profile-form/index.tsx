@@ -59,7 +59,7 @@ export function ProfileForm({
   const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl);
   const [bannerUrl, setBannerUrl] = useState(initialBannerUrl);
   const [lightningAddress, setLightningAddress] = useState(
-    initialLightningAddress,
+    initialLightningAddress
   );
   const [isPending, setIsPending] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -112,10 +112,7 @@ export function ProfileForm({
 
       // LN-address changes require a NIP-98 re-sign (ADR 0008/0015).
       if (lightningChanged) {
-        const url = new URL(
-          "/api/settings",
-          window.location.origin,
-        ).toString();
+        const url = new URL("/api/settings", window.location.origin).toString();
         const payloadHash = await hashSettingsBody(serialized);
         const unsigned = buildSettingsAuthEvent(url, payloadHash);
         try {

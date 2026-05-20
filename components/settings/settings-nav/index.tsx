@@ -37,8 +37,7 @@ const ICONS: Record<SettingsSection, React.ComponentType<{ size?: number }>> = {
 export function SettingsNav() {
   const t = useTranslations("settings.nav");
   const params = useSearchParams();
-  const active =
-    (params.get("section") as SettingsSection | null) ?? "profile";
+  const active = (params.get("section") as SettingsSection | null) ?? "profile";
 
   return (
     <nav className={styles.nav} aria-label={t("ariaLabel")}>

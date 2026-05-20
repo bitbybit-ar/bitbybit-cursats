@@ -4,10 +4,7 @@ import { Link } from "@/i18n/routing";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowRightIcon, BadgeIcon } from "@/components/icons";
-import {
-  listAllOfferings,
-  listArchivedOfferings,
-} from "@/lib/admin/offerings";
+import { listAllOfferings, listArchivedOfferings } from "@/lib/admin/offerings";
 import { requirePanelUser } from "@/lib/admin/panel-context";
 import styles from "./page.module.scss";
 
@@ -47,7 +44,7 @@ export default async function PanelOfferingsPage({
   );
 
   return (
-      <>
+    <>
       <header className={styles.header}>
         <div>
           <h1 className={styles.title}>{t("title")}</h1>
@@ -64,10 +61,7 @@ export default async function PanelOfferingsPage({
         {active.length === 0 ? (
           <Card variant="default" className={styles.empty}>
             <p>{t("emptyActive")}</p>
-            <Link
-              href="/create-course"
-              className={styles.emptyLink}
-            >
+            <Link href="/create-course" className={styles.emptyLink}>
               {t("createCta")} <ArrowRightIcon size={16} />
             </Link>
           </Card>
@@ -103,7 +97,10 @@ export default async function PanelOfferingsPage({
           <h2 className={styles.sectionTitle}>{t("archivedHeading")}</h2>
           <ul className={styles.list}>
             {archived.map((row) => (
-              <li key={row.id} className={`${styles.item} ${styles.archivedItem}`}>
+              <li
+                key={row.id}
+                className={`${styles.item} ${styles.archivedItem}`}
+              >
                 <div className={styles.row}>
                   <div className={styles.rowMain}>
                     <span className={styles.rowTitle}>{row.title}</span>
@@ -124,6 +121,6 @@ export default async function PanelOfferingsPage({
           </ul>
         </section>
       ) : null}
-      </>
-    );
+    </>
+  );
 }

@@ -7,15 +7,11 @@ export type SectionProps = React.HTMLAttributes<HTMLElement>;
 export const Section = React.forwardRef<HTMLElement, SectionProps>(
   ({ className, children, ...props }, ref) => {
     return (
-      <section
-        ref={ref}
-        className={cn(styles.section, className)}
-        {...props}
-      >
+      <section ref={ref} className={cn(styles.section, className)} {...props}>
         {children}
       </section>
     );
-  },
+  }
 );
 Section.displayName = "Section";
 

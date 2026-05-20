@@ -57,15 +57,14 @@ export default async function SettingsPage({
   const initialBio = user.bio ?? profile.about ?? "";
   const initialAvatarUrl = user.avatar_url ?? profile.picture ?? "";
   const initialBannerUrl = user.banner_url ?? profile.banner ?? "";
-  const initialLightningAddress =
-    user.lightning_address ?? profile.lud16 ?? "";
+  const initialLightningAddress = user.lightning_address ?? profile.lud16 ?? "";
 
   const prefilledFromNostr = Boolean(
     fromNostrDisplayName ||
-      (!user.bio && profile.about) ||
-      (!user.avatar_url && profile.picture) ||
-      (!user.banner_url && profile.banner) ||
-      (!user.lightning_address && profile.lud16),
+    (!user.bio && profile.about) ||
+    (!user.avatar_url && profile.picture) ||
+    (!user.banner_url && profile.banner) ||
+    (!user.lightning_address && profile.lud16)
   );
 
   return (
@@ -105,9 +104,7 @@ export default async function SettingsPage({
             />
           ) : null}
           {section === "notifications" ? (
-            <NotificationsForm
-              initialPrefs={user.notification_prefs ?? {}}
-            />
+            <NotificationsForm initialPrefs={user.notification_prefs ?? {}} />
           ) : null}
           {section === "danger" ? <DangerZoneForm /> : null}
         </div>

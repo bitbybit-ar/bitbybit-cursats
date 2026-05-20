@@ -23,7 +23,9 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
   padding-top: env(safe-area-inset-top);
 }
 
@@ -83,7 +85,8 @@ a {
 .scroll-reveal {
   opacity: 0;
   transform: translateY(30px);
-  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+  transition:
+    opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
     transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 
   &.visible {
@@ -95,7 +98,8 @@ a {
 .scroll-reveal-stagger > * {
   opacity: 0;
   transform: translateY(30px);
-  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+  transition:
+    opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
     transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 
   @for $i from 1 through 8 {
@@ -113,7 +117,8 @@ a {
 .scroll-reveal-scale {
   opacity: 0;
   transform: scale(0.96);
-  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+  transition:
+    opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
     transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 
   &.visible {

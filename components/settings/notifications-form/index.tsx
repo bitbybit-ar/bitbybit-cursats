@@ -43,15 +43,13 @@ export function NotificationsForm({ initialPrefs }: NotificationsFormProps) {
   // `true` means enabled; missing or non-`false` defaults to enabled.
   // We coerce to a fully-populated object on mount so each toggle
   // has a determinate state — easier than threading optional booleans.
-  const [prefs, setPrefs] = useState<Record<NotificationKind, boolean>>(
-    () => {
-      const out = {} as Record<NotificationKind, boolean>;
-      for (const k of NOTIFICATION_KINDS) {
-        out[k] = initialPrefs[k] !== false;
-      }
-      return out;
-    },
-  );
+  const [prefs, setPrefs] = useState<Record<NotificationKind, boolean>>(() => {
+    const out = {} as Record<NotificationKind, boolean>;
+    for (const k of NOTIFICATION_KINDS) {
+      out[k] = initialPrefs[k] !== false;
+    }
+    return out;
+  });
   const [isPending, setIsPending] = useState(false);
 
   function toggle(kind: NotificationKind) {
@@ -93,23 +91,23 @@ export function NotificationsForm({ initialPrefs }: NotificationsFormProps) {
           {NOTIFICATION_KINDS.map((kind) => {
             const token = KIND_I18N_TOKEN[kind];
             return (
-            <li key={kind} className={styles.row}>
-              <div className={styles.rowMain}>
-                <strong>{t(`kind.${token}.title`)}</strong>
-                <span className={styles.rowHint}>
-                  {t(`kind.${token}.hint`)}
-                </span>
-              </div>
-              <label className={styles.toggle}>
-                <input
-                  type="checkbox"
-                  checked={prefs[kind]}
-                  onChange={() => toggle(kind)}
-                  aria-label={t(`kind.${token}.title`)}
-                />
-                <span className={styles.toggleVisual} aria-hidden="true" />
-              </label>
-            </li>
+              <li key={kind} className={styles.row}>
+                <div className={styles.rowMain}>
+                  <strong>{t(`kind.${token}.title`)}</strong>
+                  <span className={styles.rowHint}>
+                    {t(`kind.${token}.hint`)}
+                  </span>
+                </div>
+                <label className={styles.toggle}>
+                  <input
+                    type="checkbox"
+                    checked={prefs[kind]}
+                    onChange={() => toggle(kind)}
+                    aria-label={t(`kind.${token}.title`)}
+                  />
+                  <span className={styles.toggleVisual} aria-hidden="true" />
+                </label>
+              </li>
             );
           })}
         </ul>

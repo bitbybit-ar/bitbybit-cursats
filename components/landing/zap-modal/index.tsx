@@ -97,7 +97,7 @@ export function ZapModal({ onClose }: ZapModalProps) {
       const pr = await fetchInvoice(
         endpoint.callback,
         activeAmount,
-        comment || undefined,
+        comment || undefined
       );
 
       // Try WebLN (browser extension) first
@@ -153,11 +153,7 @@ export function ZapModal({ onClose }: ZapModalProps) {
             <BoltIcon size={48} color="var(--color-secondary)" />
           </div>
           <p className={styles.successText}>{t("success")}</p>
-          <button
-            type="button"
-            className={styles.closeBtn}
-            onClick={onClose}
-          >
+          <button type="button" className={styles.closeBtn} onClick={onClose}>
             {tc("close")}
           </button>
         </div>
@@ -200,7 +196,7 @@ export function ZapModal({ onClose }: ZapModalProps) {
                 type="button"
                 className={cn(
                   styles.presetBtn,
-                  !customAmount && amount === preset && styles.active,
+                  !customAmount && amount === preset && styles.active
                 )}
                 onClick={() => {
                   setAmount(preset);

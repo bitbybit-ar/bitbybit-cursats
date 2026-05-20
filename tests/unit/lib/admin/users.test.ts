@@ -1,9 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect } from "vitest";
-import {
-  slugifyDisplayName,
-  hasPayoutConfigured,
-} from "@/lib/admin/users";
+import { slugifyDisplayName, hasPayoutConfigured } from "@/lib/admin/users";
 import type { User } from "@/lib/admin/users";
 
 // Minimal User stub that satisfies hasPayoutConfigured's reads. The
@@ -94,15 +91,15 @@ describe("slugifyDisplayName", () => {
 describe("hasPayoutConfigured", () => {
   it("rejects an empty cbu_alias seller", () => {
     expect(hasPayoutConfigured(makeUser({ payout_method: "cbu_alias" }))).toBe(
-      false,
+      false
     );
   });
 
   it("accepts a cbu_alias seller with just an alias", () => {
     expect(
       hasPayoutConfigured(
-        makeUser({ payout_method: "cbu_alias", alias: "mi.alias" }),
-      ),
+        makeUser({ payout_method: "cbu_alias", alias: "mi.alias" })
+      )
     ).toBe(true);
   });
 
@@ -112,8 +109,8 @@ describe("hasPayoutConfigured", () => {
         makeUser({
           payout_method: "cbu_alias",
           cbu: "0000003100010000000001",
-        }),
-      ),
+        })
+      )
     ).toBe(true);
   });
 
@@ -124,16 +121,14 @@ describe("hasPayoutConfigured", () => {
           payout_method: "cbu_alias",
           cbu: "   ",
           alias: " \t",
-        }),
-      ),
+        })
+      )
     ).toBe(false);
   });
 
   it("rejects a lightning_address seller with no LN address", () => {
     expect(
-      hasPayoutConfigured(
-        makeUser({ payout_method: "lightning_address" }),
-      ),
+      hasPayoutConfigured(makeUser({ payout_method: "lightning_address" }))
     ).toBe(false);
   });
 
@@ -144,8 +139,8 @@ describe("hasPayoutConfigured", () => {
           payout_method: "lightning_address",
           cbu: "0000003100010000000001",
           alias: "mi.alias",
-        }),
-      ),
+        })
+      )
     ).toBe(false);
   });
 
@@ -155,8 +150,8 @@ describe("hasPayoutConfigured", () => {
         makeUser({
           payout_method: "lightning_address",
           lightning_address: "me@walletofsatoshi.com",
-        }),
-      ),
+        })
+      )
     ).toBe(true);
   });
 });

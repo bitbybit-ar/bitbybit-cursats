@@ -26,15 +26,87 @@ export function AnonymousByDefault({ size = 200, ...props }: Props) {
     >
       <circle cx="48" cy="36" r="18" />
 
-      <rect x="36" y="24" width="7" height="7" fill="currentColor" fillOpacity="0.55" stroke="none" />
-      <rect x="44.5" y="24" width="7" height="7" fill="currentColor" fillOpacity="0.3" stroke="none" />
-      <rect x="53" y="24" width="7" height="7" fill="currentColor" fillOpacity="0.5" stroke="none" />
-      <rect x="36" y="32.5" width="7" height="7" fill="currentColor" fillOpacity="0.4" stroke="none" />
-      <rect x="44.5" y="32.5" width="7" height="7" fill="currentColor" fillOpacity="0.7" stroke="none" />
-      <rect x="53" y="32.5" width="7" height="7" fill="currentColor" fillOpacity="0.3" stroke="none" />
-      <rect x="36" y="41" width="7" height="7" fill="currentColor" fillOpacity="0.5" stroke="none" />
-      <rect x="44.5" y="41" width="7" height="7" fill="currentColor" fillOpacity="0.35" stroke="none" />
-      <rect x="53" y="41" width="7" height="7" fill="currentColor" fillOpacity="0.6" stroke="none" />
+      <rect
+        x="36"
+        y="24"
+        width="7"
+        height="7"
+        fill="currentColor"
+        fillOpacity="0.55"
+        stroke="none"
+      />
+      <rect
+        x="44.5"
+        y="24"
+        width="7"
+        height="7"
+        fill="currentColor"
+        fillOpacity="0.3"
+        stroke="none"
+      />
+      <rect
+        x="53"
+        y="24"
+        width="7"
+        height="7"
+        fill="currentColor"
+        fillOpacity="0.5"
+        stroke="none"
+      />
+      <rect
+        x="36"
+        y="32.5"
+        width="7"
+        height="7"
+        fill="currentColor"
+        fillOpacity="0.4"
+        stroke="none"
+      />
+      <rect
+        x="44.5"
+        y="32.5"
+        width="7"
+        height="7"
+        fill="currentColor"
+        fillOpacity="0.7"
+        stroke="none"
+      />
+      <rect
+        x="53"
+        y="32.5"
+        width="7"
+        height="7"
+        fill="currentColor"
+        fillOpacity="0.3"
+        stroke="none"
+      />
+      <rect
+        x="36"
+        y="41"
+        width="7"
+        height="7"
+        fill="currentColor"
+        fillOpacity="0.5"
+        stroke="none"
+      />
+      <rect
+        x="44.5"
+        y="41"
+        width="7"
+        height="7"
+        fill="currentColor"
+        fillOpacity="0.35"
+        stroke="none"
+      />
+      <rect
+        x="53"
+        y="41"
+        width="7"
+        height="7"
+        fill="currentColor"
+        fillOpacity="0.6"
+        stroke="none"
+      />
 
       <path d="M22 86 V74 Q22 60 48 60 Q74 60 74 74 V86" />
     </svg>

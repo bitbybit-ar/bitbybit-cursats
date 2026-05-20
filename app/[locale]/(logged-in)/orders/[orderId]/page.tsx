@@ -55,7 +55,7 @@ export default async function PanelOrderDetailPage({
   );
 
   return (
-      <>
+    <>
       <Link href="/orders" className={styles.back}>
         <ArrowLeftIcon size={16} />
         {t("back")}
@@ -78,9 +78,7 @@ export default async function PanelOrderDetailPage({
           <dt>{t("offering")}</dt>
           <dd>
             {order.offering_slug ? (
-              <Link
-                href={`/my-courses/${order.offering_slug}/edit`}
-              >
+              <Link href={`/my-courses/${order.offering_slug}/edit`}>
                 {order.offering_title ?? order.offering_slug}
               </Link>
             ) : (
@@ -92,11 +90,7 @@ export default async function PanelOrderDetailPage({
           <dd>{dateFormatter.format(order.created_at)}</dd>
 
           <dt>{t("paidAt")}</dt>
-          <dd>
-            {order.paid_at
-              ? dateFormatter.format(order.paid_at)
-              : "—"}
-          </dd>
+          <dd>{order.paid_at ? dateFormatter.format(order.paid_at) : "—"}</dd>
 
           <dt>{t("amountArs")}</dt>
           <dd>ARS {arsFormatter.format(order.amount_ars)}</dd>
@@ -133,15 +127,13 @@ export default async function PanelOrderDetailPage({
           {order.wapu_settlement_ref ? (
             <>
               <dt>{t("wapuSettlementRef")}</dt>
-              <dd className={styles.mono}>
-                {order.wapu_settlement_ref}
-              </dd>
+              <dd className={styles.mono}>{order.wapu_settlement_ref}</dd>
             </>
           ) : null}
         </dl>
       </Card>
 
       <p className={styles.readonlyHint}>{t("readOnlyHint")}</p>
-      </>
-    );
+    </>
+  );
 }

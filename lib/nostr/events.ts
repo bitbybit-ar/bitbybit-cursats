@@ -27,7 +27,7 @@ export function buildNoteEvent(content: string): UnsignedNostrEvent {
  * exactly those keys.
  */
 export function buildProfileMetadataEvent(
-  metadata: Kind0Profile,
+  metadata: Kind0Profile
 ): UnsignedNostrEvent {
   // Strip undefined values so consumers don't see `"foo": undefined`
   // in the JSON (which JSON.stringify already drops, but being

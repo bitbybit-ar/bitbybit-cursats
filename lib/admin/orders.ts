@@ -70,9 +70,7 @@ export async function getAdminOrderDetail(
     })
     .from(orders)
     .leftJoin(offerings, eq(orders.offering_id, offerings.id))
-    .where(
-      and(eq(orders.id, orderId), eq(orders.user_id, userId))
-    )
+    .where(and(eq(orders.id, orderId), eq(orders.user_id, userId)))
     .limit(1);
   return row ?? null;
 }
@@ -138,12 +136,7 @@ export async function getAdminStudentDetail(
       paid_count: sql<number>`COUNT(*) FILTER (WHERE ${orders.status} = 'paid')::int`,
     })
     .from(orders)
-    .where(
-      and(
-        eq(orders.pubkey, pubkey),
-        eq(orders.user_id, userId)
-      )
-    );
+    .where(and(eq(orders.pubkey, pubkey), eq(orders.user_id, userId)));
 
   if (!aggregateRow || aggregateRow.count === 0) return null;
 
@@ -161,12 +154,7 @@ export async function getAdminStudentDetail(
     })
     .from(orders)
     .leftJoin(offerings, eq(orders.offering_id, offerings.id))
-    .where(
-      and(
-        eq(orders.pubkey, pubkey),
-        eq(orders.user_id, userId)
-      )
-    )
+    .where(and(eq(orders.pubkey, pubkey), eq(orders.user_id, userId)))
     .orderBy(desc(orders.created_at));
 
   return {

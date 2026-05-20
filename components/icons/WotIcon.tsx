@@ -1,6 +1,10 @@
 import type { IconProps } from "./types";
 
-export function WotIcon({ size = 24, className, color = "currentColor" }: IconProps) {
+export function WotIcon({
+  size = 24,
+  className,
+  color = "currentColor",
+}: IconProps) {
   return (
     <svg
       width={size}

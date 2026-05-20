@@ -7,10 +7,7 @@ import { getPublicKey } from "nostr-tools/pure";
 import { hexToBytes } from "nostr-tools/utils";
 import { Button } from "@/components/ui/button";
 import { EyeIcon, EyeOffIcon } from "@/components/icons";
-import {
-  type SignerHandle,
-  makeNsecSigner,
-} from "@/lib/nostr/signers";
+import { type SignerHandle, makeNsecSigner } from "@/lib/nostr/signers";
 import {
   type AuthError,
   loginError,

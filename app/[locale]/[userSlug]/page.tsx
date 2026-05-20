@@ -16,16 +16,13 @@ type Props = {
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({
-  params,
-}: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, userSlug } = await params;
   const data = await listOfferingsForUserSlug(userSlug);
   if (!data) return {};
   return {
     title: data.seller.display_name,
-    description:
-      data.seller.bio?.slice(0, 160) ?? data.seller.display_name,
+    description: data.seller.bio?.slice(0, 160) ?? data.seller.display_name,
     alternates: alternatesFor(locale, `/${userSlug}`),
   };
 }
@@ -65,9 +62,7 @@ export default async function SellerStorePage({ params }: Props) {
             className={styles.heroAvatar}
           />
           <h1 className={styles.title}>{seller.display_name}</h1>
-          {seller.bio ? (
-            <p className={styles.bio}>{seller.bio}</p>
-          ) : null}
+          {seller.bio ? <p className={styles.bio}>{seller.bio}</p> : null}
         </div>
       </div>
 

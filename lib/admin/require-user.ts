@@ -24,10 +24,7 @@ export async function requireUser(): Promise<
     const { NextResponse } = await import("next/server");
     return {
       ok: false,
-      response: NextResponse.json(
-        { error: "unauthorized" },
-        { status: 401 }
-      ),
+      response: NextResponse.json({ error: "unauthorized" }, { status: 401 }),
     };
   }
   const user = await ensureUserForPubkey(session.pubkey);
@@ -35,10 +32,7 @@ export async function requireUser(): Promise<
     const { NextResponse } = await import("next/server");
     return {
       ok: false,
-      response: NextResponse.json(
-        { error: "user_inactive" },
-        { status: 404 }
-      ),
+      response: NextResponse.json({ error: "user_inactive" }, { status: 404 }),
     };
   }
   return { ok: true, session, user };

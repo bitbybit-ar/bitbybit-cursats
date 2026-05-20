@@ -17,7 +17,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
         {children}
       </div>
     );
-  },
+  }
 );
 Card.displayName = "Card";
 

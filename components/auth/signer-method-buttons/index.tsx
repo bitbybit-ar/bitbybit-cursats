@@ -86,9 +86,7 @@ export function SignerMethodButtons({
           >
             <QrIcon size={20} />
             <div className={styles.methodInfo}>
-              <span className={styles.methodName}>
-                {t("connectQrTitle")}
-              </span>
+              <span className={styles.methodName}>{t("connectQrTitle")}</span>
               <span className={styles.methodDescription}>
                 {t("connectQrDescription")}
               </span>

@@ -1,6 +1,10 @@
 import type { IconProps } from "./types";
 
-export function LogoutIcon({ size = 20, className, color = "currentColor" }: IconProps) {
+export function LogoutIcon({
+  size = 20,
+  className,
+  color = "currentColor",
+}: IconProps) {
   return (
     <svg
       width={size}

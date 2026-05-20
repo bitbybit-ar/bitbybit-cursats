@@ -109,10 +109,7 @@ export function checkCbu(input: string): CbuError | null {
 
 export function checkUserSlug(input: string): SlugError | null {
   const trimmed = input.trim().toLowerCase();
-  if (
-    trimmed.length < USER_SLUG_MIN ||
-    trimmed.length > USER_SLUG_MAX
-  ) {
+  if (trimmed.length < USER_SLUG_MIN || trimmed.length > USER_SLUG_MAX) {
     return "length";
   }
   if (!USER_SLUG_REGEX.test(trimmed)) return "format";

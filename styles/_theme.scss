@@ -61,21 +61,21 @@
   --gray-900: #0f172a;
 
   // — Decorative accents (identical across themes; pick by vibe) —
-  --accent-pink:   #ed3b95;
+  --accent-pink: #ed3b95;
   --accent-orange: #f3852b;
-  --accent-cyan:   #60cade;
-  --accent-gold:   #f7a825;
+  --accent-cyan: #60cade;
+  --accent-gold: #f7a825;
 
   // — Brand role tokens (auto-flip via the swapped scale) —
-  --color-primary:         var(--primary-500);
-  --color-primary-hover:   var(--primary-700);
-  --color-primary-soft:    var(--primary-300);
-  --color-secondary:       var(--secondary-500);
+  --color-primary: var(--primary-500);
+  --color-primary-hover: var(--primary-700);
+  --color-primary-soft: var(--primary-300);
+  --color-secondary: var(--secondary-500);
   --color-secondary-hover: var(--secondary-700);
-  --focus-ring:            var(--gray-700);
+  --focus-ring: var(--gray-700);
 
   // — Semantic decorative pair (Button danger / success surfaces) —
-  --color-accent:     #ef4444;
+  --color-accent: #ef4444;
   --color-accent-alt: #22c55e;
 
   // — Dark-CTA surface (GitHub-style "neutral dark" button). In light
@@ -110,25 +110,25 @@
   // — Semantic feedback (intentionally independent of brand) —
   --color-success: #22c55e;
   --color-warning: #f7a825;
-  --color-error:   #ef4444;
-  --color-info:    #3b82f6;
-  --color-nostr:   #8b5cf6;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+  --color-nostr: #8b5cf6;
 
   // — Backgrounds + surface —
-  --color-bg:      #ffffff;
-  --color-bg-2:    #f7f7f8;
-  --color-bg-3:    #efefef;
+  --color-bg: #ffffff;
+  --color-bg-2: #f7f7f8;
+  --color-bg-3: #efefef;
   --color-surface: #f7f7f8;
 
   // — Text —
-  --color-text-primary:   #1a1a2e;
+  --color-text-primary: #1a1a2e;
   --color-text-secondary: #6b7280;
 
   // — Border + card shadows —
-  --color-border:      rgba(26 26 46 / 0.08);
-  --card-shadow:       rgba(0 0 0 / 0.04);
-  --card-shadow-hover: rgba(15 23 42 / 0.10);
-  --card-border:       rgba(26 26 46 / 0.08);
+  --color-border: rgba(26 26 46 / 0.08);
+  --card-shadow: rgba(0 0 0 / 0.04);
+  --card-shadow-hover: rgba(15 23 42 / 0.1);
+  --card-border: rgba(26 26 46 / 0.08);
 
   // — Bubble (decorative orb surface) —
   --bubble-opacity: 0.08;
@@ -138,21 +138,21 @@
   // tint: at 0.06 the modal/card edge was invisible against
   // near-white surfaces, so the surface read as a flat plane with no
   // depth. 0.16 gives a clear bevel without darkening the body.
-  --ceramic-highlight:      rgba(255 255 255 / 0.85);
+  --ceramic-highlight: rgba(255 255 255 / 0.85);
   --ceramic-highlight-soft: rgba(255 255 255 / 0.35);
-  --ceramic-inner-shadow:   rgba(15 23 42 / 0.16);
+  --ceramic-inner-shadow: rgba(15 23 42 / 0.16);
 
   // — Ceramic-surface mixin tints (identical across themes; the gloss
   //   pattern painted over saturated colors does not flip) —
   --ceramic-gloss-strong: rgba(255 255 255 / 0.22);
-  --ceramic-gloss-soft:   rgba(255 255 255 / 0.08);
-  --ceramic-gloss-edge:   rgba(255 255 255 / 0.4);
-  --ceramic-shadow-edge:  rgba(0 0 0 / 0.18);
+  --ceramic-gloss-soft: rgba(255 255 255 / 0.08);
+  --ceramic-gloss-edge: rgba(255 255 255 / 0.4);
+  --ceramic-shadow-edge: rgba(0 0 0 / 0.18);
 
   // — Bubble surface tints (identical across themes) —
-  --bubble-spec-top:   rgba(255 255 255 / 0.4);
-  --bubble-spec-dot:   rgba(255 255 255 / 0.55);
-  --bubble-edge:       rgba(255 255 255 / 0.25);
+  --bubble-spec-top: rgba(255 255 255 / 0.4);
+  --bubble-spec-dot: rgba(255 255 255 / 0.55);
+  --bubble-edge: rgba(255 255 255 / 0.25);
   --bubble-inner-glow: rgba(255 255 255 / 0.12);
 }
 
@@ -193,7 +193,7 @@
   --color-primary-soft: var(--primary-700);
 
   // — Semantic decorative pair (lighter red/green for navy bg) —
-  --color-accent:     #f87171;
+  --color-accent: #f87171;
   --color-accent-alt: #34d399;
 
   // — Dark-CTA surface lifted off the page bg. See light-mode note. —
@@ -204,31 +204,31 @@
 
   // — Semantic feedback (lighter on navy; warning stays gold) —
   --color-success: #34d399;
-  --color-error:   #f87171;
-  --color-info:    #60a5fa;
-  --color-nostr:   #a78bfa;
+  --color-error: #f87171;
+  --color-info: #60a5fa;
+  --color-nostr: #a78bfa;
 
   // — Backgrounds + surface —
-  --color-bg:      #0f0f1a;
-  --color-bg-2:    #1a1a2e;
-  --color-bg-3:    #252540;
+  --color-bg: #0f0f1a;
+  --color-bg-2: #1a1a2e;
+  --color-bg-3: #252540;
   --color-surface: #1a1a2e;
 
   // — Text —
-  --color-text-primary:   #f0f0f5;
+  --color-text-primary: #f0f0f5;
   --color-text-secondary: #9ca3af;
 
   // — Border + card shadows —
-  --color-border:      rgba(255 255 255 / 0.06);
-  --card-shadow:       rgba(0 0 0 / 0.2);
-  --card-shadow-hover: rgba(226 232 240 / 0.10);
-  --card-border:       rgba(255 255 255 / 0.06);
+  --color-border: rgba(255 255 255 / 0.06);
+  --card-shadow: rgba(0 0 0 / 0.2);
+  --card-shadow-hover: rgba(226 232 240 / 0.1);
+  --card-border: rgba(255 255 255 / 0.06);
 
   // — Bubble —
   --bubble-opacity: 0.12;
 
   // — Ceramic surface tints (cool blue-gray reflection on navy) —
-  --ceramic-highlight:      rgba(138 152 200 / 0.22);
+  --ceramic-highlight: rgba(138 152 200 / 0.22);
   --ceramic-highlight-soft: rgba(138 152 200 / 0.1);
-  --ceramic-inner-shadow:   rgba(0 0 0 / 0.35);
+  --ceramic-inner-shadow: rgba(0 0 0 / 0.35);
 }

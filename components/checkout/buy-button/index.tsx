@@ -61,7 +61,10 @@ export function BuyButton({ offeringId, soldOut = false }: BuyButtonProps) {
           };
           const key = lnKey[data.lightning_reason] ?? "offeringUnavailable";
           showToast(tErrors(key), "error");
-        } else if (res.status === 404 || data.error === "offering_unavailable") {
+        } else if (
+          res.status === 404 ||
+          data.error === "offering_unavailable"
+        ) {
           showToast(tErrors("offeringUnavailable"), "error");
         } else {
           showToast(tErrors("checkoutFailed"), "error");

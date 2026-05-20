@@ -1,8 +1,18 @@
 // Display font — Nunito (headings, hero, brand)
-$font-family-display: var(--font-display), 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+$font-family-display:
+  var(--font-display),
+  "Nunito",
+  -apple-system,
+  BlinkMacSystemFont,
+  sans-serif;
 
 // Body font — Nunito Sans (paragraphs, labels, UI text)
-$font-family-base: var(--font-body), 'Nunito Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+$font-family-base:
+  var(--font-body),
+  "Nunito Sans",
+  -apple-system,
+  BlinkMacSystemFont,
+  sans-serif;
 
 // Sizes
 $font-size-xs: 0.75rem;
