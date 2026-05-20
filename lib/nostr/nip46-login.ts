@@ -106,8 +106,7 @@ export function createConnectSession(): NostrConnectSession {
     url:
       typeof window !== "undefined"
         ? window.location.origin
-        : process.env.NEXT_PUBLIC_BASE_URL ||
-          "https://cursats.bitbybit.com.ar",
+        : process.env.NEXT_PUBLIC_BASE_URL || "https://cursats.bitbybit.com.ar",
   });
 
   return { uri, clientSecretKey };

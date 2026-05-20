@@ -23,15 +23,9 @@ export function Polaroid({
 }: PolaroidProps) {
   return (
     <div
-      className={cn(
-        styles.polaroid,
-        styles[`rotation-${rotation}`],
-        className,
-      )}
+      className={cn(styles.polaroid, styles[`rotation-${rotation}`], className)}
     >
-      {frame !== undefined ? (
-        <div className={styles.frame}>{frame}</div>
-      ) : null}
+      {frame !== undefined ? <div className={styles.frame}>{frame}</div> : null}
       <div className={styles.caption}>{children}</div>
     </div>
   );

@@ -8,11 +8,7 @@
  * responsible for the schema check.
  */
 
-export type NostrAuthParseFailure =
-  | "missing"
-  | "scheme"
-  | "base64"
-  | "json";
+export type NostrAuthParseFailure = "missing" | "scheme" | "base64" | "json";
 
 export type NostrAuthParseResult =
   | { ok: true; event: unknown }

@@ -101,7 +101,7 @@ describe("db/migrate — offerings", () => {
       title: "First",
       description: "First.",
       price_amount: 1000,
-        price_currency: "ars" as const,
+      price_currency: "ars" as const,
     });
 
     await expect(
@@ -133,7 +133,7 @@ describe("db/migrate — offerings", () => {
       title: "From A",
       description: "From A.",
       price_amount: 1000,
-        price_currency: "ars" as const,
+      price_currency: "ars" as const,
     });
     await testDb.insert(offerings).values({
       user_id: b.id,
@@ -142,7 +142,7 @@ describe("db/migrate — offerings", () => {
       title: "From B",
       description: "From B.",
       price_amount: 1000,
-        price_currency: "ars" as const,
+      price_currency: "ars" as const,
     });
   });
 });

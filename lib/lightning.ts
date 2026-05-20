@@ -8,15 +8,14 @@ import { bech32 } from "@scure/base";
  * the LightningClient interface defined below. Two implementations
  * live in this file:
  *
- *   - MockLightningClient: deterministic, in-process, no network. Used
- *     in dev and tests so the whole buyer flow runs end-to-end without
- *     resolving real LNURL-pay endpoints.
  *   - RealLightningClient: hits the seller's `<domain>/.well-known/
  *     lnurlp/<local-part>` endpoint, the LNURL-pay callback, and the
- *     LUD-21 verify URL.
- *
- * `getLightningClient()` returns the mock when LIGHTNING_USE_REAL_CLIENT
- * is unset (default for dev and CI) and the real client otherwise.
+ *     LUD-21 verify URL. This is the only runtime path —
+ *     `getLightningClient()` always returns this.
+ *   - MockLightningClient: deterministic, in-process, no network.
+ *     Test-only; tests opt in by calling
+ *     `_setLightningClientForTests(new MockLightningClient())`. Not
+ *     reachable through the factory and not used by `npm run dev`.
  *
  * LUD-21 (`verify` URL) is required. We refuse to mint an invoice
  * against a Lightning Address whose LNURL-pay endpoint does not
@@ -69,7 +68,10 @@ export type LightningMintErrorCode =
   | "bolt11_no_payment_hash";
 
 export class LightningMintError extends Error {
-  constructor(public readonly code: LightningMintErrorCode, message?: string) {
+  constructor(
+    public readonly code: LightningMintErrorCode,
+    message?: string
+  ) {
     super(message ?? code);
     this.name = "LightningMintError";
   }
@@ -207,10 +209,7 @@ function isPrivateOrLocalHost(hostname: string): boolean {
  */
 export function extractPaymentHash(invoice: string): string | null {
   try {
-    const { words } = bech32.decode(
-      invoice as `${string}1${string}`,
-      2000
-    );
+    const { words } = bech32.decode(invoice as `${string}1${string}`, 2000);
 
     // Skip 7 timestamp words; stop before the last 104 signature words.
     let pos = 7;
@@ -278,9 +277,7 @@ export class MockLightningClient implements LightningClient {
   private readonly settled = new Set<string>();
   private mintCounter = 0;
 
-  async resolveAddress(
-    address: string
-  ): Promise<LightningAddressMetadata> {
+  async resolveAddress(address: string): Promise<LightningAddressMetadata> {
     const parsed = parseLightningAddress(address);
     if (!parsed) {
       throw new LightningMintError("invalid_address", address);
@@ -370,9 +367,7 @@ export class MockLightningClient implements LightningClient {
 const LNURL_FETCH_TIMEOUT_MS = 6_000;
 
 class RealLightningClient implements LightningClient {
-  async resolveAddress(
-    address: string
-  ): Promise<LightningAddressMetadata> {
+  async resolveAddress(address: string): Promise<LightningAddressMetadata> {
     const parsed = parseLightningAddress(address);
     if (!parsed) {
       throw new LightningMintError("invalid_address", address);
@@ -417,10 +412,7 @@ class RealLightningClient implements LightningClient {
     const amount_msat = amount_sats * 1000;
     // Validate amount against the provider's advertised range
     // before we burn a network round-trip on a guaranteed reject.
-    if (
-      amount_msat < meta.minSendable ||
-      amount_msat > meta.maxSendable
-    ) {
+    if (amount_msat < meta.minSendable || amount_msat > meta.maxSendable) {
       throw new LightningMintError("lnurl_invalid_response", address);
     }
     // SSRF guard on the callback URL (provider-controlled). A
@@ -435,10 +427,7 @@ class RealLightningClient implements LightningClient {
     }
     let body: unknown;
     try {
-      body = await fetchJsonWithTimeout(
-        url.toString(),
-        LNURL_FETCH_TIMEOUT_MS
-      );
+      body = await fetchJsonWithTimeout(url.toString(), LNURL_FETCH_TIMEOUT_MS);
     } catch {
       throw new LightningMintError("lnurl_unreachable", address);
     }
@@ -490,10 +479,7 @@ class RealLightningClient implements LightningClient {
     }
     let body: unknown;
     try {
-      body = await fetchJsonWithTimeout(
-        verify_url,
-        LNURL_FETCH_TIMEOUT_MS
-      );
+      body = await fetchJsonWithTimeout(verify_url, LNURL_FETCH_TIMEOUT_MS);
     } catch {
       // A transient failure must NOT mark the order paid. Treat it
       // as "not settled yet" and let the buyer page poll again.
@@ -544,8 +530,10 @@ export function _resetLightningClientForTests(): void {
 
 /**
  * Test-only helper to inject a specific client (typically a
- * MockLightningClient with pre-seeded markPaid state) without going
- * through the env switch.
+ * MockLightningClient with pre-seeded markPaid state). The factory
+ * always returns RealLightningClient otherwise, so tests that want
+ * deterministic behaviour must call this before exercising any code
+ * path that funds or polls a direct_lightning order.
  */
 export function _setLightningClientForTests(client: LightningClient): void {
   cached = client;
@@ -553,10 +541,6 @@ export function _setLightningClientForTests(client: LightningClient): void {
 
 export function getLightningClient(): LightningClient {
   if (cached) return cached;
-  if (process.env.LIGHTNING_USE_REAL_CLIENT === "1") {
-    cached = new RealLightningClient();
-  } else {
-    cached = new MockLightningClient();
-  }
+  cached = new RealLightningClient();
   return cached;
 }

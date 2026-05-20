@@ -179,7 +179,10 @@ export async function listHighlightedOfferings(
       )
       .where(baseConditions)
       .groupBy(offerings.id, users.id)
-      .orderBy(desc(sql<number>`count(${orders.id})`), desc(offerings.created_at))
+      .orderBy(
+        desc(sql<number>`count(${orders.id})`),
+        desc(offerings.created_at)
+      )
       .limit(limit);
 
     const picked = topSellers.map(toOfferingWithSeller);
@@ -210,9 +213,7 @@ export async function listHighlightedOfferings(
  * insertion order so the seller's first listing stays at the top
  * until they archive it.
  */
-export async function listOfferingsForUserSlug(
-  userSlug: string
-): Promise<{
+export async function listOfferingsForUserSlug(userSlug: string): Promise<{
   seller: OfferingWithSeller["seller"];
   offerings: Offering[];
 } | null> {
@@ -283,9 +284,7 @@ export async function getOfferingByUserAndSlug(
   }
 }
 
-export async function getOfferingById(
-  id: string
-): Promise<Offering | null> {
+export async function getOfferingById(id: string): Promise<Offering | null> {
   const db = getDb();
   const [row] = await db
     .select()

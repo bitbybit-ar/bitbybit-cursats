@@ -102,7 +102,9 @@
   font-size: $font-size-sm;
   font-weight: $font-weight-semibold;
   text-decoration: none;
-  transition: border-color 0.15s ease, color 0.15s ease,
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease,
     background-color 0.15s ease;
 
   &:hover {

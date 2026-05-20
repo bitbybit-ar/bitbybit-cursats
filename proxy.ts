@@ -107,15 +107,16 @@ function isPrefetchRequest(req: NextRequest): boolean {
  * The session check uses `verifySessionToken` (jose-only, no
  * `next/headers`) so this whole module runs on the edge runtime.
  */
-export default async function proxy(request: NextRequest): Promise<NextResponse> {
+export default async function proxy(
+  request: NextRequest
+): Promise<NextResponse> {
   const pathname = request.nextUrl.pathname;
   const isPrefetch = isPrefetchRequest(request);
 
   const legacyMatch = LEGACY_PATHS_RE.exec(pathname);
   if (legacyMatch) {
     const locale = legacyMatch[1] ?? routing.defaultLocale;
-    const localePrefix =
-      locale === routing.defaultLocale ? "" : `/${locale}`;
+    const localePrefix = locale === routing.defaultLocale ? "" : `/${locale}`;
     const subpath = pathname.slice(localePrefix.length);
     const target = rewriteLegacyPath(subpath);
     if (target) {
@@ -135,8 +136,7 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
     const session = await readSession(request);
 
     if (!session) {
-      const localePrefix =
-        locale === routing.defaultLocale ? "" : `/${locale}`;
+      const localePrefix = locale === routing.defaultLocale ? "" : `/${locale}`;
       const url = new URL(`${localePrefix}/sign-in`, request.url);
       // Strip the locale prefix from `next` — the sign-in page
       // re-applies it via next-intl's locale-aware router.
@@ -191,7 +191,7 @@ async function readSession(req: NextRequest) {
  */
 async function refreshOrClearSessionCookie(
   request: NextRequest,
-  response: NextResponse,
+  response: NextResponse
 ): Promise<void> {
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   if (!token) return;

@@ -53,18 +53,20 @@ describe("extractPaymentHash", () => {
 describe("verifyPreimage", () => {
   it("returns true when sha256(preimage) === payment_hash", () => {
     const preimage = "00".repeat(32);
-    const hashHex = Buffer.from(
-      sha256(Buffer.from(preimage, "hex"))
-    ).toString("hex");
+    const hashHex = Buffer.from(sha256(Buffer.from(preimage, "hex"))).toString(
+      "hex"
+    );
     expect(verifyPreimage(preimage, hashHex)).toBe(true);
   });
 
   it("is case-insensitive on the hex inputs", () => {
     const preimage = "AB".repeat(32);
-    const hashHex = Buffer.from(
-      sha256(Buffer.from(preimage, "hex"))
-    ).toString("hex");
-    expect(verifyPreimage(preimage.toLowerCase(), hashHex.toUpperCase())).toBe(true);
+    const hashHex = Buffer.from(sha256(Buffer.from(preimage, "hex"))).toString(
+      "hex"
+    );
+    expect(verifyPreimage(preimage.toLowerCase(), hashHex.toUpperCase())).toBe(
+      true
+    );
   });
 
   it("rejects mismatched preimage / hash", () => {
@@ -90,12 +92,14 @@ describe("MockLightningClient/resolveAddress", () => {
 
   it("rejects malformed addresses with invalid_address", async () => {
     const client = new MockLightningClient();
-    await expect(client.resolveAddress("not-an-address")).rejects.toBeInstanceOf(
-      LightningMintError
+    await expect(
+      client.resolveAddress("not-an-address")
+    ).rejects.toBeInstanceOf(LightningMintError);
+    await expect(client.resolveAddress("not-an-address")).rejects.toMatchObject(
+      {
+        code: "invalid_address",
+      }
     );
-    await expect(client.resolveAddress("not-an-address")).rejects.toMatchObject({
-      code: "invalid_address",
-    });
   });
 
   it("simulates an unreachable provider for the test address bogus@example.invalid", async () => {
@@ -206,10 +210,14 @@ describe("assertSafePublicHttpsUrl (SSRF guard)", () => {
 
   it("rejects RFC1918 private ranges", () => {
     expect(() => assertSafePublicHttpsUrl("https://10.0.0.5/x")).toThrow();
-    expect(() => assertSafePublicHttpsUrl("https://10.255.255.255/x")).toThrow();
+    expect(() =>
+      assertSafePublicHttpsUrl("https://10.255.255.255/x")
+    ).toThrow();
     expect(() => assertSafePublicHttpsUrl("https://192.168.1.1/x")).toThrow();
     expect(() => assertSafePublicHttpsUrl("https://172.16.0.1/x")).toThrow();
-    expect(() => assertSafePublicHttpsUrl("https://172.31.255.254/x")).toThrow();
+    expect(() =>
+      assertSafePublicHttpsUrl("https://172.31.255.254/x")
+    ).toThrow();
   });
 
   it("accepts non-private 172/x ranges (172.32+ is public)", () => {
@@ -240,7 +248,9 @@ describe("assertSafePublicHttpsUrl (SSRF guard)", () => {
   it("rejects IPv6 loopback / ULA / link-local", () => {
     expect(() => assertSafePublicHttpsUrl("https://[::1]/x")).toThrow();
     expect(() => assertSafePublicHttpsUrl("https://[fc00::1]/x")).toThrow();
-    expect(() => assertSafePublicHttpsUrl("https://[fd12:3456:789a::1]/x")).toThrow();
+    expect(() =>
+      assertSafePublicHttpsUrl("https://[fd12:3456:789a::1]/x")
+    ).toThrow();
     expect(() => assertSafePublicHttpsUrl("https://[fe80::1]/x")).toThrow();
   });
 
@@ -266,11 +276,12 @@ describe("MockLightningClient minSendable / maxSendable", () => {
 describe("getLightningClient factory", () => {
   beforeEach(() => {
     _resetLightningClientForTests();
-    delete process.env.LIGHTNING_USE_REAL_CLIENT;
   });
 
-  it("returns the mock by default", () => {
-    expect(getLightningClient()).toBeInstanceOf(MockLightningClient);
+  it("returns the real client (never the mock) without an explicit injection", () => {
+    // Production must talk to the seller's actual Lightning Address.
+    // The mock is only reachable through _setLightningClientForTests.
+    expect(getLightningClient()).not.toBeInstanceOf(MockLightningClient);
   });
 
   it("memoises the instance", () => {

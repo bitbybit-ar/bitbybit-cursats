@@ -1,10 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
-import {
-  listForPubkey,
-  markAllRead,
-  markRead,
-} from "@/lib/notifications";
+import { listForPubkey, markAllRead, markRead } from "@/lib/notifications";
 import {
   notificationDtoSchema,
   notificationPatchSchema,
@@ -13,7 +9,9 @@ import {
 
 export const dynamic = "force-dynamic";
 
-function rowToDto(row: Awaited<ReturnType<typeof listForPubkey>>[number]): NotificationDTO {
+function rowToDto(
+  row: Awaited<ReturnType<typeof listForPubkey>>[number]
+): NotificationDTO {
   // Best-effort parse: the DB column is varchar(40) and the helper
   // emits only the kinds in the enum, but a future kind landing
   // before its TypeScript update would surface here. We pass the

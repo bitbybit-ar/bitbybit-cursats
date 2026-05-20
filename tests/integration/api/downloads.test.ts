@@ -41,7 +41,7 @@ async function seedDownloadOffering(downloadUrl: string | null) {
       title: "PDF",
       description: "A download.",
       price_amount: 500,
-        price_currency: "ars" as const,
+      price_currency: "ars" as const,
       download_url: downloadUrl,
     })
     .returning();
@@ -62,7 +62,7 @@ async function seedCodeOffering() {
       title: "Code",
       description: "A code offering.",
       price_amount: 500,
-        price_currency: "ars" as const,
+      price_currency: "ars" as const,
       code_pool: ["X"],
     })
     .returning();
@@ -100,9 +100,7 @@ describe("GET /api/downloads/[orderId]", () => {
     const { req, ctx } = buildRequest(order_id);
     const res = await GET(req, ctx);
     expect(res.status).toBe(302);
-    expect(res.headers.get("location")).toBe(
-      "https://example.com/asset.pdf"
-    );
+    expect(res.headers.get("location")).toBe("https://example.com/asset.pdf");
   });
 
   it("returns 403 when the order is still pending", async () => {
@@ -123,9 +121,7 @@ describe("GET /api/downloads/[orderId]", () => {
   });
 
   it("returns 404 for an unknown order id", async () => {
-    const { req, ctx } = buildRequest(
-      "00000000-0000-0000-0000-000000000000"
-    );
+    const { req, ctx } = buildRequest("00000000-0000-0000-0000-000000000000");
     const res = await GET(req, ctx);
     expect(res.status).toBe(404);
   });

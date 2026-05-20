@@ -1,9 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import {
-  drawAndAssignCode,
-  getOrder,
-  markOrderPaid,
-} from "@/lib/orders";
+import { drawAndAssignCode, getOrder, markOrderPaid } from "@/lib/orders";
 import { getOfferingById } from "@/lib/offerings";
 import { getUserById } from "@/lib/admin/users";
 import { emitNotification } from "@/lib/notifications";
@@ -90,10 +86,7 @@ export async function GET(
               });
             }
           } catch (err) {
-            console.warn(
-              `[orders/${order.id}] notification emit failed:`,
-              err
-            );
+            console.warn(`[orders/${order.id}] notification emit failed:`, err);
           }
         }
         return NextResponse.json({

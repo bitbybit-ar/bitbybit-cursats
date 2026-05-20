@@ -29,10 +29,7 @@ import {
   isSignerCancellation,
 } from "@/lib/nostr/auth-errors";
 import { createNewIdentity } from "@/lib/nostr/create-account";
-import {
-  makeNsecSigner,
-  type SignerHandle,
-} from "@/lib/nostr/signers";
+import { makeNsecSigner, type SignerHandle } from "@/lib/nostr/signers";
 import type { Locale } from "@/lib/schemas/auth";
 import styles from "./signin.module.scss";
 
@@ -104,8 +101,7 @@ export function SignInClient({ locale }: SignInClientProps) {
   const [createState, setCreateState] = useState<CreateState>({
     kind: "idle",
   });
-  const createdNsec =
-    createState.kind === "idle" ? null : createState.nsec;
+  const createdNsec = createState.kind === "idle" ? null : createState.nsec;
   const isAuthFailed = createState.kind === "auth_failed";
 
   const messageFor = (
@@ -295,101 +291,95 @@ export function SignInClient({ locale }: SignInClientProps) {
         </Link>
       </div>
 
-        {panel === "nsec" ? (
-          <Modal onClose={closePanel} title={t("nsecTitle")} size="sm">
-            <NsecSignerForm
-              onSigner={handleSigner}
-              onError={handleError}
-              showWarning
-              requireAcceptRisk
-              submitLabel={t("nsecSignIn")}
-              submittingLabel={t("nsecSigningIn")}
-            />
-            {errorMessage ? (
-              <p className={styles.error} role="alert">
-                {errorMessage}
-              </p>
-            ) : null}
-          </Modal>
-        ) : null}
+      {panel === "nsec" ? (
+        <Modal onClose={closePanel} title={t("nsecTitle")} size="sm">
+          <NsecSignerForm
+            onSigner={handleSigner}
+            onError={handleError}
+            showWarning
+            requireAcceptRisk
+            submitLabel={t("nsecSignIn")}
+            submittingLabel={t("nsecSigningIn")}
+          />
+          {errorMessage ? (
+            <p className={styles.error} role="alert">
+              {errorMessage}
+            </p>
+          ) : null}
+        </Modal>
+      ) : null}
 
-        {panel === "nip46-qr" ? (
-          <Modal
-            onClose={closePanel}
-            onBack={closePanel}
-            title={t("connectScanModalTitle")}
-            size="sm"
-          >
-            <NostrConnectPanel
-              mode="qr"
-              onSigner={handleSigner}
-              onError={handleError}
-            />
-            {errorMessage ? (
-              <p className={styles.error} role="alert">
-                {errorMessage}
-              </p>
-            ) : null}
-          </Modal>
-        ) : null}
+      {panel === "nip46-qr" ? (
+        <Modal
+          onClose={closePanel}
+          onBack={closePanel}
+          title={t("connectScanModalTitle")}
+          size="sm"
+        >
+          <NostrConnectPanel
+            mode="qr"
+            onSigner={handleSigner}
+            onError={handleError}
+          />
+          {errorMessage ? (
+            <p className={styles.error} role="alert">
+              {errorMessage}
+            </p>
+          ) : null}
+        </Modal>
+      ) : null}
 
-        {panel === "nip46-bunker" ? (
-          <Modal
-            onClose={closePanel}
-            onBack={closePanel}
-            title={t("connectBunkerModalTitle")}
-            size="sm"
-          >
-            <NostrConnectPanel
-              mode="bunker"
-              onSigner={handleSigner}
-              onError={handleError}
-            />
-            {errorMessage ? (
-              <p className={styles.error} role="alert">
-                {errorMessage}
-              </p>
-            ) : null}
-          </Modal>
-        ) : null}
+      {panel === "nip46-bunker" ? (
+        <Modal
+          onClose={closePanel}
+          onBack={closePanel}
+          title={t("connectBunkerModalTitle")}
+          size="sm"
+        >
+          <NostrConnectPanel
+            mode="bunker"
+            onSigner={handleSigner}
+            onError={handleError}
+          />
+          {errorMessage ? (
+            <p className={styles.error} role="alert">
+              {errorMessage}
+            </p>
+          ) : null}
+        </Modal>
+      ) : null}
 
-        {createdNsec ? (
-          <Modal
-            onClose={handleContinueAfterCreate}
-            title={t("createdTitle")}
-            size="sm"
-          >
-            <div className={styles.createdSuccess}>
-              <CheckIcon size={32} />
-            </div>
-            <p className={styles.createdIntro}>{t("createdIntro")}</p>
+      {createdNsec ? (
+        <Modal
+          onClose={handleContinueAfterCreate}
+          title={t("createdTitle")}
+          size="sm"
+        >
+          <div className={styles.createdSuccess}>
+            <CheckIcon size={32} />
+          </div>
+          <p className={styles.createdIntro}>{t("createdIntro")}</p>
 
-            <label className={styles.createdLabel}>
-              {t("createdNsecLabel")}
-            </label>
-            <div className={styles.createdNsecBox}>
-              <code className={styles.createdNsec}>{createdNsec}</code>
-              <button
-                type="button"
-                className={styles.createdCopyBtn}
-                onClick={handleCopyNsec}
-                aria-label={t("createdCopy")}
-              >
-                {isCopied ? (
-                  <CheckIcon size={14} />
-                ) : (
-                  <CopyIcon size={14} />
-                )}
-                {isCopied ? t("createdCopied") : t("createdCopy")}
-              </button>
-            </div>
+          <label className={styles.createdLabel}>{t("createdNsecLabel")}</label>
+          <div className={styles.createdNsecBox}>
+            <code className={styles.createdNsec}>{createdNsec}</code>
+            <button
+              type="button"
+              className={styles.createdCopyBtn}
+              onClick={handleCopyNsec}
+              aria-label={t("createdCopy")}
+            >
+              {isCopied ? <CheckIcon size={14} /> : <CopyIcon size={14} />}
+              {isCopied ? t("createdCopied") : t("createdCopy")}
+            </button>
+          </div>
 
-            <div className={styles.createdWarning}>
-              <FlagIcon size={16} />
-              <span>{t("createdWarning")}</span>
-            </div>
+          <div className={styles.createdWarning}>
+            <FlagIcon size={16} />
+            <span>{t("createdWarning")}</span>
+          </div>
 
-            {/*
+          {/*
               Auth-failed branch: the nsec is on screen so the user
               can save it, but we couldn't establish a session.
               Render the localised failure + a Retry button that
@@ -397,51 +387,49 @@ export function SignInClient({ locale }: SignInClientProps) {
               new identity — that would orphan the key the user is
               reading right now).
             */}
-            {createState.kind === "auth_failed" ? (
-              <div className={styles.createdAuthError}>
-                {createState.error ? (
-                  <p className={styles.error} role="alert">
-                    {createState.error}
-                  </p>
-                ) : null}
-                <Button
-                  type="button"
-                  variant="primary"
-                  fullWidth
-                  onClick={handleRetryCreateAuth}
-                  disabled={isCreating}
-                >
-                  {isCreating
-                    ? t("creatingIdentity")
-                    : t("createdRetryAuth")}
-                </Button>
-              </div>
-            ) : null}
+          {createState.kind === "auth_failed" ? (
+            <div className={styles.createdAuthError}>
+              {createState.error ? (
+                <p className={styles.error} role="alert">
+                  {createState.error}
+                </p>
+              ) : null}
+              <Button
+                type="button"
+                variant="primary"
+                fullWidth
+                onClick={handleRetryCreateAuth}
+                disabled={isCreating}
+              >
+                {isCreating ? t("creatingIdentity") : t("createdRetryAuth")}
+              </Button>
+            </div>
+          ) : null}
 
-            <label className={styles.createdAck}>
-              <input
-                type="checkbox"
-                checked={isAcknowledged}
-                onChange={(e) => setIsAcknowledged(e.target.checked)}
-              />
-              <span>{t("createdAckLabel")}</span>
-            </label>
+          <label className={styles.createdAck}>
+            <input
+              type="checkbox"
+              checked={isAcknowledged}
+              onChange={(e) => setIsAcknowledged(e.target.checked)}
+            />
+            <span>{t("createdAckLabel")}</span>
+          </label>
 
-            <Button
-              type="button"
-              variant="primary"
-              fullWidth
-              onClick={handleContinueAfterCreate}
-              // Continue is only meaningful in the `ready` variant.
-              // Disabling it whenever auth has not succeeded prevents
-              // a click from pushing the user into the app with an
-              // unauthenticated session.
-              disabled={!isAcknowledged || isAuthFailed}
-            >
-              {t("createdContinue")}
-            </Button>
-          </Modal>
-        ) : null}
+          <Button
+            type="button"
+            variant="primary"
+            fullWidth
+            onClick={handleContinueAfterCreate}
+            // Continue is only meaningful in the `ready` variant.
+            // Disabling it whenever auth has not succeeded prevents
+            // a click from pushing the user into the app with an
+            // unauthenticated session.
+            disabled={!isAcknowledged || isAuthFailed}
+          >
+            {t("createdContinue")}
+          </Button>
+        </Modal>
+      ) : null}
     </Container>
   );
 }

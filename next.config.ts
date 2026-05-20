@@ -17,9 +17,7 @@ const nextConfig: NextConfig = {
     includePaths: [process.cwd()],
   },
   images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "**" },
-    ],
+    remotePatterns: [{ protocol: "https", hostname: "**" }],
     // Allow SVG through next/image. Friend logos are sometimes only
     // distributed as SVG (e.g., Mapping Bitcoin). The accompanying
     // contentSecurityPolicy locks served images to a sandbox so a

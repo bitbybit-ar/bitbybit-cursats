@@ -63,8 +63,7 @@ export default async function ExplorePage({ params, searchParams }: Props) {
         limit: PERSONALISED_RAIL_SIZE,
       })
     : null;
-  const recommendedIds =
-    recommendations?.rows.map((r) => r.offering.id) ?? [];
+  const recommendedIds = recommendations?.rows.map((r) => r.offering.id) ?? [];
 
   const { rows, total } = await listDiscoveryOfferingsPaged({
     q: parsed.q || undefined,
@@ -85,7 +84,9 @@ export default async function ExplorePage({ params, searchParams }: Props) {
   const showRail =
     isPersonalisable && parsed.page === 1 && recommendations !== null;
   const showMainHeading =
-    isPersonalisable && recommendations !== null && recommendations.rows.length > 0;
+    isPersonalisable &&
+    recommendations !== null &&
+    recommendations.rows.length > 0;
 
   return (
     <Container>

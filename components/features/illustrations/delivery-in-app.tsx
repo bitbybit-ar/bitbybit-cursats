@@ -38,12 +38,54 @@ export function DeliveryInApp({ size = 200, ...props }: Props) {
       />
 
       <rect x="38" y="26" width="20" height="20" rx="1" strokeWidth="1.5" />
-      <rect x="40" y="28" width="4" height="4" fill="currentColor" stroke="none" />
-      <rect x="52" y="28" width="4" height="4" fill="currentColor" stroke="none" />
-      <rect x="40" y="40" width="4" height="4" fill="currentColor" stroke="none" />
-      <rect x="46" y="34" width="3" height="3" fill="currentColor" stroke="none" />
-      <rect x="50" y="38" width="3" height="3" fill="currentColor" stroke="none" />
-      <rect x="46" y="40" width="3" height="3" fill="currentColor" stroke="none" />
+      <rect
+        x="40"
+        y="28"
+        width="4"
+        height="4"
+        fill="currentColor"
+        stroke="none"
+      />
+      <rect
+        x="52"
+        y="28"
+        width="4"
+        height="4"
+        fill="currentColor"
+        stroke="none"
+      />
+      <rect
+        x="40"
+        y="40"
+        width="4"
+        height="4"
+        fill="currentColor"
+        stroke="none"
+      />
+      <rect
+        x="46"
+        y="34"
+        width="3"
+        height="3"
+        fill="currentColor"
+        stroke="none"
+      />
+      <rect
+        x="50"
+        y="38"
+        width="3"
+        height="3"
+        fill="currentColor"
+        stroke="none"
+      />
+      <rect
+        x="46"
+        y="40"
+        width="3"
+        height="3"
+        fill="currentColor"
+        stroke="none"
+      />
 
       <path d="M38 54 H58" strokeWidth="1.5" />
       <path d="M38 60 H54" strokeWidth="1.5" />

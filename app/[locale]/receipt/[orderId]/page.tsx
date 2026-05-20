@@ -39,10 +39,7 @@ export default async function ReceiptPage({ params }: Props) {
               <span className={styles.spinner} aria-hidden />
               <h1 className={styles.title}>{t("pending.title")}</h1>
               <p className={styles.subtitle}>{t("pending.body")}</p>
-              <Link
-                href={`/checkout/${orderId}`}
-                className={styles.backLink}
-              >
+              <Link href={`/checkout/${orderId}`} className={styles.backLink}>
                 <ArrowLeftIcon size={16} />
                 {t("pending.back")}
               </Link>
@@ -88,9 +85,7 @@ export default async function ReceiptPage({ params }: Props) {
             />
           ) : null}
 
-          {order.pubkey === null ? (
-            <NostrPromptCard orderId={orderId} />
-          ) : null}
+          {order.pubkey === null ? <NostrPromptCard orderId={orderId} /> : null}
         </article>
       </Container>
     </Section>

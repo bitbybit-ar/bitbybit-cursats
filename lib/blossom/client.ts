@@ -114,7 +114,9 @@ export async function uploadToBlossom(
   const authHeader = `Nostr ${btoa(JSON.stringify(signed))}`;
 
   const attempts = options.servers.map(
-    async (server): Promise<
+    async (
+      server
+    ): Promise<
       | { ok: true; server: string; url: string }
       | { ok: false; server: string; reason: string }
     > => {
@@ -139,9 +141,10 @@ export async function uploadToBlossom(
         // { url, sha256, size, type }. Some servers tolerate a
         // missing `url` and only echo the descriptor; in that
         // case derive the URL from `<base>/<sha256>`.
-        const json = (await res.json().catch(() => null)) as
-          | { url?: string; sha256?: string }
-          | null;
+        const json = (await res.json().catch(() => null)) as {
+          url?: string;
+          sha256?: string;
+        } | null;
         const url = json?.url ?? `${base}/${sha256}`;
         return { ok: true, server: base, url };
       } catch (err) {
@@ -159,9 +162,7 @@ export async function uploadToBlossom(
     (r): r is { ok: true; server: string; url: string } => r.ok
   );
   const failures = settled
-    .filter(
-      (r): r is { ok: false; server: string; reason: string } => !r.ok
-    )
+    .filter((r): r is { ok: false; server: string; reason: string } => !r.ok)
     .map(({ server, reason }) => ({ server, reason }));
 
   if (successes.length === 0) {

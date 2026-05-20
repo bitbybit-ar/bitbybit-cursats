@@ -1,13 +1,11 @@
 import { and, eq, desc, ilike, sql, type SQL } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { orders, offerings, users } from "@/lib/db/schema";
-import {
-  getWapuClient,
-  type DirectPaymentFunding,
-} from "@/lib/wapu";
+import { getWapuClient, type DirectPaymentFunding } from "@/lib/wapu";
 import {
   getLightningClient,
   LightningMintError,
+  type LightningMintErrorCode,
 } from "@/lib/lightning";
 import { pickPayoutAlias } from "@/lib/admin/users";
 import { convertPrice } from "@/lib/exchange-rate";
@@ -49,7 +47,17 @@ export type CreateOrderError =
   | "lightning_mint_failed";
 
 export class OrderCreateError extends Error {
-  constructor(public readonly code: CreateOrderError) {
+  constructor(
+    public readonly code: CreateOrderError,
+    /**
+     * When `code === "lightning_mint_failed"`, the underlying
+     * LightningMintError code rides along so the checkout API can
+     * surface a specific reason (lnurl_unreachable vs lnurl_no_lud21
+     * vs …) to the buyer instead of a generic "unavailable". Unset
+     * for non-LN failure modes.
+     */
+    public readonly lightning_code?: LightningMintErrorCode
+  ) {
     super(code);
     this.name = "OrderCreateError";
   }
@@ -102,10 +110,7 @@ export async function createOrder(
   // narrow race where two buyers check out the last code at once;
   // the loser of that race lands in the receipt's "code pending"
   // branch and is the seller's manual problem.
-  if (
-    offering.type === "code" &&
-    (offering.code_pool?.length ?? 0) === 0
-  ) {
+  if (offering.type === "code" && (offering.code_pool?.length ?? 0) === 0) {
     throw new OrderCreateError("offering_sold_out");
   }
 
@@ -227,7 +232,7 @@ async function fundDirectLightningOrder(opts: {
     );
   } catch (err) {
     if (err instanceof LightningMintError) {
-      throw new OrderCreateError("lightning_mint_failed");
+      throw new OrderCreateError("lightning_mint_failed", err.code);
     }
     throw err;
   }
@@ -282,10 +287,7 @@ export async function markOrderPaid(opts: {
   if (existing.status === "paid") {
     return { updated: false };
   }
-  if (
-    existing.payment_hash &&
-    existing.payment_hash !== opts.payment_hash
-  ) {
+  if (existing.payment_hash && existing.payment_hash !== opts.payment_hash) {
     // Defence against a webhook tied to a different invoice colliding
     // with this order id. Should not happen with a working Wapu, but
     // we'd rather refuse the update than corrupt the row.

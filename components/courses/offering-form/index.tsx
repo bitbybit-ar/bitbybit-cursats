@@ -11,13 +11,41 @@ import {
   ShareOnNostrModal,
   type ShareContext,
 } from "@/components/share/share-on-nostr-modal";
+import {
+  PayoutSetupModal,
+  type PayoutSavedValues,
+} from "@/components/courses/payout-setup-modal";
 import { useSignerContext } from "@/lib/contexts/signer-context";
 import { MAX_TAGS_PER_OFFERING, type Offering } from "@/lib/admin/offerings";
 import styles from "./offering-form.module.scss";
 
+type PayoutMethod = "cbu_alias" | "lightning_address";
+
+export interface OfferingFormPayoutState {
+  cbu: string;
+  alias: string;
+  lightningAddress: string;
+  payoutMethod: PayoutMethod;
+}
+
 interface OfferingFormProps {
   /** When provided, the form pre-populates and submits a PATCH. */
   offering?: Offering;
+  /**
+   * Current seller payout state from the user row. Used on create to
+   * gate submission behind a payout-setup modal so the offering does
+   * not get published unsellable. Optional because the edit-mode
+   * call site does not need it (an existing offering implies the
+   * seller already cleared this gate at create time).
+   */
+  payoutState?: OfferingFormPayoutState;
+}
+
+function isPayoutConfigured(state: OfferingFormPayoutState): boolean {
+  if (state.payoutMethod === "lightning_address") {
+    return state.lightningAddress.trim().length > 0;
+  }
+  return state.cbu.trim().length > 0 || state.alias.trim().length > 0;
 }
 
 interface OfferingPayload {
@@ -62,7 +90,7 @@ function normalizeTagInput(raw: string): string {
   return slugify(raw).slice(0, 32);
 }
 
-export function OfferingForm({ offering }: OfferingFormProps) {
+export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
   const t = useTranslations("myCourses.form");
   const tCommon = useTranslations("common");
   const tErr = useTranslations("errors");
@@ -76,9 +104,15 @@ export function OfferingForm({ offering }: OfferingFormProps) {
   // modal instead of immediately navigating away. The modal owns
   // the redirect via its `onClose` callback. Null on edit-mode
   // success (no share prompt for housekeeping edits).
-  const [shareContext, setShareContext] = useState<ShareContext | null>(
-    null,
-  );
+  const [shareContext, setShareContext] = useState<ShareContext | null>(null);
+
+  // Local mirror of the seller's payout state so the popup can update
+  // it in place after a successful save without forcing a server
+  // round-trip. Edit mode has no gate (existing offering implies the
+  // seller already cleared it at create time), so the prop is optional.
+  const [currentPayout, setCurrentPayout] =
+    useState<OfferingFormPayoutState | null>(payoutState ?? null);
+  const [showPayoutModal, setShowPayoutModal] = useState(false);
 
   const isEdit = offering !== undefined;
 
@@ -94,9 +128,7 @@ export function OfferingForm({ offering }: OfferingFormProps) {
   const [type, setType] = useState<"code" | "download">(
     offering?.type ?? "code"
   );
-  const [description, setDescription] = useState(
-    offering?.description ?? ""
-  );
+  const [description, setDescription] = useState(offering?.description ?? "");
   const [priceAmount, setPriceAmount] = useState(
     offering ? String(offering.price_amount) : ""
   );
@@ -105,9 +137,7 @@ export function OfferingForm({ offering }: OfferingFormProps) {
   );
   const [imageUrl, setImageUrl] = useState(offering?.image_url ?? "");
   const [codeCount, setCodeCount] = useState("10");
-  const [downloadUrl, setDownloadUrl] = useState(
-    offering?.download_url ?? ""
-  );
+  const [downloadUrl, setDownloadUrl] = useState(offering?.download_url ?? "");
   const [tags, setTags] = useState<string[]>(offering?.tags ?? []);
   const [tagDraft, setTagDraft] = useState("");
 
@@ -159,19 +189,16 @@ export function OfferingForm({ offering }: OfferingFormProps) {
     setSlugManuallyEdited(true);
   }
 
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (isPending) return;
-
+  function buildPayload(): OfferingPayload | null {
     const priceAmountNum = Number.parseInt(priceAmount, 10);
     if (Number.isNaN(priceAmountNum) || priceAmountNum <= 0) {
       showToast(t("invalidPriceAmount"), "error");
-      return;
+      return null;
     }
 
     if (imageUrl.trim() === "") {
       showToast(t("imageRequired"), "error");
-      return;
+      return null;
     }
 
     let codeCountNum: number | undefined;
@@ -183,13 +210,13 @@ export function OfferingForm({ offering }: OfferingFormProps) {
         codeCountNum > 10000
       ) {
         showToast(t("invalidCodeCount"), "error");
-        return;
+        return null;
       }
     }
 
     if (type === "download" && downloadUrl.trim() === "") {
       showToast(t("downloadUrlRequired"), "error");
-      return;
+      return null;
     }
 
     // Commit any tag still sitting in the draft input so a seller
@@ -201,7 +228,7 @@ export function OfferingForm({ offering }: OfferingFormProps) {
         ? [...tags, pendingTag].slice(0, MAX_TAGS_PER_OFFERING)
         : tags;
 
-    const payload: OfferingPayload = {
+    return {
       slug: slug.trim(),
       type,
       title: title.trim(),
@@ -213,7 +240,9 @@ export function OfferingForm({ offering }: OfferingFormProps) {
       tags: finalTags,
       code_count: codeCountNum,
     };
+  }
 
+  async function submitOffering(payload: OfferingPayload) {
     setIsPending(true);
     try {
       const url = isEdit
@@ -232,6 +261,14 @@ export function OfferingForm({ offering }: OfferingFormProps) {
           router.push("/");
           return;
         }
+        if (data.error === "payout_not_configured") {
+          // BE caught a payout gap the FE check missed (e.g. stale
+          // payoutState prop). Surface the modal so the seller can
+          // recover without leaving the page.
+          setShowPayoutModal(true);
+          showToast(t("payoutNotConfigured"), "error");
+          return;
+        }
         if (data.error === "slug_taken") {
           showToast(t("slugTaken"), "error");
         } else {
@@ -244,9 +281,9 @@ export function OfferingForm({ offering }: OfferingFormProps) {
         // Fresh create — pause on this page so the share modal can
         // mount. The modal's onClose handles the redirect once the
         // seller either publishes or dismisses.
-        const data = (await res.json().catch(() => null)) as
-          | { offering?: { slug?: string } }
-          | null;
+        const data = (await res.json().catch(() => null)) as {
+          offering?: { slug?: string };
+        } | null;
         const offeringSlug = data?.offering?.slug ?? payload.slug;
         setShareContext({
           kind: "course-created",
@@ -265,6 +302,44 @@ export function OfferingForm({ offering }: OfferingFormProps) {
     } finally {
       setIsPending(false);
     }
+  }
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (isPending) return;
+
+    const payload = buildPayload();
+    if (!payload) return;
+
+    // Pre-check seller's payout state on create. Edit-mode skips
+    // the gate (existing offering already passed at create time).
+    if (!isEdit && currentPayout && !isPayoutConfigured(currentPayout)) {
+      setShowPayoutModal(true);
+      return;
+    }
+
+    await submitOffering(payload);
+  }
+
+  function handlePayoutSaved(next: PayoutSavedValues) {
+    // Merge the freshly-saved fields onto the existing payout state
+    // (lightning_address lives on the profile form and is unchanged
+    // by this modal — preserve whatever value we already had).
+    setCurrentPayout((prev) => ({
+      cbu: next.cbu,
+      alias: next.alias,
+      lightningAddress: prev?.lightningAddress ?? "",
+      payoutMethod: next.payoutMethod,
+    }));
+    setShowPayoutModal(false);
+
+    // Replay the submission with the just-saved values. If the user
+    // picked the LN rail but has no LN address, PayoutForm's own
+    // validation would have blocked the save — so reaching this
+    // point means the merged state passes `isPayoutConfigured`.
+    const payload = buildPayload();
+    if (!payload) return;
+    void submitOffering(payload);
   }
 
   async function handleArchive() {
@@ -292,324 +367,323 @@ export function OfferingForm({ offering }: OfferingFormProps) {
   }
 
   return (
-    <form className={styles.form} onSubmit={handleSubmit}>
-      <section className={styles.section}>
-        <header className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>{t("sectionBasics")}</h2>
-          <p className={styles.sectionHint}>{t("sectionBasicsHint")}</p>
-        </header>
+    <>
+      <form className={styles.form} onSubmit={handleSubmit}>
+        <section className={styles.section}>
+          <header className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>{t("sectionBasics")}</h2>
+            <p className={styles.sectionHint}>{t("sectionBasicsHint")}</p>
+          </header>
 
-        <div className={styles.field}>
-          <label htmlFor="title" className={styles.label}>
-            {t("title")}
-          </label>
-          <input
-            id="title"
-            type="text"
-            className={styles.input}
-            value={title}
-            onChange={(e) => handleTitleChange(e.target.value)}
-            required
-            maxLength={200}
-          />
-        </div>
-
-        <div className={styles.field}>
-          <label htmlFor="slug" className={styles.label}>
-            {t("slug")}
-            <Tooltip
-              text={t("slugHint")}
-              example={t("slugExample")}
-              label={tCommon("tooltipLabel")}
-            />
-          </label>
-          <input
-            id="slug"
-            type="text"
-            className={styles.input}
-            value={slug}
-            onChange={(e) => handleSlugChange(e.target.value)}
-            required
-            maxLength={80}
-            pattern="[a-z0-9]+(-[a-z0-9]+)*"
-            autoComplete="off"
-            spellCheck={false}
-          />
-        </div>
-
-        <div className={styles.field}>
-          <label htmlFor="description" className={styles.label}>
-            {t("description")}
-          </label>
-          <textarea
-            id="description"
-            className={styles.textarea}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            required
-            rows={5}
-          />
-        </div>
-
-        <div className={styles.field}>
-          <label htmlFor="tagInput" className={styles.label}>
-            {t("tags")}
-            <span className={styles.optional}>{t("optional")}</span>
-            <Tooltip
-              text={t("tagsHint")}
-              example={t("tagsExample")}
-              label={tCommon("tooltipLabel")}
-            />
-          </label>
-          <div
-            className={styles.chipInput}
-            onClick={() => document.getElementById("tagInput")?.focus()}
-            role="presentation"
-          >
-            {tags.map((tag) => (
-              <span key={tag} className={styles.chip}>
-                <span className={styles.chipLabel}>{tag}</span>
-                <button
-                  type="button"
-                  className={styles.chipRemove}
-                  onClick={() => removeTag(tag)}
-                  aria-label={t("tagsRemove", { tag })}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
+          <div className={styles.field}>
+            <label htmlFor="title" className={styles.label}>
+              {t("title")}
+            </label>
             <input
-              id="tagInput"
+              id="title"
               type="text"
-              className={styles.chipInputField}
-              value={tagDraft}
-              onChange={(e) => setTagDraft(e.target.value)}
-              onKeyDown={handleTagKeyDown}
-              onBlur={commitTagDraft}
-              placeholder={
-                tags.length === 0 ? t("tagsPlaceholder") : ""
-              }
-              maxLength={32}
+              className={styles.input}
+              value={title}
+              onChange={(e) => handleTitleChange(e.target.value)}
+              required
+              maxLength={200}
+            />
+          </div>
+
+          <div className={styles.field}>
+            <label htmlFor="slug" className={styles.label}>
+              {t("slug")}
+              <Tooltip
+                text={t("slugHint")}
+                example={t("slugExample")}
+                label={tCommon("tooltipLabel")}
+              />
+            </label>
+            <input
+              id="slug"
+              type="text"
+              className={styles.input}
+              value={slug}
+              onChange={(e) => handleSlugChange(e.target.value)}
+              required
+              maxLength={80}
+              pattern="[a-z0-9]+(-[a-z0-9]+)*"
               autoComplete="off"
               spellCheck={false}
-              disabled={tags.length >= MAX_TAGS_PER_OFFERING}
             />
           </div>
-          <p className={styles.hint}>
-            {t("tagsHelp", { max: MAX_TAGS_PER_OFFERING })}
-          </p>
-        </div>
-      </section>
 
-      <section className={styles.section}>
-        <header className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>{t("sectionPricing")}</h2>
-          <p className={styles.sectionHint}>{t("sectionPricingHint")}</p>
-        </header>
-
-        <fieldset className={styles.fieldset}>
-          <legend className={styles.legend}>{t("priceCurrency")}</legend>
-          <label
-            className={`${styles.radio} ${priceCurrency === "ars" ? styles.radioSelected : ""}`}
-          >
-            <input
-              type="radio"
-              name="priceCurrency"
-              value="ars"
-              checked={priceCurrency === "ars"}
-              onChange={() => setPriceCurrency("ars")}
-            />
-            <span>
-              <strong>{t("priceCurrencyArs")}</strong>
-              <span className={styles.radioHint}>
-                {t("priceCurrencyArsHint")}
-              </span>
-            </span>
-          </label>
-          <label
-            className={`${styles.radio} ${priceCurrency === "sats" ? styles.radioSelected : ""}`}
-          >
-            <input
-              type="radio"
-              name="priceCurrency"
-              value="sats"
-              checked={priceCurrency === "sats"}
-              onChange={() => setPriceCurrency("sats")}
-            />
-            <span>
-              <strong>{t("priceCurrencySats")}</strong>
-              <span className={styles.radioHint}>
-                {t("priceCurrencySatsHint")}
-              </span>
-            </span>
-          </label>
-        </fieldset>
-
-        <div className={styles.field}>
-          <label htmlFor="priceAmount" className={styles.label}>
-            {priceCurrency === "ars" ? t("priceArs") : t("priceSats")}
-            <Tooltip
-              text={t("priceAmountHint")}
-              example={t("priceAmountExample")}
-              label={tCommon("tooltipLabel")}
-            />
-          </label>
-          <input
-            id="priceAmount"
-            type="number"
-            min={1}
-            step={1}
-            className={styles.input}
-            value={priceAmount}
-            onChange={(e) => setPriceAmount(e.target.value)}
-            required
-          />
-        </div>
-      </section>
-
-      <section className={styles.section}>
-        <header className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>{t("sectionContent")}</h2>
-          <p className={styles.sectionHint}>{t("sectionContentHint")}</p>
-        </header>
-
-        <fieldset
-          className={styles.fieldset}
-          disabled={isEdit}
-          aria-describedby={isEdit ? "type-lock-hint" : undefined}
-        >
-          <legend className={styles.legend}>{t("type")}</legend>
-          <label
-            className={`${styles.radio} ${type === "code" ? styles.radioSelected : ""}`}
-          >
-            <input
-              type="radio"
-              name="type"
-              value="code"
-              checked={type === "code"}
-              onChange={() => setType("code")}
-            />
-            <span>
-              <strong>{t("typeCode")}</strong>
-              <span className={styles.radioHint}>{t("typeCodeHint")}</span>
-            </span>
-          </label>
-          <label
-            className={`${styles.radio} ${type === "download" ? styles.radioSelected : ""}`}
-          >
-            <input
-              type="radio"
-              name="type"
-              value="download"
-              checked={type === "download"}
-              onChange={() => setType("download")}
-            />
-            <span>
-              <strong>{t("typeDownload")}</strong>
-              <span className={styles.radioHint}>
-                {t("typeDownloadHint")}
-              </span>
-            </span>
-          </label>
-          {isEdit ? (
-            <p id="type-lock-hint" className={styles.hint}>
-              {t("typeLocked")}
-            </p>
-          ) : null}
-        </fieldset>
-
-        {type === "code" && !isEdit ? (
           <div className={styles.field}>
-            <label htmlFor="codeCount" className={styles.label}>
-              {t("codeCount")}
+            <label htmlFor="description" className={styles.label}>
+              {t("description")}
+            </label>
+            <textarea
+              id="description"
+              className={styles.textarea}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              required
+              rows={5}
+            />
+          </div>
+
+          <div className={styles.field}>
+            <label htmlFor="tagInput" className={styles.label}>
+              {t("tags")}
+              <span className={styles.optional}>{t("optional")}</span>
               <Tooltip
-                text={t("codeCountHint")}
-                example={t("codeCountExample")}
+                text={t("tagsHint")}
+                example={t("tagsExample")}
+                label={tCommon("tooltipLabel")}
+              />
+            </label>
+            <div
+              className={styles.chipInput}
+              onClick={() => document.getElementById("tagInput")?.focus()}
+              role="presentation"
+            >
+              {tags.map((tag) => (
+                <span key={tag} className={styles.chip}>
+                  <span className={styles.chipLabel}>{tag}</span>
+                  <button
+                    type="button"
+                    className={styles.chipRemove}
+                    onClick={() => removeTag(tag)}
+                    aria-label={t("tagsRemove", { tag })}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+              <input
+                id="tagInput"
+                type="text"
+                className={styles.chipInputField}
+                value={tagDraft}
+                onChange={(e) => setTagDraft(e.target.value)}
+                onKeyDown={handleTagKeyDown}
+                onBlur={commitTagDraft}
+                placeholder={tags.length === 0 ? t("tagsPlaceholder") : ""}
+                maxLength={32}
+                autoComplete="off"
+                spellCheck={false}
+                disabled={tags.length >= MAX_TAGS_PER_OFFERING}
+              />
+            </div>
+            <p className={styles.hint}>
+              {t("tagsHelp", { max: MAX_TAGS_PER_OFFERING })}
+            </p>
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <header className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>{t("sectionPricing")}</h2>
+            <p className={styles.sectionHint}>{t("sectionPricingHint")}</p>
+          </header>
+
+          <fieldset className={styles.fieldset}>
+            <legend className={styles.legend}>{t("priceCurrency")}</legend>
+            <label
+              className={`${styles.radio} ${priceCurrency === "ars" ? styles.radioSelected : ""}`}
+            >
+              <input
+                type="radio"
+                name="priceCurrency"
+                value="ars"
+                checked={priceCurrency === "ars"}
+                onChange={() => setPriceCurrency("ars")}
+              />
+              <span>
+                <strong>{t("priceCurrencyArs")}</strong>
+                <span className={styles.radioHint}>
+                  {t("priceCurrencyArsHint")}
+                </span>
+              </span>
+            </label>
+            <label
+              className={`${styles.radio} ${priceCurrency === "sats" ? styles.radioSelected : ""}`}
+            >
+              <input
+                type="radio"
+                name="priceCurrency"
+                value="sats"
+                checked={priceCurrency === "sats"}
+                onChange={() => setPriceCurrency("sats")}
+              />
+              <span>
+                <strong>{t("priceCurrencySats")}</strong>
+                <span className={styles.radioHint}>
+                  {t("priceCurrencySatsHint")}
+                </span>
+              </span>
+            </label>
+          </fieldset>
+
+          <div className={styles.field}>
+            <label htmlFor="priceAmount" className={styles.label}>
+              {priceCurrency === "ars" ? t("priceArs") : t("priceSats")}
+              <Tooltip
+                text={t("priceAmountHint")}
+                example={t("priceAmountExample")}
                 label={tCommon("tooltipLabel")}
               />
             </label>
             <input
-              id="codeCount"
+              id="priceAmount"
               type="number"
               min={1}
-              max={10000}
               step={1}
               className={styles.input}
-              value={codeCount}
-              onChange={(e) => setCodeCount(e.target.value)}
+              value={priceAmount}
+              onChange={(e) => setPriceAmount(e.target.value)}
               required
             />
           </div>
-        ) : null}
+        </section>
 
-        {type === "code" && isEdit && offering ? (
-          <div className={styles.field}>
-            <p className={styles.hint}>
-              {t("codePoolRemaining", {
-                count: offering.code_pool?.length ?? 0,
-              })}
-            </p>
-          </div>
-        ) : null}
+        <section className={styles.section}>
+          <header className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>{t("sectionContent")}</h2>
+            <p className={styles.sectionHint}>{t("sectionContentHint")}</p>
+          </header>
 
-        {type === "download" ? (
-          <div className={styles.field}>
-            <label htmlFor="downloadUrl" className={styles.label}>
-              {t("downloadUrl")}
-              <Tooltip
-                text={t("downloadUrlHint")}
-                example={t("downloadUrlExample")}
-                label={tCommon("tooltipLabel")}
-              />
-            </label>
-            <input
-              id="downloadUrl"
-              type="url"
-              className={styles.input}
-              value={downloadUrl}
-              onChange={(e) => setDownloadUrl(e.target.value)}
-              placeholder="https://…"
-              required
-            />
-          </div>
-        ) : null}
-      </section>
-
-      <section className={styles.section}>
-        <header className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>{t("sectionCover")}</h2>
-          <p className={styles.sectionHint}>{t("sectionCoverHint")}</p>
-        </header>
-
-        <ImageUpload
-          value={imageUrl ? imageUrl : null}
-          onChange={(next) => setImageUrl(next ?? "")}
-          label={t("imageUrl")}
-          required
-        />
-      </section>
-
-      <div className={styles.actions}>
-        <Button type="submit" variant="primary" disabled={isPending}>
-          {isPending
-            ? t("saving")
-            : isEdit
-              ? t("saveEdit")
-              : t("saveCreate")}
-        </Button>
-        {isEdit ? (
-          <Button
-            type="button"
-            variant="danger"
-            onClick={handleArchive}
-            disabled={isArchiving}
+          <fieldset
+            className={styles.fieldset}
+            disabled={isEdit}
+            aria-describedby={isEdit ? "type-lock-hint" : undefined}
           >
-            {isArchiving ? t("archiving") : t("archive")}
-          </Button>
-        ) : null}
-      </div>
+            <legend className={styles.legend}>{t("type")}</legend>
+            <label
+              className={`${styles.radio} ${type === "code" ? styles.radioSelected : ""}`}
+            >
+              <input
+                type="radio"
+                name="type"
+                value="code"
+                checked={type === "code"}
+                onChange={() => setType("code")}
+              />
+              <span>
+                <strong>{t("typeCode")}</strong>
+                <span className={styles.radioHint}>{t("typeCodeHint")}</span>
+              </span>
+            </label>
+            <label
+              className={`${styles.radio} ${type === "download" ? styles.radioSelected : ""}`}
+            >
+              <input
+                type="radio"
+                name="type"
+                value="download"
+                checked={type === "download"}
+                onChange={() => setType("download")}
+              />
+              <span>
+                <strong>{t("typeDownload")}</strong>
+                <span className={styles.radioHint}>
+                  {t("typeDownloadHint")}
+                </span>
+              </span>
+            </label>
+            {isEdit ? (
+              <p id="type-lock-hint" className={styles.hint}>
+                {t("typeLocked")}
+              </p>
+            ) : null}
+          </fieldset>
 
+          {type === "code" && !isEdit ? (
+            <div className={styles.field}>
+              <label htmlFor="codeCount" className={styles.label}>
+                {t("codeCount")}
+                <Tooltip
+                  text={t("codeCountHint")}
+                  example={t("codeCountExample")}
+                  label={tCommon("tooltipLabel")}
+                />
+              </label>
+              <input
+                id="codeCount"
+                type="number"
+                min={1}
+                max={10000}
+                step={1}
+                className={styles.input}
+                value={codeCount}
+                onChange={(e) => setCodeCount(e.target.value)}
+                required
+              />
+            </div>
+          ) : null}
+
+          {type === "code" && isEdit && offering ? (
+            <div className={styles.field}>
+              <p className={styles.hint}>
+                {t("codePoolRemaining", {
+                  count: offering.code_pool?.length ?? 0,
+                })}
+              </p>
+            </div>
+          ) : null}
+
+          {type === "download" ? (
+            <div className={styles.field}>
+              <label htmlFor="downloadUrl" className={styles.label}>
+                {t("downloadUrl")}
+                <Tooltip
+                  text={t("downloadUrlHint")}
+                  example={t("downloadUrlExample")}
+                  label={tCommon("tooltipLabel")}
+                />
+              </label>
+              <input
+                id="downloadUrl"
+                type="url"
+                className={styles.input}
+                value={downloadUrl}
+                onChange={(e) => setDownloadUrl(e.target.value)}
+                placeholder="https://…"
+                required
+              />
+            </div>
+          ) : null}
+        </section>
+
+        <section className={styles.section}>
+          <header className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>{t("sectionCover")}</h2>
+            <p className={styles.sectionHint}>{t("sectionCoverHint")}</p>
+          </header>
+
+          <ImageUpload
+            value={imageUrl ? imageUrl : null}
+            onChange={(next) => setImageUrl(next ?? "")}
+            label={t("imageUrl")}
+            required
+          />
+        </section>
+
+        <div className={styles.actions}>
+          <Button type="submit" variant="primary" disabled={isPending}>
+            {isPending ? t("saving") : isEdit ? t("saveEdit") : t("saveCreate")}
+          </Button>
+          {isEdit ? (
+            <Button
+              type="button"
+              variant="danger"
+              onClick={handleArchive}
+              disabled={isArchiving}
+            >
+              {isArchiving ? t("archiving") : t("archive")}
+            </Button>
+          ) : null}
+        </div>
+      </form>
+
+      {/* Modals are siblings of the form, not children — PayoutSetupModal
+          embeds the settings PayoutForm (its own <form>), so nesting it
+          inside <form> would be invalid HTML and confuse Enter-key submit. */}
       {shareContext ? (
         <ShareOnNostrModal
           context={shareContext}
@@ -620,7 +694,18 @@ export function OfferingForm({ offering }: OfferingFormProps) {
           }}
         />
       ) : null}
-    </form>
+
+      {showPayoutModal && currentPayout ? (
+        <PayoutSetupModal
+          initialCbu={currentPayout.cbu}
+          initialAlias={currentPayout.alias}
+          initialPayoutMethod={currentPayout.payoutMethod}
+          currentLightningAddress={currentPayout.lightningAddress}
+          onSaved={handlePayoutSaved}
+          onClose={() => setShowPayoutModal(false)}
+        />
+      ) : null}
+    </>
   );
 }
 

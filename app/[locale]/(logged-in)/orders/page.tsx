@@ -43,7 +43,7 @@ export default async function PanelOrdersPage({
   );
 
   return (
-      <>
+    <>
       <header className={styles.header}>
         <h1 className={styles.title}>{t("title")}</h1>
         <p className={styles.subtitle}>{t("subtitle")}</p>
@@ -57,17 +57,14 @@ export default async function PanelOrdersPage({
         <ul className={styles.list}>
           {orders.map((order) => (
             <li key={order.id} className={styles.item}>
-              <Link
-                href={`/orders/${order.id}`}
-                className={styles.row}
-              >
+              <Link href={`/orders/${order.id}`} className={styles.row}>
                 <div className={styles.rowMain}>
                   <span className={styles.rowTitle}>
                     {order.offering_title ?? t("unknownOffering")}
                   </span>
                   <span className={styles.rowMeta}>
-                    {dateFormatter.format(order.created_at)} ·{" "}
-                    ARS {arsFormatter.format(order.amount_ars)}
+                    {dateFormatter.format(order.created_at)} · ARS{" "}
+                    {arsFormatter.format(order.amount_ars)}
                     {order.pubkey ? (
                       <>
                         <span className={styles.dot}>·</span>
@@ -78,9 +75,7 @@ export default async function PanelOrdersPage({
                     ) : (
                       <>
                         <span className={styles.dot}>·</span>
-                        <span className={styles.anon}>
-                          {t("anonymous")}
-                        </span>
+                        <span className={styles.anon}>{t("anonymous")}</span>
                       </>
                     )}
                   </span>
@@ -98,6 +93,6 @@ export default async function PanelOrdersPage({
           ))}
         </ul>
       )}
-      </>
-    );
+    </>
+  );
 }

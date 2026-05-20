@@ -72,7 +72,10 @@ export async function SuggestedForYou({
   const subtitleKey = FALLBACK_TO_SUBTITLE_KEY[resolved.fallback];
 
   return (
-    <section className={styles.section} aria-labelledby="suggested-for-you-title">
+    <section
+      className={styles.section}
+      aria-labelledby="suggested-for-you-title"
+    >
       <header className={styles.header}>
         <h2 id="suggested-for-you-title" className={styles.title}>
           {t("title")}
@@ -82,11 +85,7 @@ export async function SuggestedForYou({
 
       <div className={styles.grid}>
         {resolved.rows.map(({ offering, seller }) => (
-          <OfferingCard
-            key={offering.id}
-            offering={offering}
-            seller={seller}
-          />
+          <OfferingCard key={offering.id} offering={offering} seller={seller} />
         ))}
       </div>
 

@@ -74,8 +74,7 @@ export default async function PurchasesPage({
 
   const totalPages = Math.max(1, Math.ceil(total / PURCHASES_PAGE_SIZE));
   const isFiltered = purchasesHasActiveFilters(parsed);
-  const isAbsolutelyEmpty =
-    total === 0 && parsed.page === 1 && !isFiltered;
+  const isAbsolutelyEmpty = total === 0 && parsed.page === 1 && !isFiltered;
 
   const dateFormatter = new Intl.DateTimeFormat(
     locale === "es" ? "es-AR" : "en-US",
@@ -174,7 +173,10 @@ export default async function PurchasesPage({
                           className={styles.thumbImg}
                         />
                       ) : (
-                        <span aria-hidden="true" className={styles.thumbFallback}>
+                        <span
+                          aria-hidden="true"
+                          className={styles.thumbFallback}
+                        >
                           {offering.title.slice(0, 1).toUpperCase()}
                         </span>
                       )}
@@ -227,7 +229,10 @@ export default async function PurchasesPage({
 
                   <div className={styles.actions}>
                     {isPending ? (
-                      <Link href={checkoutHref} className={styles.actionPrimary}>
+                      <Link
+                        href={checkoutHref}
+                        className={styles.actionPrimary}
+                      >
                         {t("continueCheckout")} <ArrowRightIcon size={14} />
                       </Link>
                     ) : (
@@ -236,7 +241,10 @@ export default async function PurchasesPage({
                         <ArrowRightIcon size={14} />
                       </Link>
                     )}
-                    <Link href={offeringHref} className={styles.actionSecondary}>
+                    <Link
+                      href={offeringHref}
+                      className={styles.actionSecondary}
+                    >
                       {t("viewListing")}
                     </Link>
                   </div>

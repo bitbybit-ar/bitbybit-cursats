@@ -42,7 +42,7 @@ export default async function EditOfferingPage({
   const t = await getTranslations("myCourses.edit");
 
   return (
-      <>
+    <>
       <Link href="/my-courses" className={styles.back}>
         <ArrowLeftIcon size={16} />
         {t("back")}
@@ -51,9 +51,7 @@ export default async function EditOfferingPage({
       <p className={styles.subtitle}>
         <code className={styles.slug}>{offering.slug}</code>
         {offering.archived_at ? (
-          <span className={styles.archivedTag}>
-            {t("archived")}
-          </span>
+          <span className={styles.archivedTag}>{t("archived")}</span>
         ) : null}
       </p>
 
@@ -65,6 +63,6 @@ export default async function EditOfferingPage({
           initialRemaining={offering.code_pool?.length ?? 0}
         />
       ) : null}
-      </>
-    );
+    </>
+  );
 }

@@ -3,7 +3,15 @@
 import { cn } from "@/lib/utils";
 import styles from "./bubble.module.scss";
 
-type BubbleColor = "blue" | "lime" | "green" | "red" | "pink" | "cyan" | "orange" | "gold";
+type BubbleColor =
+  | "blue"
+  | "lime"
+  | "green"
+  | "red"
+  | "pink"
+  | "cyan"
+  | "orange"
+  | "gold";
 type BubbleVariant = "solid" | "gradient" | "icon";
 type BubbleAnimation = "float" | "drift" | "float-slow" | "none";
 
@@ -54,7 +62,7 @@ export function Bubble({
         styles[color],
         variantClass,
         animClass,
-        className,
+        className
       )}
       data-gradient-to={variant === "gradient" ? gradientTo : undefined}
       style={{

@@ -90,7 +90,9 @@ async function seedOrder(opts: SeedOrderOpts) {
   return row;
 }
 
-function ids(rows: Awaited<ReturnType<typeof listRecommendedOfferings>>["rows"]) {
+function ids(
+  rows: Awaited<ReturnType<typeof listRecommendedOfferings>>["rows"]
+) {
   return rows.map((r) => r.offering.id);
 }
 

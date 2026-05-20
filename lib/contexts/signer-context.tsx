@@ -29,10 +29,7 @@ import {
   useState,
 } from "react";
 import type { ReactNode } from "react";
-import {
-  type SignerHandle,
-  makeExtensionSigner,
-} from "@/lib/nostr/signers";
+import { type SignerHandle, makeExtensionSigner } from "@/lib/nostr/signers";
 import type { NostrEvent, UnsignedNostrEvent } from "@/lib/nostr/types";
 import type { SignerType, Locale } from "@/lib/schemas/auth";
 
@@ -153,10 +150,10 @@ export function SignerProvider({
   renderReSignInModal,
 }: SignerProviderProps) {
   const [session, setSession] = useState<SessionUser | null>(
-    initialSession ?? null,
+    initialSession ?? null
   );
   const [sessionLoading, setSessionLoading] = useState(
-    initialSession === undefined,
+    initialSession === undefined
   );
   const [signer, setSignerState] = useState<SignerHandle | null>(null);
   // Mirror of `signer` state. signWithPrompt reads from this ref so a
@@ -240,10 +237,7 @@ export function SignerProvider({
       // inside the signed envelope (a MITM cannot forge different
       // values without invalidating the signature). Empty content
       // per the spec.
-      const url = new URL(
-        "/api/auth/nostr",
-        window.location.origin
-      ).toString();
+      const url = new URL("/api/auth/nostr", window.location.origin).toString();
 
       let signed;
       try {

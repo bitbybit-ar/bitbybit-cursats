@@ -25,9 +25,8 @@ function notificationCopy(
   n: NotificationDTO
 ): NotificationCopy {
   const payload = (n.payload ?? {}) as Record<string, unknown>;
-  const offering = typeof payload.offering_title === "string"
-    ? payload.offering_title
-    : "";
+  const offering =
+    typeof payload.offering_title === "string" ? payload.offering_title : "";
   // Use a separate try/catch per key so a missing body key doesn't blank
   // the title (and vice versa).
   let title: string;
@@ -47,7 +46,8 @@ function notificationCopy(
 
 function notificationHref(n: NotificationDTO): string | null {
   const payload = (n.payload ?? {}) as Record<string, unknown>;
-  const orderId = typeof payload.order_id === "string" ? payload.order_id : null;
+  const orderId =
+    typeof payload.order_id === "string" ? payload.order_id : null;
   if (!orderId) return null;
   return n.kind === "order.paid" ? `/receipt/${orderId}` : null;
 }
@@ -110,8 +110,8 @@ export function NotificationBell({ className }: NotificationBellProps) {
   const markAsRead = async (id: string) => {
     setNotifications((prev) =>
       prev.map((n) =>
-        n.id === id ? { ...n, read_at: new Date().toISOString() } : n,
-      ),
+        n.id === id ? { ...n, read_at: new Date().toISOString() } : n
+      )
     );
     try {
       await fetch("/api/notifications", {
@@ -127,7 +127,9 @@ export function NotificationBell({ className }: NotificationBellProps) {
   const markAllRead = async () => {
     if (unreadCount === 0) return;
     const now = new Date().toISOString();
-    setNotifications((prev) => prev.map((n) => ({ ...n, read_at: n.read_at ?? now })));
+    setNotifications((prev) =>
+      prev.map((n) => ({ ...n, read_at: n.read_at ?? now }))
+    );
     try {
       await fetch("/api/notifications", { method: "POST" });
     } catch {
@@ -185,7 +187,7 @@ export function NotificationBell({ className }: NotificationBellProps) {
                 const href = notificationHref(n);
                 const itemClass = cn(
                   styles.itemButton,
-                  n.read_at ? styles.read : styles.unread,
+                  n.read_at ? styles.read : styles.unread
                 );
                 const onActivate = () => {
                   if (!n.read_at) markAsRead(n.id);
@@ -203,7 +205,11 @@ export function NotificationBell({ className }: NotificationBellProps) {
                 return (
                   <li key={n.id} className={styles.item}>
                     {href ? (
-                      <Link href={href} className={itemClass} onClick={onActivate}>
+                      <Link
+                        href={href}
+                        className={itemClass}
+                        onClick={onActivate}
+                      >
                         {content}
                       </Link>
                     ) : (

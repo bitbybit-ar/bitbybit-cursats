@@ -9,11 +9,7 @@ export const PURCHASES_PAGE_SIZE = 12;
 // turning into a massive `OFFSET` scan.
 const MAX_PAGE = 1000;
 
-export type PurchasesStatusFilter =
-  | "all"
-  | "pending"
-  | "paid"
-  | "failed";
+export type PurchasesStatusFilter = "all" | "pending" | "paid" | "failed";
 
 export interface PurchasesParams {
   q: string;
@@ -48,9 +44,7 @@ export function parsePurchasesParams(raw: Raw | undefined): PurchasesParams {
 
   const pageRaw = Number.parseInt(readFirst(r, "page") ?? "1", 10);
   const page =
-    Number.isFinite(pageRaw) && pageRaw >= 1
-      ? Math.min(pageRaw, MAX_PAGE)
-      : 1;
+    Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.min(pageRaw, MAX_PAGE) : 1;
 
   return { q, status, page };
 }

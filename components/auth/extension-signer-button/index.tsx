@@ -4,10 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { BoltIcon } from "@/components/icons";
-import {
-  type SignerHandle,
-  makeExtensionSigner,
-} from "@/lib/nostr/signers";
+import { type SignerHandle, makeExtensionSigner } from "@/lib/nostr/signers";
 import {
   type AuthError,
   loginError,

@@ -96,11 +96,7 @@ export async function getUserBySlug(slug: string): Promise<User | null> {
 
 export async function getUserById(id: string): Promise<User | null> {
   const db = getDb();
-  const [row] = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, id))
-    .limit(1);
+  const [row] = await db.select().from(users).where(eq(users.id, id)).limit(1);
   return row ?? null;
 }
 
@@ -256,7 +252,7 @@ export async function claimUser(
 export async function softDeleteUser(
   id: string,
   actorPubkey: string,
-  meta: { signedEventId?: string } = {},
+  meta: { signedEventId?: string } = {}
 ): Promise<void> {
   const db = getDb();
   const now = new Date();
@@ -345,8 +341,7 @@ export async function updateUserProfile(
   ).filter(
     (k) =>
       patch[k] !== undefined &&
-      JSON.stringify(patch[k]) !==
-        JSON.stringify(before[k as keyof User])
+      JSON.stringify(patch[k]) !== JSON.stringify(before[k as keyof User])
   );
   const payload_diff: Record<string, unknown> = { changed: changedKeys };
   if (meta.signedEventId) {
@@ -380,4 +375,23 @@ export function pickPayoutAlias(user: User): string | null {
     if (c) return c.value;
   }
   return null;
+}
+
+/**
+ * True when the user has the payout destination required by their
+ * current `payout_method` filled in.
+ *
+ *   - cbu_alias        → at least one of `cbu` / `alias`
+ *   - lightning_address → `lightning_address` present
+ *
+ * Sellers must satisfy this before they can create an offering;
+ * a checkout against an unconfigured seller would already be
+ * rejected downstream, but failing early at create-time avoids
+ * publishing an unsellable course.
+ */
+export function hasPayoutConfigured(user: User): boolean {
+  if (user.payout_method === "lightning_address") {
+    return Boolean(user.lightning_address?.trim());
+  }
+  return Boolean(user.cbu?.trim() || user.alias?.trim());
 }

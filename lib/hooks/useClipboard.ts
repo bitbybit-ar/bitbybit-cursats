@@ -19,7 +19,7 @@ export function useClipboard(resetDelay = 2000) {
       if (timeout.current) clearTimeout(timeout.current);
       timeout.current = setTimeout(() => setCopied(false), resetDelay);
     },
-    [resetDelay],
+    [resetDelay]
   );
 
   return { copied, copy };

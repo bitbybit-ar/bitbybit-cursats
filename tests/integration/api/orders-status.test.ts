@@ -48,7 +48,7 @@ async function seedLightningOrder() {
       title: "Status test",
       description: "for the polling path",
       price_amount: 1000,
-        price_currency: "ars" as const,
+      price_currency: "ars" as const,
       // Pre-seed one redemption code so drawAndAssignCode succeeds
       // without `pool_empty`.
       code_pool: ["TEST-CODE-1"],

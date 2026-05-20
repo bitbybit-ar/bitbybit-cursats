@@ -46,9 +46,7 @@ function parseKind0(content: string): Kind0Profile {
   }
 }
 
-export async function fetchKind0Profile(
-  pubkey: string
-): Promise<Kind0Profile> {
+export async function fetchKind0Profile(pubkey: string): Promise<Kind0Profile> {
   const pool = new SimplePool();
   try {
     const event = await pool.get(

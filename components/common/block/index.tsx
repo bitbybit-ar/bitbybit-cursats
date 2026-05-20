@@ -38,7 +38,7 @@ export function Block({
         styles[color],
         animClass,
         flat && styles.flat,
-        className,
+        className
       )}
       style={{ animationDelay: `${delay}s` }}
       aria-hidden="true"

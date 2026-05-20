@@ -60,6 +60,38 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   current page's offerings so the rail doesn't re-surface what the
   buyer is already looking at.
 
+- **Specific error messages for failed Lightning Address checks.**
+  When a seller's Lightning Address fails the settings-time probe
+  or a buyer's mint at checkout, the UI now surfaces the underlying
+  reason (invalid format, provider unreachable, no LUD-21 support,
+  malformed response) instead of a generic "invalid" / "unavailable"
+  toast. The buyer-side messages are candid about the seller's
+  wallet being the problem so buyers know to retry vs pick a
+  different course. Plumbed via a new `lightning_code` field on
+  `OrderCreateError` and a `lightning_reason` field on the
+  `/api/checkout` 503 response.
+
+- **Lightning checkout always mints against the seller's real
+  Lightning Address.** `getLightningClient()` no longer branches
+  on a `LIGHTNING_USE_REAL_CLIENT` env flag — production, staging,
+  and `npm run dev` all use `RealLightningClient`, which calls
+  the seller's LNURL-pay endpoint and LUD-21 verify URL. The
+  `MockLightningClient` stays exported but is only reachable
+  through `_setLightningClientForTests`, the explicit test-only
+  injection seam used by the LN integration tests. Removes a
+  silent-failure footgun where unset env meant fake BOLT11s for
+  every direct_lightning order.
+
+- **Course creation now gated on a configured payout method.**
+  Submitting the create-course form when the seller has no payout
+  destination on file for their current rail (`cbu_alias` → cbu
+  or alias; `lightning_address` → LN address) opens a payout-
+  setup modal embedding the same `PayoutForm` from `/settings`.
+  Saving in the modal writes through to the user row and resumes
+  the original submission. `POST /api/my-courses` enforces the
+  same check server-side and returns `409 payout_not_configured`
+  so a stale page can't slip an unsellable offering through.
+
 ### Added
 
 - **Personalised recommendations module.** New
@@ -103,7 +135,6 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   `/explore` ordering for logged-in users.
 
 ### Changed
-
 - **Features page — deck-deal animation.** The polaroid grid now
   sets up like a hand of cards. On desktop the nine cards stack at
   the top-left where "Dos formas de cobrar" lands, then spring out

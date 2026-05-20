@@ -37,7 +37,9 @@
     0 4px 12px $card-shadow,
     inset 0 1px 0 $ceramic-highlight,
     inset 0 -2px 4px $ceramic-inner-shadow;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 // Hover treatment for interactive cards — preserves the theme-tinted
@@ -124,11 +126,7 @@
 // set `--bubble-color` for the outer halo tint.
 @mixin bubble-surface($bg) {
   background:
-    radial-gradient(
-      circle at 30% 28%,
-      $bubble-spec-top 0%,
-      transparent 45%
-    ),
+    radial-gradient(circle at 30% 28%, $bubble-spec-top 0%, transparent 45%),
     $bg;
   border: 1px solid $bubble-edge;
   box-shadow:

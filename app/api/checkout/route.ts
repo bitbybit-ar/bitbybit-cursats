@@ -73,15 +73,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       } else {
         status = 503;
       }
-      return NextResponse.json(
-        { error: "offering_unavailable", reason: err.code },
-        { status }
-      );
+      // When the failure was an LN mint, surface the underlying
+      // LightningMintErrorCode so the buyer's UI can show a specific
+      // message (provider unreachable vs no LUD-21 vs malformed)
+      // instead of a generic "unavailable" toast.
+      const body: Record<string, unknown> = {
+        error: "offering_unavailable",
+        reason: err.code,
+      };
+      if (err.lightning_code) {
+        body.lightning_reason = err.lightning_code;
+      }
+      return NextResponse.json(body, { status });
     }
     console.error("[checkout] failed:", err);
-    return NextResponse.json(
-      { error: "checkout_failed" },
-      { status: 502 }
-    );
+    return NextResponse.json({ error: "checkout_failed" }, { status: 502 });
   }
 }

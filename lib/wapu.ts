@@ -95,10 +95,7 @@ export interface WapuTentativeState {
  * payment settlement webhook once the contract is shared.
  */
 export interface WapuWebhookEvent {
-  event_type:
-    | "direct_fiat.paid"
-    | "direct_fiat.expired"
-    | "direct_fiat.failed";
+  event_type: "direct_fiat.paid" | "direct_fiat.expired" | "direct_fiat.failed";
   tentative_uuid: string;
   payment_hash: string;
   /** Unix seconds. */
@@ -294,8 +291,7 @@ export function getWapuClient(): WapuClient {
   if (cached) return cached;
   const apiKey = process.env.WAPU_API_KEY;
   if (!apiKey) {
-    const secret =
-      process.env.WAPU_WEBHOOK_SECRET || "mock-webhook-secret";
+    const secret = process.env.WAPU_WEBHOOK_SECRET || "mock-webhook-secret";
     cached = new MockWapuClient(secret);
     return cached;
   }

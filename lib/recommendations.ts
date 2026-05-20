@@ -1,13 +1,5 @@
 import "server-only";
-import {
-  and,
-  desc,
-  eq,
-  isNull,
-  notInArray,
-  or,
-  sql,
-} from "drizzle-orm";
+import { and, desc, eq, isNull, notInArray, or, sql } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { offerings, orders, users } from "@/lib/db/schema";
 import {
@@ -199,26 +191,21 @@ export async function listRecommendedOfferings(
         matchConditions.push(sql`${offerings.tags} && ${tagsParam}`);
       }
       if (sellersParam) {
-        matchConditions.push(
-          sql`${offerings.user_id} = ANY(${sellersParam})`
-        );
+        matchConditions.push(sql`${offerings.user_id} = ANY(${sellersParam})`);
       }
       // At this point matchConditions has at least one element
       // because `hasSignal` was true.
-      const matchOr = matchConditions.length === 1
-        ? matchConditions[0]
-        : or(...matchConditions);
+      const matchOr =
+        matchConditions.length === 1
+          ? matchConditions[0]
+          : or(...matchConditions);
 
       const baseWhere = and(
         eq(users.active, true),
         isNull(offerings.archived_at),
         matchOr,
-        buyerUserId
-          ? sql`${offerings.user_id} <> ${buyerUserId}`
-          : undefined,
-        excludeIds.length
-          ? notInArray(offerings.id, excludeIds)
-          : undefined
+        buyerUserId ? sql`${offerings.user_id} <> ${buyerUserId}` : undefined,
+        excludeIds.length ? notInArray(offerings.id, excludeIds) : undefined
       );
 
       personalised = await db
@@ -258,10 +245,7 @@ export async function listRecommendedOfferings(
       const highlights = await listHighlightedOfferings(
         remaining + pickedIds.length + excludeIds.length
       );
-      const excludeForHighlights = new Set([
-        ...pickedIds,
-        ...excludeIds,
-      ]);
+      const excludeForHighlights = new Set([...pickedIds, ...excludeIds]);
       const filteredHighlights = highlights
         .filter((h) => !excludeForHighlights.has(h.offering.id))
         .filter(

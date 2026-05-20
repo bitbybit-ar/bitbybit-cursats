@@ -81,7 +81,7 @@ describe("admin/offerings/createOfferingForAdmin", () => {
         price_currency: "ars" as const,
 
         image_url: "https://example.com/cover.png",
-      code_count: 5,
+        code_count: 5,
       },
       ACTOR
     );
@@ -96,7 +96,7 @@ describe("admin/offerings/createOfferingForAdmin", () => {
         price_currency: "ars" as const,
 
         image_url: "https://example.com/cover.png",
-      code_count: 5,
+        code_count: 5,
       },
       ACTOR
     );
@@ -125,7 +125,7 @@ describe("admin/offerings/createOfferingForAdmin", () => {
         price_currency: "ars" as const,
 
         image_url: "https://example.com/cover.png",
-      code_count: 5,
+        code_count: 5,
       },
       a.pubkey
     );
@@ -140,7 +140,7 @@ describe("admin/offerings/createOfferingForAdmin", () => {
         price_currency: "ars" as const,
 
         image_url: "https://example.com/cover.png",
-      code_count: 5,
+        code_count: 5,
       },
       b.pubkey
     );
@@ -163,7 +163,7 @@ describe("admin/offerings/updateOfferingForAdmin", () => {
         price_currency: "ars" as const,
 
         image_url: "https://example.com/cover.png",
-      code_count: 5,
+        code_count: 5,
       },
       ACTOR
     );
@@ -223,7 +223,7 @@ describe("admin/offerings/updateOfferingForAdmin", () => {
         price_currency: "ars" as const,
 
         image_url: "https://example.com/cover.png",
-      code_count: 5,
+        code_count: 5,
       },
       owner.pubkey
     );
@@ -253,7 +253,7 @@ describe("admin/offerings/updateOfferingForAdmin", () => {
         price_currency: "ars" as const,
 
         image_url: "https://example.com/cover.png",
-      code_count: 5,
+        code_count: 5,
       },
       ACTOR
     );
@@ -268,7 +268,7 @@ describe("admin/offerings/updateOfferingForAdmin", () => {
         price_currency: "ars" as const,
 
         image_url: "https://example.com/cover.png",
-      code_count: 5,
+        code_count: 5,
       },
       ACTOR
     );
@@ -339,7 +339,7 @@ describe("admin/offerings/archiveOfferingForAdmin", () => {
         price_currency: "ars" as const,
 
         image_url: "https://example.com/cover.png",
-      code_count: 5,
+        code_count: 5,
       },
       ACTOR
     );
@@ -371,7 +371,7 @@ describe("admin/offerings/list helpers", () => {
         price_currency: "ars" as const,
 
         image_url: "https://example.com/cover.png",
-      code_count: 5,
+        code_count: 5,
       },
       ACTOR
     );
@@ -386,7 +386,7 @@ describe("admin/offerings/list helpers", () => {
         price_currency: "ars" as const,
 
         image_url: "https://example.com/cover.png",
-      code_count: 5,
+        code_count: 5,
       },
       ACTOR
     );
@@ -417,7 +417,7 @@ describe("admin/offerings/list helpers", () => {
         price_currency: "ars" as const,
 
         image_url: "https://example.com/cover.png",
-      code_count: 5,
+        code_count: 5,
       },
       a.pubkey
     );
@@ -432,7 +432,7 @@ describe("admin/offerings/list helpers", () => {
         price_currency: "ars" as const,
 
         image_url: "https://example.com/cover.png",
-      code_count: 5,
+        code_count: 5,
       },
       b.pubkey
     );
@@ -454,7 +454,7 @@ describe("admin/offerings/list helpers", () => {
         price_currency: "ars" as const,
 
         image_url: "https://example.com/cover.png",
-      code_count: 5,
+        code_count: 5,
       },
       ACTOR
     );

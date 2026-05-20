@@ -49,12 +49,7 @@ export function LightningQR({ bolt11 }: LightningQRProps) {
         <code className={styles.invoiceText}>{bolt11}</code>
       </div>
 
-      <Button
-        variant="ghost"
-        size="default"
-        onClick={handleCopy}
-        fullWidth
-      >
+      <Button variant="ghost" size="default" onClick={handleCopy} fullWidth>
         {isCopied ? <CheckIcon size={16} /> : <CopyIcon size={16} />}
         {isCopied ? t("copied") : t("copyInvoice")}
       </Button>

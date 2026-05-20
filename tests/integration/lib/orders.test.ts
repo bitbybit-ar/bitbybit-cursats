@@ -193,7 +193,12 @@ describe("orders/createOrder — direct_lightning rail", () => {
 
     await expect(
       createOrder({ offering_id: offering.id, pubkey: null })
-    ).rejects.toMatchObject({ code: "lightning_mint_failed" });
+    ).rejects.toMatchObject({
+      code: "lightning_mint_failed",
+      // The underlying LightningMintErrorCode rides along so the
+      // checkout API can surface a specific buyer-facing message.
+      lightning_code: "lnurl_no_lud21",
+    });
 
     // The pending row should have been deleted on failure (createOrder
     // catches the throw, deletes, then rethrows).
@@ -489,11 +494,7 @@ describe("orders/drawAndAssignCode", () => {
     // Smoke test for the optimistic-concurrency loop: kick off two
     // draws against the same offering in parallel; both must land
     // on different codes and the pool must shrink by exactly two.
-    const offering = await seedCodeOfferingWithPool([
-      "X1",
-      "X2",
-      "X3",
-    ]);
+    const offering = await seedCodeOfferingWithPool(["X1", "X2", "X3"]);
     const a = await createOrder({
       offering_id: offering.id,
       pubkey: null,
