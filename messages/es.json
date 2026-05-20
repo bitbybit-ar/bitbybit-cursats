@@ -346,7 +346,11 @@
   "createCourse": {
     "metadataTitle": "Nuevo curso",
     "title": "Nuevo curso",
-    "subtitle": "Definí los detalles para que el curso aparezca en tu storefront."
+    "subtitle": "Definí los detalles para que el curso aparezca en tu storefront.",
+    "payoutModal": {
+      "title": "Configurá cómo querés cobrar",
+      "intro": "Antes de publicar un curso necesitás un destino de cobro: o un CBU/alias para recibir pesos, o una Lightning Address para recibir sats."
+    }
   },
   "myCourses": {
     "metadataTitle": "Mis cursos",
@@ -439,6 +443,7 @@
       "saving": "Guardando…",
       "saved": "Curso guardado.",
       "saveFailed": "No pudimos guardar el curso. Probá de nuevo.",
+      "payoutNotConfigured": "Configurá cómo querés cobrar antes de crear el curso.",
       "slugTaken": "Ya existe un curso con ese slug.",
       "invalidPriceArs": "El precio en ARS tiene que ser un número entero positivo.",
       "invalidPriceSats": "El precio en sats tiene que ser un número entero positivo.",

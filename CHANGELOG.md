@@ -12,6 +12,15 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Course creation now gated on a configured payout method.**
+  Submitting the create-course form when the seller has no payout
+  destination on file for their current rail (`cbu_alias` → cbu
+  or alias; `lightning_address` → LN address) opens a payout-
+  setup modal embedding the same `PayoutForm` from `/settings`.
+  Saving in the modal writes through to the user row and resumes
+  the original submission. `POST /api/my-courses` enforces the
+  same check server-side and returns `409 payout_not_configured`
+  so a stale page can't slip an unsellable offering through.
 - **Landing's highlighted-courses rail reads real data.** The
   rail no longer ships hardcoded sample courses. It now queries
   Postgres for up to three offerings ranked by paid-order count,

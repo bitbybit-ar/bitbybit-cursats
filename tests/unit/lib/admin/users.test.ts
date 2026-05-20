@@ -1,6 +1,37 @@
 // @vitest-environment node
 import { describe, it, expect } from "vitest";
-import { slugifyDisplayName } from "@/lib/admin/users";
+import {
+  slugifyDisplayName,
+  hasPayoutConfigured,
+} from "@/lib/admin/users";
+import type { User } from "@/lib/admin/users";
+
+// Minimal User stub that satisfies hasPayoutConfigured's reads. The
+// helper only inspects four columns; the rest are filler so the cast
+// stays type-safe without dragging in a full row factory.
+function makeUser(overrides: Partial<User>): User {
+  return {
+    id: "00000000-0000-0000-0000-000000000000",
+    pubkey: "pk",
+    slug: "user-x",
+    display_name: "X",
+    bio: null,
+    avatar_url: null,
+    banner_url: null,
+    cbu: null,
+    alias: null,
+    lightning_address: null,
+    payout_method: "cbu_alias",
+    features_autorenewal: false,
+    locale: "es",
+    notification_prefs: {},
+    active: true,
+    deleted_at: null,
+    created_at: new Date(),
+    updated_at: new Date(),
+    ...overrides,
+  } as User;
+}
 
 describe("slugifyDisplayName", () => {
   it("lowercases and hyphenates word boundaries", () => {
@@ -57,5 +88,75 @@ describe("slugifyDisplayName", () => {
   it("handles names that produce only hyphens or empty after stripping", () => {
     expect(slugifyDisplayName("---")).toBeNull();
     expect(slugifyDisplayName("@@@")).toBeNull();
+  });
+});
+
+describe("hasPayoutConfigured", () => {
+  it("rejects an empty cbu_alias seller", () => {
+    expect(hasPayoutConfigured(makeUser({ payout_method: "cbu_alias" }))).toBe(
+      false,
+    );
+  });
+
+  it("accepts a cbu_alias seller with just an alias", () => {
+    expect(
+      hasPayoutConfigured(
+        makeUser({ payout_method: "cbu_alias", alias: "mi.alias" }),
+      ),
+    ).toBe(true);
+  });
+
+  it("accepts a cbu_alias seller with just a cbu", () => {
+    expect(
+      hasPayoutConfigured(
+        makeUser({
+          payout_method: "cbu_alias",
+          cbu: "0000003100010000000001",
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  it("rejects a cbu_alias seller with only whitespace fields", () => {
+    expect(
+      hasPayoutConfigured(
+        makeUser({
+          payout_method: "cbu_alias",
+          cbu: "   ",
+          alias: " \t",
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it("rejects a lightning_address seller with no LN address", () => {
+    expect(
+      hasPayoutConfigured(
+        makeUser({ payout_method: "lightning_address" }),
+      ),
+    ).toBe(false);
+  });
+
+  it("rejects a lightning_address seller even if cbu/alias are present", () => {
+    expect(
+      hasPayoutConfigured(
+        makeUser({
+          payout_method: "lightning_address",
+          cbu: "0000003100010000000001",
+          alias: "mi.alias",
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it("accepts a lightning_address seller with an LN address", () => {
+    expect(
+      hasPayoutConfigured(
+        makeUser({
+          payout_method: "lightning_address",
+          lightning_address: "me@walletofsatoshi.com",
+        }),
+      ),
+    ).toBe(true);
   });
 });

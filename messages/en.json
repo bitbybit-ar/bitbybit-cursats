@@ -346,7 +346,11 @@
   "createCourse": {
     "metadataTitle": "New course",
     "title": "New course",
-    "subtitle": "Set the details so the course shows up in your storefront."
+    "subtitle": "Set the details so the course shows up in your storefront.",
+    "payoutModal": {
+      "title": "Set up how you want to get paid",
+      "intro": "Before publishing a course you need a payout destination: either a CBU/alias to receive Argentine pesos, or a Lightning Address to receive sats."
+    }
   },
   "myCourses": {
     "metadataTitle": "My courses",
@@ -439,6 +443,7 @@
       "saving": "Saving…",
       "saved": "Course saved.",
       "saveFailed": "Couldn't save the course. Try again.",
+      "payoutNotConfigured": "Set up how you want to get paid before creating the course.",
       "slugTaken": "A course with that slug already exists.",
       "invalidPriceArs": "ARS price must be a positive integer.",
       "invalidPriceSats": "Sats price must be a positive integer.",
