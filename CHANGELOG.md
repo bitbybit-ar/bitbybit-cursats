@@ -12,6 +12,16 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Lightning checkout always mints against the seller's real
+  Lightning Address.** `getLightningClient()` no longer branches
+  on a `LIGHTNING_USE_REAL_CLIENT` env flag — production, staging,
+  and `npm run dev` all use `RealLightningClient`, which calls
+  the seller's LNURL-pay endpoint and LUD-21 verify URL. The
+  `MockLightningClient` stays exported but is only reachable
+  through `_setLightningClientForTests`, the explicit test-only
+  injection seam used by the LN integration tests. Removes a
+  silent-failure footgun where unset env meant fake BOLT11s for
+  every direct_lightning order.
 - **Course creation now gated on a configured payout method.**
   Submitting the create-course form when the seller has no payout
   destination on file for their current rail (`cbu_alias` → cbu

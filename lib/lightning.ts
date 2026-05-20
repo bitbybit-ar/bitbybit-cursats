@@ -8,15 +8,14 @@ import { bech32 } from "@scure/base";
  * the LightningClient interface defined below. Two implementations
  * live in this file:
  *
- *   - MockLightningClient: deterministic, in-process, no network. Used
- *     in dev and tests so the whole buyer flow runs end-to-end without
- *     resolving real LNURL-pay endpoints.
  *   - RealLightningClient: hits the seller's `<domain>/.well-known/
  *     lnurlp/<local-part>` endpoint, the LNURL-pay callback, and the
- *     LUD-21 verify URL.
- *
- * `getLightningClient()` returns the mock when LIGHTNING_USE_REAL_CLIENT
- * is unset (default for dev and CI) and the real client otherwise.
+ *     LUD-21 verify URL. This is the only runtime path —
+ *     `getLightningClient()` always returns this.
+ *   - MockLightningClient: deterministic, in-process, no network.
+ *     Test-only; tests opt in by calling
+ *     `_setLightningClientForTests(new MockLightningClient())`. Not
+ *     reachable through the factory and not used by `npm run dev`.
  *
  * LUD-21 (`verify` URL) is required. We refuse to mint an invoice
  * against a Lightning Address whose LNURL-pay endpoint does not
@@ -544,8 +543,10 @@ export function _resetLightningClientForTests(): void {
 
 /**
  * Test-only helper to inject a specific client (typically a
- * MockLightningClient with pre-seeded markPaid state) without going
- * through the env switch.
+ * MockLightningClient with pre-seeded markPaid state). The factory
+ * always returns RealLightningClient otherwise, so tests that want
+ * deterministic behaviour must call this before exercising any code
+ * path that funds or polls a direct_lightning order.
  */
 export function _setLightningClientForTests(client: LightningClient): void {
   cached = client;
@@ -553,10 +554,6 @@ export function _setLightningClientForTests(client: LightningClient): void {
 
 export function getLightningClient(): LightningClient {
   if (cached) return cached;
-  if (process.env.LIGHTNING_USE_REAL_CLIENT === "1") {
-    cached = new RealLightningClient();
-  } else {
-    cached = new MockLightningClient();
-  }
+  cached = new RealLightningClient();
   return cached;
 }
