@@ -90,10 +90,9 @@ export const users = pgTable(
     // Which rail this user uses to receive funds (when selling).
     // ADR 0015. 'cbu_alias' preserves prior behavior on migration;
     // users who want sats flip the radio in the settings page.
-    payout_method: payoutMethod("payout_method").notNull().default("cbu_alias"),
-    features_autorenewal: boolean("features_autorenewal")
+    payout_method: payoutMethod("payout_method")
       .notNull()
-      .default(false),
+      .default("cbu_alias"),
     // Default UI language for this user. The navbar's locale switch
     // is a temporary session-only override (URL prefix); this is the
     // value applied on next sign-in. ADR 0021.

@@ -496,6 +496,13 @@ class RealLightningClient implements LightningClient {
   }
 }
 
+// LNURL responses (well-known metadata, callback, LUD-21 verify) are
+// all small JSON envelopes — a few hundred bytes in practice. Cap the
+// read at 64 KiB so a malicious or compromised provider can't return
+// gigabytes and OOM the worker. The timeout above protects against
+// slow-loris; this protects against fast-but-huge.
+const MAX_LNURL_RESPONSE_BYTES = 64 * 1024;
+
 async function fetchJsonWithTimeout(
   url: string,
   timeoutMs: number
@@ -511,10 +518,52 @@ async function fetchJsonWithTimeout(
     if (!res.ok) {
       throw new Error(`fetch_${res.status}: ${url}`);
     }
-    return await res.json();
+    // Reject obviously-oversized responses by the advertised
+    // Content-Length first; not all providers send it, so the
+    // streaming counter below is the real guard.
+    const advertised = res.headers.get("content-length");
+    if (advertised && Number(advertised) > MAX_LNURL_RESPONSE_BYTES) {
+      ctl.abort();
+      throw new Error(`fetch_oversize: ${url}`);
+    }
+    const reader = res.body?.getReader();
+    if (!reader) {
+      throw new Error(`fetch_no_body: ${url}`);
+    }
+    const chunks: Uint8Array[] = [];
+    let received = 0;
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      if (value) {
+        received += value.byteLength;
+        if (received > MAX_LNURL_RESPONSE_BYTES) {
+          // Best-effort: cancel the underlying stream so the
+          // provider stops sending. Throw before we accumulate
+          // beyond the cap into the chunks array.
+          await reader.cancel().catch(() => {});
+          throw new Error(`fetch_oversize: ${url}`);
+        }
+        chunks.push(value);
+      }
+    }
+    const text = new TextDecoder("utf-8").decode(
+      chunks.length === 1 ? chunks[0] : concatChunks(chunks, received),
+    );
+    return JSON.parse(text);
   } finally {
     clearTimeout(timer);
   }
+}
+
+function concatChunks(chunks: Uint8Array[], total: number): Uint8Array {
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return out;
 }
 
 // --- Factory -----------------------------------------------------

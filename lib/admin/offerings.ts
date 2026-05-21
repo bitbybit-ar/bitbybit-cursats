@@ -106,6 +106,22 @@ export function mintCodes(count: number): string[] {
   return Array.from(codes);
 }
 
+// `download_url` is followed by a 302 from `/api/downloads/[orderId]`
+// after a buyer has paid, so it must be a real https endpoint —
+// `javascript:`, `data:`, `file:`, and bare http are all phishing or
+// downgrade vectors at that step. zod's `.url()` only checks shape, so
+// the refinement here is load-bearing.
+const HttpsUrlSchema = z
+  .string()
+  .url()
+  .refine((value) => {
+    try {
+      return new URL(value).protocol === "https:";
+    } catch {
+      return false;
+    }
+  }, "url must use https://");
+
 const OfferingCommonFields = z.object({
   slug: SlugSchema,
   type: z.enum(["code", "download"]),
@@ -114,7 +130,7 @@ const OfferingCommonFields = z.object({
   price_amount: z.number().int().positive(),
   price_currency: z.enum(["ars", "sats"]),
   image_url: z.string().url(),
-  download_url: z.string().url().nullable().optional(),
+  download_url: HttpsUrlSchema.nullable().optional(),
   tags: TagsSchema,
 });
 

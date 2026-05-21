@@ -66,7 +66,6 @@ export const UpdateUserProfileSchema = z
     cbu: CbuSchema.nullable(),
     lightning_address: LightningAddressSchema.nullable(),
     payout_method: z.enum(["cbu_alias", "lightning_address"]),
-    features_autorenewal: z.boolean(),
     locale: z.enum(["es", "en"]),
     notification_prefs: NotificationPrefsSchema,
   })
@@ -311,9 +310,6 @@ export async function updateUserProfile(
   }
   if (patch.payout_method !== undefined) {
     next.payout_method = patch.payout_method;
-  }
-  if (patch.features_autorenewal !== undefined) {
-    next.features_autorenewal = patch.features_autorenewal;
   }
   if (patch.locale !== undefined) next.locale = patch.locale;
   // Merge notification_prefs on top of the existing row instead of

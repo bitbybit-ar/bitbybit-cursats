@@ -92,7 +92,7 @@
   &:focus-visible {
     outline: 2px solid $focus-ring;
     outline-offset: 2px;
-    border-radius: $border-radius-xs;
+    border-radius: $border-radius-2xs;
   }
 }
 
@@ -230,6 +230,6 @@
   &:focus-visible {
     outline: 2px solid $focus-ring;
     outline-offset: 2px;
-    border-radius: $border-radius-xs;
+    border-radius: $border-radius-2xs;
   }
 }

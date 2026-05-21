@@ -291,8 +291,17 @@ export function getWapuClient(): WapuClient {
   if (cached) return cached;
   const apiKey = process.env.WAPU_API_KEY;
   if (!apiKey) {
-    const secret = process.env.WAPU_WEBHOOK_SECRET || "mock-webhook-secret";
-    cached = new MockWapuClient(secret);
+    // Production must never run on the mock client with a deterministic
+    // fallback secret — that secret is public in this file, so anyone
+    // could forge a valid `paid` webhook. Fail at boot if a deployment
+    // somehow lands here without an explicit override.
+    const explicitSecret = process.env.WAPU_WEBHOOK_SECRET;
+    if (process.env.NODE_ENV === "production" && !explicitSecret) {
+      throw new Error(
+        "WAPU_WEBHOOK_SECRET is required in production. Either set WAPU_API_KEY to use the real client, or set WAPU_WEBHOOK_SECRET to a high-entropy value shared with Wapu.",
+      );
+    }
+    cached = new MockWapuClient(explicitSecret || "mock-webhook-secret");
     return cached;
   }
   cached = new UnimplementedWapuClient();

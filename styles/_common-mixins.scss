@@ -62,8 +62,8 @@
 @mixin section-padding {
   padding: $spacing-100 0;
 
-  @media (max-width: 768px) {
-    padding: 60px 0;
+  @include mobile {
+    padding: $spacing-64 0;
   }
 }
 

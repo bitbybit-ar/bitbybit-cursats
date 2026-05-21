@@ -10,6 +10,67 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Removed
+
+- **`users.features_autorenewal` column dropped.** Migration
+  `0010_drop_features_autorenewal.sql` removes the column from
+  Postgres; `UpdateUserProfileSchema` no longer accepts the field
+  and the PATCH response no longer surfaces it. ADR
+  [0020](docs/architecture/decisions/0020-defer-autorenewal-from-mvp.md)
+  was revised in the same pass: the original "keep the column,
+  drop only the UI" posture was replaced with an outright drop.
+  Re-introducing autorenewal will need a fresh migration.
+
+### Security
+
+- **Wapu webhook secret fails fast in production.**
+  `lib/wapu.ts` now throws at boot when `NODE_ENV=production` and
+  `WAPU_WEBHOOK_SECRET` is unset. Dev and CI continue to fall
+  back to the deterministic `mock-webhook-secret`. Closes the
+  forge-a-paid-webhook risk if a deployment was missing the env
+  var.
+- **Download proxy restricted to https.** The offering schema's
+  `download_url` field now rejects `javascript:`, `data:`,
+  `file:`, and bare http; the `/api/downloads/[orderId]` route
+  re-parses the URL and refuses a 302 to anything that isn't
+  https. Closes the post-purchase phishing/credential-theft
+  vector flagged in the security audit.
+- **LUD-21 probe runs on every Lightning-Address change.**
+  `/api/settings` previously skipped the 1-sat probe when the
+  user updated only their LN address without flipping
+  `payout_method`; the gate is now driven entirely by whether
+  the address changed, so the next rail flip cannot activate an
+  unverified provider.
+- **LNURL responses capped at 64 KiB.** `fetchJsonWithTimeout`
+  (the shared helper used by the LNURL metadata, callback, and
+  LUD-21 verify polls) now streams the response and aborts past
+  the cap. The previous timeout-only guard would not stop a
+  fast-but-huge response from exhausting worker memory.
+- **NIP-98 replay window tightened from 30 s to 10 s.**
+  `lib/nostr/verify.ts` halves the time a captured auth event
+  stays usable. A residual replay risk inside the 10 s window
+  remains; closing it fully requires a single-use-nonce store
+  and is deferred.
+- **JSON-LD output hardened against script-tag injection.**
+  `app/[locale]/layout.tsx` now escapes `</script` and `<!--`
+  sequences before embedding the schema.org payloads, so a
+  future contributor passing user data into the markup cannot
+  break out of the `<script>` island.
+- **Wapu webhook 500 responses no longer leak error detail.**
+  The internal exception message stays in the server log; the
+  HTTP body is `{ error: "internal_error" }` so a caller probing
+  with forged-but-signed payloads cannot infer schema or
+  order-state from the response.
+
+### Accessibility
+
+- **`.size-sm` buttons hit 44 px on mobile.** Desktop density is
+  unchanged; touch viewports get a `min-height: 44px` to meet
+  WCAG 2.5.5.
+- **Skip-to-content link confirmed.** The skip-link / `<main>`
+  landmark pair was already in `app/[locale]/layout.tsx`; the
+  audit finding was a false read.
+
 ### Changed
 
 - **`/explore` is personalised for signed-in users.** When a
@@ -135,6 +196,30 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   `/explore` ordering for logged-in users.
 
 ### Changed
+
+- **Breakpoint hygiene.** Replaced hardcoded `@media` queries in
+  `_common-mixins.scss`, the offering detail page, and the
+  receipt's nostr-prompt card with `@include mobile` /
+  `tabletAndUp` mixins so every breakpoint resolves to the same
+  three constants in `_media-mixins.scss`.
+- **Design-token hygiene.** Back-link bumped to 44 × 44 px
+  (WCAG 2.5.5) with `border-radius: $border-radius-full`;
+  checkout-status now uses `$border-radius-md`; confetti in the
+  zap modal references `var(--color-nostr)` /
+  `var(--accent-gold)` / etc. instead of hex literals so the
+  flipping accents pick up the right value per theme; polaroid
+  corner uses the new `$border-radius-xs` (4 px). Decorative
+  motion amplitudes in `bubble.module.scss` and
+  `polaroid.module.scss`, the polaroid's static
+  `rgba(0, 0, 0, ...)` shadows (intentionally non-flipping per
+  the file's own header comment), and the polaroid's fixed
+  320 px width are documented exceptions and stay as-is.
+- **Border-radius scale.** Renamed `$border-radius-xs` from 2 px
+  to 4 px and introduced `$border-radius-2xs: 2px`, so the
+  scale reads 2xs → xs → sm → md → lg → xl → full in
+  increasing radius. Three existing 2 px call-sites (the
+  attendance polaroid and offering-card focus rings) migrate to
+  `$border-radius-2xs` to keep their current look.
 - **Features page — deck-deal animation.** The polaroid grid now
   sets up like a hand of cards. On desktop the nine cards stack at
   the top-left where "Dos formas de cobrar" lands, then spring out

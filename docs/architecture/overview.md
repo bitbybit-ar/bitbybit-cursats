@@ -1,7 +1,7 @@
 # Architecture overview
 
 > **Status:** Active
-> **Last updated:** 2026-05-19
+> **Last updated:** 2026-05-21
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-21 | Auto-renewal flow, Ownership of state | Replaced the full autorenewal flow description and diagram with a deferred-from-MVP pointer to ADR 0020; removed the "Autorenewal toggle" row from the ownership table. | ADR 0020 was revised to drop the column outright (migration 0009). The overview was still describing the dormant-but-deployed posture the original ADR walked back. |
 | 2026-05-19 | External services | Added Yadio as the live sats↔ARS exchange-rate source. | The storefront was quoting against a 4-sats/ARS mock (~4.5× off); ADR 0022 wired the real rate. |
 | 2026-05-12 | — | Rebranded references from "Cursá" to "Cursats" and updated the deployment URL to `cursats.bitbybit.com.ar`. Aligned the example storefront URLs with ADR 0017 (flat `/<userSlug>` instead of `/m/<userSlug>`). | Brand rename per ADR 0018 — portmanteau of *cursá* (the voseo verb) and *sats*. |
 | 2026-05-12 | What this app is, Routing, Identity model, Creator surfaces (renamed from Merchant admin panel), Stack, Configuration model, Auto-renewal flow, Security, What is intentionally not here, Table of Contents | Replaced single-tenant framing with multi-tenant marketplace; replaced "Wapu only" with the dual-rail model (Wapu ARS + Lightning Address direct sats); removed the `/panel/*` namespace and the `ADMIN_PUBKEYS`-gated admin posture; renamed the panel section to "Creator surfaces" and pointed it at the top-level English routes; updated the Stack image-storage line from Vercel Blob to Blossom; renamed `lib/merchant.ts` → `lib/site.ts` and `merchants` → `users` in the configuration table. | The doc was three pivots behind reality (ADR 0014 opened the marketplace, ADR 0015 added the second rail, ADR 0016 collapsed `merchants` into `users`). Contributors reading this would have built against an architecture that no longer exists. |
@@ -343,43 +344,21 @@ permanent receipt page at `/[locale]/receipt/[orderId]`; if they
 connected a Nostr identity at checkout, an encrypted DM with the
 same content goes out from the deployment's npub.
 
-## Auto-renewal flow (optional)
+## Auto-renewal flow (deferred from MVP)
 
-Gated by `users.features_autorenewal` (Postgres), toggled by the
-seller from `/[locale]/settings`. The NWC client, the cron
-handler, and the encrypted-secrets storage are *deployed but
-dormant* when the flag is off — the code is present in every
-build, gated by a runtime check on the flag. Flipping the toggle
-takes effect immediately; no redeploy. Decision in ADR
-[0005](decisions/0005-prepaid-default-autorenewal-optin.md)
-(amended by ADR 0009).
+Deferred per ADR
+[0020](decisions/0020-defer-autorenewal-from-mvp.md). The settings
+toggle, the `users.features_autorenewal` column, and the input
+field on `UpdateUserProfileSchema` are all gone (migration
+`0009_drop_features_autorenewal.sql`). Every purchase in v1 is a
+one-shot; the section is left here as a pointer for the
+re-introduction ADR so it has something to supersede.
 
-```text
-Cron (daily)     Cursats app           NWC connection         Wapu
-     │                │                     │                  │
-     │── tick ───────▶│                     │                  │
-     │                │── list expiring ────│                  │
-     │                │── create invoice ───────────────────── ▶
-     │                │◀── invoice ─────────────────────────── │
-     │                │── pay via NWC pull ▶                   │
-     │                │                     │── pay invoice ─ ▶│
-     │                │◀── webhook: paid ────────────────────── │
-     │                │── send "renewed" Nostr DM ────────────
-```
-
-Each subscriber stores: their NWC connection string (encrypted at
-rest), the offering they subscribed to, the budget granted, and
-the next renewal date. Renewal confirmations and cancellations
-are pushed to the subscriber's Nostr pubkey — already known from
-the NWC connection — so no separate identity prompt is needed. A
-pull failure puts the subscription in a grace window; after N
-retries the subscription is cancelled and a Nostr DM is sent.
-
-There is no buyer-side wallet detection. Both checkout buttons
-("Comprar" and "Autorenovar") are visible when the seller's
-autorenewal flag is on; if a buyer's wallet cannot complete the
-NWC connection, the auto-renewal flow simply fails and the buyer
-falls back to the one-shot button.
+No NWC client, cron worker, or encrypted-secrets storage ships in
+v1; a future ADR that re-enables autorenewal will need a fresh
+schema (the original single-boolean column was not going to
+survive a real implementation anyway) and will rebuild the
+checkout's "Autorenovar" CTA from scratch.
 
 ## Notifications & delivery
 
@@ -442,7 +421,6 @@ shape in ADR [0009](decisions/0009-offerings-and-settings-in-database.md).
 | Slug, display name, bio | the seller | Postgres `users`, `/[locale]/settings` |
 | Payout method + destination (CBU/alias OR Lightning Address) | the seller | Postgres `users`, `/[locale]/settings` |
 | Offerings (catalog) | the seller | Postgres `offerings`, `/[locale]/my-courses` |
-| Autorenewal toggle | the seller | Postgres `users.features_autorenewal`, `/[locale]/settings` |
 | Orders, sessions, notifications | nobody | Postgres, system-managed |
 
 First-run experience: a new visitor signs in with Nostr →

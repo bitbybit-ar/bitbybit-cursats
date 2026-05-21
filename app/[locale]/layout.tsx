@@ -8,6 +8,7 @@ import {
 import { Nunito, Nunito_Sans } from "next/font/google";
 import { routing } from "@/i18n/routing";
 import { alternatesFor } from "@/lib/seo";
+import { serializeJsonLd } from "@/lib/jsonld";
 import { getBaseUrl } from "@/lib/env";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/lib/contexts/theme-context";
@@ -172,11 +173,11 @@ export default async function LocaleLayout({
         <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(orgJsonLd) }}
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(websiteJsonLd) }}
         />
       </head>
       <body suppressHydrationWarning>

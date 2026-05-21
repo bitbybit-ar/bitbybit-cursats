@@ -78,17 +78,16 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
     lightningAddressChanged ||
     payoutMethodChanged;
 
-  // LUD-21 sanity check (ADR 0015). When a user sets/changes their
-  // LN address and the sats rail will be active after this PATCH,
-  // mint a 1-sat probe invoice to confirm the provider advertises
-  // LUD-21. Refuse the save with a friendly error if not — at
-  // checkout time we'd have no way to verify settlement.
+  // LUD-21 sanity check (ADR 0015). Probe the upstream provider
+  // whenever the user sets or changes their LN address, regardless
+  // of which rail is currently active. A seller may store the
+  // address now and flip `payout_method` later in a separate PATCH;
+  // if we only probed when the sats rail was already selected, that
+  // later flip would activate an unverified address and break
+  // settlement confirmation at checkout time.
   const nextLightningAddress =
     parsed.data.lightning_address ?? auth.user.lightning_address;
-  const willUseSatsRail =
-    (parsed.data.payout_method ?? auth.user.payout_method) ===
-    "lightning_address";
-  if (lightningAddressChanged && nextLightningAddress && willUseSatsRail) {
+  if (lightningAddressChanged && nextLightningAddress) {
     try {
       await getLightningClient().mintInvoice(
         nextLightningAddress,
@@ -152,7 +151,6 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
       alias: updated.alias,
       lightning_address: updated.lightning_address,
       payout_method: updated.payout_method,
-      features_autorenewal: updated.features_autorenewal,
       locale: updated.locale,
       notification_prefs: updated.notification_prefs,
     },

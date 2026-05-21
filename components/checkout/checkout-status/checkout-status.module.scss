@@ -10,7 +10,7 @@
   align-items: center;
   gap: $spacing-12;
   padding: $spacing-16;
-  border-radius: 12px;
+  border-radius: $border-radius-md;
   border: 1px solid $color-border;
   background-color: $color-bg-2;
 }

@@ -1,7 +1,7 @@
 # Routing
 
 > **Status:** Active
-> **Last updated:** 2026-05-19
+> **Last updated:** 2026-05-21
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-21 | Buyer flow, Account, Subscriber, API | Scrubbed `features_autorenewal` references; checkout, settings, and subscriber sections now state autorenewal is deferred per ADR 0020 and point at migration `0009_drop_features_autorenewal.sql`. | The column and its plumbing were removed; the doc was still describing the dormant-but-deployed posture the original ADR 0020 walked back. |
 | 2026-05-19 | Static content | `/how-it-works` restyled: a fixed ambient bubble backdrop plus the two journeys as titled rows of reused `<Polaroid>` step cards (view-triggered stagger; no toggle, no scroll-scrub, no query param). Same single route, same i18n keys/content; no routing or data change. Components under `components/how-it-works/*`. | Presentational only; logged so contributors know it is one static page (not parameterised) before the visual layer churned. |
 | 2026-05-19 | Conventions, Static content | Renamed the last two Spanish-slug public pages: `/como-funciona` → `/how-it-works`, `/caracteristicas` → `/features`. Clean pre-launch rename (no back-compat redirect — nothing links to the old slugs yet); reserved-slug list updated to the new names (plus `/faq`, previously missing). Updated the Features-page card list (dropped opt-in autorenewal and marketplace-or-self-host, which describe deferred/cut features per ADRs 0020 and 0014/0004; now one-shot + open marketplace) and the How-it-works glossary note (3 brand logos: Lightning / Wapu / Nostr). | ADR 0023: every public route is English/language-neutral; the "Spanish slug retained for share-link continuity" carve-out from ADR 0014 is moot pre-launch. The Features copy was advertising a deferred feature (autorenewal) and a retired model (per-merchant fork/self-host). |
 | 2026-05-12 | Buyer flow, Conventions | Flattened seller URLs: `/[locale]/m/[userSlug]` → `/[locale]/[userSlug]` and `/[locale]/m/[userSlug]/c/[offeringSlug]` → `/[locale]/[userSlug]/c/[offeringSlug]`. Redesigned the offering detail page (hero + rail/delivery badges + instructor block) and wired the landing's mock courses (`lib/mock/highlighted-courses.ts`) as a fallback so the three demo URLs render without a populated DB. | ADR 0017. With merchants collapsed into users (ADR 0016) the `/m/` namespace no longer maps to a distinct concept; the offering page also needed real shape before the marketplace launches. |
@@ -99,7 +100,7 @@ clicks, pays, and walks away with a redemption code or download.
 | `/[locale]/explore` | Global catalog | Aggregated view across every active seller's offerings. |
 | `/[locale]/[userSlug]` | Seller storefront | A single seller's listings. Slug auto-generated at sign-in (`user-<first-8>`); the seller can rename it from `/settings`. |
 | `/[locale]/[userSlug]/c/[offeringSlug]` | Offering detail | Hero (image + title + price + CTA), rail/delivery badges, long description, instructor block with the seller's bio and a link to their storefront. `c/` keeps the offering slug namespaced under the seller so two sellers can both ship `intro-bitcoin`. |
-| `/[locale]/checkout/[orderId]` | Lightning invoice | QR + copy-to-clipboard, status polling against `/api/orders/[orderId]`. Survives reload. If `users.features_autorenewal` is on for the seller, both pay-buttons (one-shot vs NWC) are visible — buyer self-selects. |
+| `/[locale]/checkout/[orderId]` | Lightning invoice | QR + copy-to-clipboard, status polling against `/api/orders/[orderId]`. Survives reload. Single one-shot pay CTA (autorenewal is deferred per ADR [0020](decisions/0020-defer-autorenewal-from-mvp.md)). |
 | `/[locale]/receipt/[orderId]` | Permanent receipt | Redemption code (`type=code`) or short-lived signed download URL (`type=download`). Inline "Conectá tu Nostr para guardar este pedido" prompt. Decision pinned in ADR [0006](decisions/0006-nostr-and-inapp-delivery.md). |
 
 ## Account
@@ -137,16 +138,17 @@ the `(logged-in)` route group in `app/[locale]/(logged-in)/...`.
 | `/[locale]/my-courses/[slug]/edit` | Edit course | Same form as create, prefilled. Archive button lives on this page. |
 | `/[locale]/orders` | Sales history | Read-only in v1. Filter, search, sort, paginate. |
 | `/[locale]/orders/[orderId]` | Sale detail | Buyer pubkey if any, payment hash, rail (`wapu_ars` or `lightning`), Wapu settlement reference (Wapu rail) or LNURL verify URL (Lightning rail), redemption state. |
-| `/[locale]/settings` | Settings | Slug, display name, bio, payout method (`wapu_ars` ⇒ CBU/alias; `lightning` ⇒ Lightning Address), autorenewal toggle. Mutations to payment-destination fields require a NIP-07 re-sign at save time; a new Lightning Address must pass a 1-sat LUD-21 probe before being accepted (ADR [0015](decisions/0015-sats-settlement-rail.md)). |
+| `/[locale]/settings` | Settings | Slug, display name, bio, payout method (`wapu_ars` ⇒ CBU/alias; `lightning` ⇒ Lightning Address). Mutations to payment-destination fields require a NIP-07 re-sign at save time; a new Lightning Address must pass a 1-sat LUD-21 probe before being accepted (ADR [0015](decisions/0015-sats-settlement-rail.md)). |
 
-## Subscriber (auto-renewal)
+## Subscriber (auto-renewal — deferred)
 
-Code paths are deployed but dormant unless the seller has
-`features_autorenewal` on (amended ADR
-[0005](decisions/0005-prepaid-default-autorenewal-optin.md)). The
-subscriber-side surface is reserved but not yet shipped; this
-table documents the expected shape so contributors building it
-do not invent a different one.
+No subscriber routes ship in v1. Autorenewal is deferred per ADR
+[0020](decisions/0020-defer-autorenewal-from-mvp.md); the
+`users.features_autorenewal` column was dropped in migration
+`0009_drop_features_autorenewal.sql` and no code branches on it
+anywhere. The table below is preserved as a hint for the future
+ADR that re-introduces the feature, so contributors building it
+do not invent a different shape.
 
 | Route | Status | Purpose |
 |---|---|---|
@@ -207,10 +209,12 @@ servers (`NEXT_PUBLIC_BLOSSOM_SERVERS`), authenticated by a
 kind:24242 signed event produced via `signWithPrompt`. The
 returned hash-addressed URL lands in `offerings.image_url`.
 
-### Subscriber (only mounted when `features_autorenewal` is on)
+### Subscriber (deferred — not built in v1)
 
-The cron and NWC routes are reserved but not yet built; this
-table documents the expected shape.
+The cron and NWC routes are reserved but not built; autorenewal
+is deferred per ADR
+[0020](decisions/0020-defer-autorenewal-from-mvp.md). The table
+documents the expected shape for a future re-introduction.
 
 | Route | Method | Status | Purpose |
 |---|---|---|---|

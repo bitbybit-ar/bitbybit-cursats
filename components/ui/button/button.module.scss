@@ -2,6 +2,7 @@
 @use "@/styles/spacing" as *;
 @use "@/styles/typography" as *;
 @use "@/styles/common-mixins" as *;
+@use "@/styles/media-mixins" as *;
 
 .button {
   display: inline-block;
@@ -62,10 +63,12 @@
 
 .variant-secondary {
   @include ceramic-surface($color-secondary, 28%);
-  // Dark text on lime — white on #A5CE3A is ~2.5:1 (fails AA). Use
-  // the static-navy token rather than $gray-900 because the gray
-  // scale flips in dark mode (gray-900 becomes near-white), which
-  // would break this exact contrast we are trying to preserve.
+  // Dark text on lime. White on #a5ce3a is ~2.5:1 (fails AA);
+  // $static-navy on #a5ce3a is ~10.5:1 (passes AAA body, 7:1).
+  // Use the static-navy token rather than $gray-900 because the
+  // gray scale flips in dark mode (gray-900 becomes near-white),
+  // which would break this exact contrast we are trying to
+  // preserve.
   color: $static-navy;
 
   &:hover:not(:disabled) {
@@ -111,9 +114,8 @@
 // the roles can diverge later without a visual regression.
 .variant-accent {
   @include ceramic-surface($color-secondary, 28%);
-  // Theme-independent dark text — the gray scale flips in dark
-  // mode, so $gray-900 would resolve to near-white and fail
-  // contrast on the lime surface. See $static-navy in _colors.scss.
+  // Same contrast story as .variant-secondary above —
+  // $static-navy on #a5ce3a is ~10.5:1 (passes AAA body).
   color: $static-navy;
 
   &:hover:not(:disabled) {
@@ -232,6 +234,13 @@
 .size-sm {
   padding: $spacing-8 $spacing-16;
   font-size: $font-size-sm;
+
+  // Density on desktop is intentional, but a ~30px hit target is
+  // below WCAG 2.5.5 on touch viewports. Bump to 44px on mobile so
+  // small buttons in the navbar / table actions stay tappable.
+  @include mobile {
+    min-height: 44px;
+  }
 }
 
 .size-default {
