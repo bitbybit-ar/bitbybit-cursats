@@ -96,11 +96,26 @@ export async function generateMetadata({
       url: locale === "es" ? baseUrl : `${baseUrl}/${locale}`,
       locale: ogLocale,
       alternateLocale: altLocale,
+      // Static PNG referenced explicitly so WhatsApp's link-preview
+      // crawler (which historically misses Next.js file-convention
+      // OG endpoints) has a guaranteed image to fetch. The dynamic
+      // `opengraph-image.tsx` in this segment still auto-injects as
+      // a second entry — crawlers that respect file conventions get
+      // the per-locale headline; those that don't get the static one.
+      images: [
+        {
+          url: "/og.png",
+          width: 1200,
+          height: 630,
+          alt: t("siteTitle"),
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: t("siteTitle"),
       description: t("description"),
+      images: ["/og.png"],
     },
     robots: {
       index: true,
