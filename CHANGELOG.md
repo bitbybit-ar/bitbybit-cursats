@@ -82,10 +82,13 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   travel-companions polaroids drop in from above with alternating
   tilts and a spring landing — same primitives in both, lifted to
   `components/common/reveal-header` and
-  `components/common/reveal-polaroids`. Scroll triggers are tuned
-  per section so the cascade only starts once the relevant content
-  is well in view. Respects `prefers-reduced-motion`. Also bumps
-  "sats" → "SATS" inside the landing hero gradient for both
+  `components/common/reveal-polaroids`. The support-cursats block
+  fades its header in with a blur clear and rises the CTAs, the
+  contribute label, and the per-project repo links in a soft
+  cascade. Scroll triggers are tuned per section so the cascade
+  only starts once the relevant content is well in view. Respects
+  `prefers-reduced-motion`. Also bumps "sats" → "SATS" inside the
+  landing hero gradient for both
   locales.
 
 - **`/explore` is personalised for signed-in users.** When a
