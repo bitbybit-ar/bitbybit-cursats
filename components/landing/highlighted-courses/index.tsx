@@ -3,6 +3,8 @@ import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
 import { OfferingCard } from "@/components/catalog/offering-card";
 import { listHighlightedOfferings } from "@/lib/offerings";
+import { RevealHeader } from "./reveal-header";
+import { RevealGrid } from "./reveal-grid";
 import styles from "./highlighted-courses.module.scss";
 
 export async function HighlightedCourses() {
@@ -13,16 +15,19 @@ export async function HighlightedCourses() {
 
   return (
     <Container className={styles.container}>
-      <header className={styles.header}>
-        <h2 className={styles.title}>{t("title")}</h2>
-        <p className={styles.subtitle}>{t("subtitle")}</p>
-      </header>
+      <RevealHeader
+        className={styles.header}
+        titleClassName={styles.title}
+        subtitleClassName={styles.subtitle}
+        title={t("title")}
+        subtitle={t("subtitle")}
+      />
 
-      <div className={styles.grid}>
+      <RevealGrid className={styles.grid}>
         {rows.map(({ offering, seller }) => (
           <OfferingCard key={offering.id} offering={offering} seller={seller} />
         ))}
-      </div>
+      </RevealGrid>
 
       <div className={styles.actions}>
         <Button

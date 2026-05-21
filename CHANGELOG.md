@@ -19,6 +19,11 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   in from opposite sides. Built with framer-motion; respects
   `prefers-reduced-motion`. Also bumps "sats" → "SATS" inside the
   landing hero gradient for both locales.
+- **Highlighted-courses reveal on scroll.** Section title and
+  subtitle fade in with a blur clear (no movement) as the section
+  enters the viewport; offering cards then slide in one by one
+  from the left. Runs once per page load and respects
+  `prefers-reduced-motion`.
 - **Specific error messages for failed Lightning Address checks.**
   When a seller's Lightning Address fails the settings-time probe
   or a buyer's mint at checkout, the UI now surfaces the underlying
