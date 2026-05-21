@@ -3,7 +3,7 @@ import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
 import { OfferingCard } from "@/components/catalog/offering-card";
 import { listHighlightedOfferings } from "@/lib/offerings";
-import { RevealHeader } from "./reveal-header";
+import { RevealHeader } from "@/components/common/reveal-header";
 import { RevealGrid } from "./reveal-grid";
 import styles from "./highlighted-courses.module.scss";
 

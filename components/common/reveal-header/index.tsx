@@ -59,3 +59,5 @@ export function RevealHeader({
     </motion.header>
   );
 }
+
+export default RevealHeader;

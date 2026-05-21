@@ -24,6 +24,11 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   enters the viewport; offering cards then slide in one by one
   from the left. Runs once per page load and respects
   `prefers-reduced-motion`.
+- **Need-motivation polaroid drop.** The Arena / Habits cards now
+  drop in from above with alternating tilts (-8° / +6°), a soft
+  scale-up, and a spring landing — like photos hitting a pinboard.
+  The header reuses the shared `RevealHeader` (blur-clear fade) for
+  rhythm consistency across landing sections.
 - **Specific error messages for failed Lightning Address checks.**
   When a seller's Lightning Address fails the settings-time probe
   or a buyer's mint at checkout, the UI now surfaces the underlying

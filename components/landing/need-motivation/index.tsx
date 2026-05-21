@@ -2,6 +2,8 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Section } from "@/components/ui/section";
 import { ArrowRightIcon } from "@/components/icons";
+import { RevealHeader } from "@/components/common/reveal-header";
+import { RevealPolaroids } from "./reveal-polaroids";
 import styles from "./need-motivation.module.scss";
 
 interface MotivationCard {
@@ -39,40 +41,46 @@ export function NeedMotivation() {
 
   return (
     <Section id="motivacion">
-      <header className={styles.header}>
-        <h2 className={styles.title}>{t("title")}</h2>
-        <p className={styles.subtitle}>{t("subtitle")}</p>
-      </header>
+      <RevealHeader
+        className={styles.header}
+        titleClassName={styles.title}
+        subtitleClassName={styles.subtitle}
+        title={t("title")}
+        subtitle={t("subtitle")}
+      />
 
-      <ul className={styles.board} aria-label={t("listLabel")}>
+      <RevealPolaroids
+        className={styles.board}
+        itemClassName={styles.boardItem}
+        ariaLabel={t("listLabel")}
+      >
         {CARDS.map((card) => (
-          <li key={card.href} className={styles.boardItem}>
-            <a
-              href={card.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={styles.polaroid}
-            >
-              <div className={styles.photoFrame}>
-                <Image
-                  src={card.imageSrc}
-                  alt={card.imageAlt}
-                  width={420}
-                  height={280}
-                  className={styles.photo}
-                />
-              </div>
-              <div className={styles.caption}>
-                <h3 className={styles.name}>{t(card.titleKey)}</h3>
-                <p className={styles.description}>{t(card.descriptionKey)}</p>
-                <span className={styles.cta}>
-                  {t(card.ctaKey)} <ArrowRightIcon size={14} />
-                </span>
-              </div>
-            </a>
-          </li>
+          <a
+            key={card.href}
+            href={card.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.polaroid}
+          >
+            <div className={styles.photoFrame}>
+              <Image
+                src={card.imageSrc}
+                alt={card.imageAlt}
+                width={420}
+                height={280}
+                className={styles.photo}
+              />
+            </div>
+            <div className={styles.caption}>
+              <h3 className={styles.name}>{t(card.titleKey)}</h3>
+              <p className={styles.description}>{t(card.descriptionKey)}</p>
+              <span className={styles.cta}>
+                {t(card.ctaKey)} <ArrowRightIcon size={14} />
+              </span>
+            </div>
+          </a>
         ))}
-      </ul>
+      </RevealPolaroids>
     </Section>
   );
 }
