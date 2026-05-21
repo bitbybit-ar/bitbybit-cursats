@@ -12,6 +12,13 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Hero entrance animation on the landing.** The title now
+  assembles word-by-word with a blur-clear + rise, and the
+  gradient word ("SATS") arrives last with a soft spring
+  overshoot. Subtitle eases in afterwards and the two CTAs slide
+  in from opposite sides. Built with framer-motion; respects
+  `prefers-reduced-motion`. Also bumps "sats" → "SATS" inside the
+  landing hero gradient for both locales.
 - **Specific error messages for failed Lightning Address checks.**
   When a seller's Lightning Address fails the settings-time probe
   or a buyer's mint at checkout, the UI now surfaces the underlying
