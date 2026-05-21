@@ -3,7 +3,7 @@ import { useTranslations } from "next-intl";
 import { Section } from "@/components/ui/section";
 import { ArrowRightIcon } from "@/components/icons";
 import { RevealHeader } from "@/components/common/reveal-header";
-import { RevealPolaroids } from "./reveal-polaroids";
+import { RevealPolaroids } from "@/components/common/reveal-polaroids";
 import styles from "./need-motivation.module.scss";
 
 interface MotivationCard {
@@ -47,12 +47,15 @@ export function NeedMotivation() {
         subtitleClassName={styles.subtitle}
         title={t("title")}
         subtitle={t("subtitle")}
+        viewportMargin="-35% 0px"
       />
 
       <RevealPolaroids
         className={styles.board}
         itemClassName={styles.boardItem}
         ariaLabel={t("listLabel")}
+        viewportMargin="-25% 0px"
+        delay={0.6}
       >
         {CARDS.map((card) => (
           <a

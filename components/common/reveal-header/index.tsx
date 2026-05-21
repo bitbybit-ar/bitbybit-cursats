@@ -9,6 +9,7 @@ type Props = {
   subtitle: ReactNode;
   titleClassName?: string;
   subtitleClassName?: string;
+  viewportMargin?: string;
 };
 
 export function RevealHeader({
@@ -17,6 +18,7 @@ export function RevealHeader({
   subtitle,
   titleClassName,
   subtitleClassName,
+  viewportMargin = "-15% 0px",
 }: Props) {
   const reduceMotion = useReducedMotion();
 
@@ -48,7 +50,7 @@ export function RevealHeader({
       variants={container}
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: true, margin: "-15% 0px" }}
+      viewport={{ once: true, margin: viewportMargin }}
     >
       <motion.h2 className={titleClassName} variants={item}>
         {title}

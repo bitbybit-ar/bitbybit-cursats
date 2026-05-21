@@ -29,6 +29,13 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   scale-up, and a spring landing — like photos hitting a pinboard.
   The header reuses the shared `RevealHeader` (blur-clear fade) for
   rhythm consistency across landing sections.
+- **Travel-companions reveal.** The 6 logo polaroids now share the
+  same drop-in-with-tilt cascade as need-motivation via the lifted
+  `RevealPolaroids` primitive. Header uses the shared `RevealHeader`.
+  Tightened viewport triggers and added a delay knob so the header
+  reveals near screen center and the cards only cascade once their
+  grid is fully on-screen (fixes premature animation of below-the-
+  fold rows in both sections).
 - **Specific error messages for failed Lightning Address checks.**
   When a seller's Lightning Address fails the settings-time probe
   or a buyer's mint at checkout, the UI now surfaces the underlying

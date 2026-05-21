@@ -8,6 +8,8 @@ type Props = {
   itemClassName?: string;
   ariaLabel?: string;
   children: ReactNode;
+  viewportMargin?: string;
+  delay?: number;
 };
 
 const TILTS = [-8, 6, -5, 7, -6, 5];
@@ -17,6 +19,8 @@ export function RevealPolaroids({
   itemClassName,
   ariaLabel,
   children,
+  viewportMargin = "-10% 0px",
+  delay = 0,
 }: Props) {
   const reduceMotion = useReducedMotion();
 
@@ -25,7 +29,7 @@ export function RevealPolaroids({
     visible: {
       transition: {
         staggerChildren: reduceMotion ? 0 : 0.22,
-        delayChildren: reduceMotion ? 0 : 0.15,
+        delayChildren: reduceMotion ? 0 : 0.15 + delay,
       },
     },
   };
@@ -37,7 +41,7 @@ export function RevealPolaroids({
       variants={container}
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: true, margin: "-10% 0px" }}
+      viewport={{ once: true, margin: viewportMargin }}
     >
       {Children.map(children, (child, i) => {
         const tilt = TILTS[i % TILTS.length];
