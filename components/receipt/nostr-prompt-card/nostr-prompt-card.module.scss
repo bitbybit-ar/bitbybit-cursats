@@ -1,6 +1,7 @@
 @use "@/styles/colors" as *;
 @use "@/styles/spacing" as *;
 @use "@/styles/typography" as *;
+@use "@/styles/media-mixins" as *;
 
 .card {
   display: grid;
@@ -59,7 +60,7 @@
   }
 }
 
-@media (max-width: 600px) {
+@include mobile {
   .card {
     grid-template-columns: auto 1fr;
   }

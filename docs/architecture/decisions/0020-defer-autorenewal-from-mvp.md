@@ -3,7 +3,7 @@
 - **Date**: 2026-05-14
 - **Status**: Accepted
 - **Deciders**: BitByBit team
-- **Last updated**: 2026-05-14
+- **Last updated**: 2026-05-21
 
 ---
 
@@ -11,6 +11,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-21 | Decision, Consequences | Drop the `users.features_autorenewal` column outright (migration `0009_drop_features_autorenewal.sql`) and remove the field from `UpdateUserProfileSchema` and the PATCH response. | The hackathon judges will be reading the schema and the API surface. Carrying a dead boolean column plus an input field with no UI invited the same "what does this do?" confusion the original ADR was supposed to remove. A future autorenewal feature will need a fresh migration anyway — the original shape probably won't survive. |
 | 2026-05-14 | — | Initial version. | Record that the autorenewal toggle is gone from MVP scope before the settings refresh ships, so a future contributor can find the decision next to the code change instead of digging through commit messages. |
 
 ---
@@ -53,21 +54,19 @@ that mis-promises a feature is worse than not showing it at all.
    payload to `/api/settings`.
 3. The PATCH route's response no longer echoes the flag back.
 
-**Keep the column.** `users.features_autorenewal` stays in the
-database with its current default (`false`) for every row. There
-is no migration to drop it because:
+**Drop the column from the schema.** Migration
+`0009_drop_features_autorenewal.sql` removes `users.features_
+autorenewal` outright. The original ADR (see Change Log) kept the
+column on the theory that a future re-launch could land cleanly;
+in practice the field invited "what does this do?" questions for
+anyone reading the schema and the API write surface still accepted
+it. A future autorenewal feature will need a fresh migration
+regardless — the original shape probably won't survive.
 
-- The cost is one nullable boolean. Dropping the column requires
-  a destructive migration and would force every downstream test
-  fixture to drop the field too, for no functional gain.
-- A future ADR that re-introduces autorenewal can re-surface the
-  same flag without a migration, picking up where this left off.
-
-**Keep `UpdateUserProfileSchema.features_autorenewal` as an
-optional, partial field.** API clients (e.g. a hypothetical CLI
-tool, or a legacy integration tester) can still set it; the form
-just doesn't send it. The flag never causes behavior in the
-checkout or cron paths because none of that code exists.
+**Drop `features_autorenewal` from `UpdateUserProfileSchema`.** The
+API no longer accepts writes to the flag, so an attacker with a
+stolen session cookie cannot silently enable a feature that does
+not exist. The PATCH response no longer surfaces the field either.
 
 ## Consequences
 
@@ -81,10 +80,11 @@ checkout or cron paths because none of that code exists.
 
 **Negative / accepted trade-offs:**
 
-- **Column stays.** A future ADR that re-enables autorenewal will
-  inherit a `false` default for every existing row. That's the
-  intended migration story; flagged here so a reader doesn't
-  expect the column to be gone.
+- **Re-introducing autorenewal needs a fresh migration.** That's
+  fine; the original column shape (a single boolean) was unlikely
+  to survive a real implementation anyway — anything past v1 will
+  need NWC connection identifiers, an interval, last-charged
+  timestamps, etc.
 - **i18n strings removed.** `settings.form.autorenewal*` and
   `settings.form.featuresLegend` are gone from
   `messages/{es,en}.json`. Re-introducing the feature means
@@ -95,7 +95,6 @@ checkout or cron paths because none of that code exists.
 
 **Out of scope:**
 
-- Removing the column itself. Tracked above as "future ADR".
 - Removing `lib/checkout` or webhook code that branches on the
   flag — there isn't any. The flag was dormant; removing the
   toggle removes the only place it was read.

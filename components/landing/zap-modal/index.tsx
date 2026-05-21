@@ -17,7 +17,17 @@ const LIGHTNING_ADDRESS =
   process.env.NEXT_PUBLIC_LIGHTNING_ADDRESS ??
   "";
 const CONFETTI_COUNT = 24;
-const CONFETTI_COLORS = ["#8B5CF6", "#F7A825", "#22C55E", "#EF4444", "#3B82F6"];
+// CSS var refs (not hex) so the green/red accents flip with the
+// theme and a rebrand in _theme.scss carries through automatically.
+// `backgroundColor` accepts a `var(...)` string at the inline-style
+// layer.
+const CONFETTI_COLORS = [
+  "var(--color-nostr)",
+  "var(--accent-gold)",
+  "var(--color-accent-alt)",
+  "var(--color-accent)",
+  "var(--primary-500)",
+];
 
 type ZapStatus = "idle" | "sending" | "success" | "error" | "no-webln";
 

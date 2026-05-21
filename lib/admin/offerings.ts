@@ -26,6 +26,54 @@ const SlugSchema = z
   .max(80)
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "slug must be kebab-case ASCII");
 
+/**
+ * Tag constraint — kebab-case ASCII, ≤32 chars per tag. Same shape
+ * as slugs because tags also flow into URLs (`/explore?q=<tag>`) and
+ * we want stable, predictable identifiers across the marketplace.
+ * ADR 0024.
+ */
+const TagSchema = z
+  .string()
+  .min(1)
+  .max(32)
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "tag must be kebab-case ASCII");
+
+/** Hard cap on tags per offering. Keeps the GIN index well-behaved
+ *  and forces sellers to be selective — eight is plenty. ADR 0024.
+ */
+export const MAX_TAGS_PER_OFFERING = 8;
+
+const TagsSchema = z
+  .array(TagSchema)
+  .max(MAX_TAGS_PER_OFFERING)
+  .default([])
+  .transform((tags) => Array.from(new Set(tags)));
+
+/**
+ * Normalise a raw list of tags from a UI or API client: trim, lowercase,
+ * collapse internal whitespace into hyphens, drop empties, and dedupe.
+ * Mirrors what the form already does client-side; defence-in-depth so
+ * a hand-crafted request can't slip an unnormalised tag past Zod
+ * validation.
+ */
+export function normalizeTags(raw: readonly string[] | undefined): string[] {
+  if (!raw) return [];
+  const out = new Set<string>();
+  for (const t of raw) {
+    const cleaned = t
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9\s-]/g, "")
+      .trim()
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    if (cleaned.length > 0 && cleaned.length <= 32) out.add(cleaned);
+  }
+  return Array.from(out).slice(0, MAX_TAGS_PER_OFFERING);
+}
+
 // Code-mint constants. The 28-char charset drops 0/O/1/I/L because
 // they're ambiguous when a buyer reads the code off a receipt. With
 // 8 random picks that's ~28^8 ≈ 3.8e11 codes — collisions inside a
@@ -58,6 +106,22 @@ export function mintCodes(count: number): string[] {
   return Array.from(codes);
 }
 
+// `download_url` is followed by a 302 from `/api/downloads/[orderId]`
+// after a buyer has paid, so it must be a real https endpoint —
+// `javascript:`, `data:`, `file:`, and bare http are all phishing or
+// downgrade vectors at that step. zod's `.url()` only checks shape, so
+// the refinement here is load-bearing.
+const HttpsUrlSchema = z
+  .string()
+  .url()
+  .refine((value) => {
+    try {
+      return new URL(value).protocol === "https:";
+    } catch {
+      return false;
+    }
+  }, "url must use https://");
+
 const OfferingCommonFields = z.object({
   slug: SlugSchema,
   type: z.enum(["code", "download"]),
@@ -66,7 +130,8 @@ const OfferingCommonFields = z.object({
   price_amount: z.number().int().positive(),
   price_currency: z.enum(["ars", "sats"]),
   image_url: z.string().url(),
-  download_url: z.string().url().nullable().optional(),
+  download_url: HttpsUrlSchema.nullable().optional(),
+  tags: TagsSchema,
 });
 
 export const CreateOfferingSchema = OfferingCommonFields.extend({
@@ -116,8 +181,13 @@ export const UpdateOfferingSchema = OfferingCommonFields.partial().superRefine(
   }
 );
 
-export type CreateOfferingInput = z.infer<typeof CreateOfferingSchema>;
-export type UpdateOfferingInput = z.infer<typeof UpdateOfferingSchema>;
+// `z.input` (not `z.infer`) on purpose: `tags` has a `.default([])`
+// + transform, so `z.infer` makes it required in the output type.
+// Callers (route handlers + tests) construct the *input* — tags
+// optional, parsed value always present — so `z.input` matches the
+// caller's POV. Same reasoning for `download_url` and `code_count`.
+export type CreateOfferingInput = z.input<typeof CreateOfferingSchema>;
+export type UpdateOfferingInput = z.input<typeof UpdateOfferingSchema>;
 
 export async function listAllOfferings(userId: string): Promise<Offering[]> {
   const db = getDb();
@@ -213,6 +283,7 @@ export async function createOfferingForAdmin(
       image_url: input.image_url,
       code_pool: initialPool,
       download_url: input.download_url ?? null,
+      tags: normalizeTags(input.tags),
     })
     .returning();
 
@@ -276,6 +347,8 @@ export async function updateOfferingForAdmin(
         patch.download_url === undefined
           ? existing.download_url
           : patch.download_url,
+      tags:
+        patch.tags === undefined ? existing.tags : normalizeTags(patch.tags),
       updated_at: new Date(),
     })
     .where(and(eq(offerings.user_id, userId), eq(offerings.id, id)))

@@ -1,0 +1,32 @@
+@use "@/styles/colors" as *;
+@use "@/styles/spacing" as *;
+@use "@/styles/typography" as *;
+
+.searchInput {
+  width: 100%;
+  max-width: 320px;
+  padding: $spacing-8 $spacing-12;
+  background: $color-bg;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  font-family: $font-family-base;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  transition:
+    border-color 0.15s ease,
+    outline-color 0.15s ease;
+
+  &::placeholder {
+    color: $color-text-secondary;
+  }
+
+  &:hover {
+    border-color: $color-text-secondary;
+  }
+
+  &:focus-visible {
+    border-color: $color-primary;
+    outline: 2px solid $focus-ring;
+    outline-offset: 1px;
+  }
+}

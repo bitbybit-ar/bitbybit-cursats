@@ -90,10 +90,9 @@ export const users = pgTable(
     // Which rail this user uses to receive funds (when selling).
     // ADR 0015. 'cbu_alias' preserves prior behavior on migration;
     // users who want sats flip the radio in the settings page.
-    payout_method: payoutMethod("payout_method").notNull().default("cbu_alias"),
-    features_autorenewal: boolean("features_autorenewal")
+    payout_method: payoutMethod("payout_method")
       .notNull()
-      .default(false),
+      .default("cbu_alias"),
     // Default UI language for this user. The navbar's locale switch
     // is a temporary session-only override (URL prefix); this is the
     // value applied on next sign-in. ADR 0021.
@@ -149,6 +148,19 @@ export const offerings = pgTable(
     price_amount: integer("price_amount").notNull(),
     price_currency: priceCurrency("price_currency").notNull(),
     image_url: text("image_url"),
+    // Discovery + recommendation signal. Kebab-case, lowercase ASCII;
+    // ≤8 tags per offering, ≤32 chars per tag (enforced by the Zod
+    // schema in `lib/admin/offerings.ts`). Empty array default so
+    // pre-tags rows behave like rows with no tags rather than NULL,
+    // which would force every read site to handle a third state.
+    // GIN index on the column powers `tags && $signal` queries used
+    // by `lib/recommendations.ts` and the `q = ANY(tags)` clause in
+    // `listDiscoveryOfferingsPaged`. ADR 0024.
+    tags: text("tags")
+      .array()
+      .$type<string[]>()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
     // For type=code: pool of redemption codes. For type=download: null.
     code_pool: text("code_pool")
       .array()
@@ -165,6 +177,10 @@ export const offerings = pgTable(
     uniqueIndex("offerings_user_slug_idx").on(table.user_id, table.slug),
     index("offerings_user_id_idx").on(table.user_id),
     index("offerings_archived_at_idx").on(table.archived_at),
+    // GIN index for tag containment / overlap queries. Drizzle's
+    // index().using() supports the second arg as a list of column
+    // refs; raw `sql` is unnecessary here.
+    index("offerings_tags_gin_idx").using("gin", table.tags),
   ]
 );
 

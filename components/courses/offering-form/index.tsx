@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type KeyboardEvent } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/routing";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import {
   type PayoutSavedValues,
 } from "@/components/courses/payout-setup-modal";
 import { useSignerContext } from "@/lib/contexts/signer-context";
-import type { Offering } from "@/lib/admin/offerings";
+import { MAX_TAGS_PER_OFFERING, type Offering } from "@/lib/admin/offerings";
 import styles from "./offering-form.module.scss";
 
 type PayoutMethod = "cbu_alias" | "lightning_address";
@@ -57,6 +57,7 @@ interface OfferingPayload {
   price_currency: "ars" | "sats";
   image_url: string;
   download_url: string | null;
+  tags: string[];
   /** Only sent on create — minting more codes on edit is a separate flow. */
   code_count?: number;
 }
@@ -78,6 +79,15 @@ function slugify(title: string): string {
     .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 80);
+}
+
+/**
+ * Same shape as `slugify` but capped at 32 to match the per-tag
+ * length enforced by `TagSchema` in `lib/admin/offerings.ts`. Used
+ * to normalise a raw chip-input value before it joins the tag list.
+ */
+function normalizeTagInput(raw: string): string {
+  return slugify(raw).slice(0, 32);
 }
 
 export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
@@ -128,6 +138,46 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
   const [imageUrl, setImageUrl] = useState(offering?.image_url ?? "");
   const [codeCount, setCodeCount] = useState("10");
   const [downloadUrl, setDownloadUrl] = useState(offering?.download_url ?? "");
+  const [tags, setTags] = useState<string[]>(offering?.tags ?? []);
+  const [tagDraft, setTagDraft] = useState("");
+
+  function commitTagDraft(): void {
+    const cleaned = normalizeTagInput(tagDraft);
+    if (cleaned.length === 0) {
+      setTagDraft("");
+      return;
+    }
+    if (tags.includes(cleaned)) {
+      setTagDraft("");
+      return;
+    }
+    if (tags.length >= MAX_TAGS_PER_OFFERING) {
+      showToast(t("tagsMax", { max: MAX_TAGS_PER_OFFERING }), "error");
+      return;
+    }
+    setTags([...tags, cleaned]);
+    setTagDraft("");
+  }
+
+  function handleTagKeyDown(e: KeyboardEvent<HTMLInputElement>): void {
+    if (e.key === "Enter" || e.key === ",") {
+      // Enter and comma both commit a chip. Prevent the form submit
+      // on Enter and the literal "," from leaking into the input.
+      e.preventDefault();
+      commitTagDraft();
+      return;
+    }
+    if (e.key === "Backspace" && tagDraft.length === 0 && tags.length > 0) {
+      // Backspace on an empty draft removes the most recent chip —
+      // standard chip-input affordance.
+      e.preventDefault();
+      setTags(tags.slice(0, -1));
+    }
+  }
+
+  function removeTag(tag: string): void {
+    setTags(tags.filter((t) => t !== tag));
+  }
 
   function handleTitleChange(next: string) {
     setTitle(next);
@@ -169,6 +219,15 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
       return null;
     }
 
+    // Commit any tag still sitting in the draft input so a seller
+    // who typed a tag and hit Save (instead of Enter) doesn't lose
+    // it silently.
+    const pendingTag = normalizeTagInput(tagDraft);
+    const finalTags =
+      pendingTag.length > 0 && !tags.includes(pendingTag)
+        ? [...tags, pendingTag].slice(0, MAX_TAGS_PER_OFFERING)
+        : tags;
+
     return {
       slug: slug.trim(),
       type,
@@ -178,6 +237,7 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
       price_currency: priceCurrency,
       image_url: imageUrl.trim(),
       download_url: type === "download" ? downloadUrl.trim() : null,
+      tags: finalTags,
       code_count: codeCountNum,
     };
   }
@@ -365,6 +425,54 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
               required
               rows={5}
             />
+          </div>
+
+          <div className={styles.field}>
+            <label htmlFor="tagInput" className={styles.label}>
+              {t("tags")}
+              <span className={styles.optional}>{t("optional")}</span>
+              <Tooltip
+                text={t("tagsHint")}
+                example={t("tagsExample")}
+                label={tCommon("tooltipLabel")}
+              />
+            </label>
+            <div
+              className={styles.chipInput}
+              onClick={() => document.getElementById("tagInput")?.focus()}
+              role="presentation"
+            >
+              {tags.map((tag) => (
+                <span key={tag} className={styles.chip}>
+                  <span className={styles.chipLabel}>{tag}</span>
+                  <button
+                    type="button"
+                    className={styles.chipRemove}
+                    onClick={() => removeTag(tag)}
+                    aria-label={t("tagsRemove", { tag })}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+              <input
+                id="tagInput"
+                type="text"
+                className={styles.chipInputField}
+                value={tagDraft}
+                onChange={(e) => setTagDraft(e.target.value)}
+                onKeyDown={handleTagKeyDown}
+                onBlur={commitTagDraft}
+                placeholder={tags.length === 0 ? t("tagsPlaceholder") : ""}
+                maxLength={32}
+                autoComplete="off"
+                spellCheck={false}
+                disabled={tags.length >= MAX_TAGS_PER_OFFERING}
+              />
+            </div>
+            <p className={styles.hint}>
+              {t("tagsHelp", { max: MAX_TAGS_PER_OFFERING })}
+            </p>
           </div>
         </section>
 

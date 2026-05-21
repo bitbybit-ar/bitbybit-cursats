@@ -10,32 +10,132 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Removed
+
+- **`users.features_autorenewal` column dropped.** Migration
+  `0010_drop_features_autorenewal.sql` removes the column from
+  Postgres; `UpdateUserProfileSchema` no longer accepts the field
+  and the PATCH response no longer surfaces it. ADR
+  [0020](docs/architecture/decisions/0020-defer-autorenewal-from-mvp.md)
+  was revised in the same pass: the original "keep the column,
+  drop only the UI" posture was replaced with an outright drop.
+  Re-introducing autorenewal will need a fresh migration.
+
+### Security
+
+- **Wapu webhook secret fails fast in production.**
+  `lib/wapu.ts` now throws at boot when `NODE_ENV=production` and
+  `WAPU_WEBHOOK_SECRET` is unset. Dev and CI continue to fall
+  back to the deterministic `mock-webhook-secret`. Closes the
+  forge-a-paid-webhook risk if a deployment was missing the env
+  var.
+- **Download proxy restricted to https.** The offering schema's
+  `download_url` field now rejects `javascript:`, `data:`,
+  `file:`, and bare http; the `/api/downloads/[orderId]` route
+  re-parses the URL and refuses a 302 to anything that isn't
+  https. Closes the post-purchase phishing/credential-theft
+  vector flagged in the security audit.
+- **LUD-21 probe runs on every Lightning-Address change.**
+  `/api/settings` previously skipped the 1-sat probe when the
+  user updated only their LN address without flipping
+  `payout_method`; the gate is now driven entirely by whether
+  the address changed, so the next rail flip cannot activate an
+  unverified provider.
+- **LNURL responses capped at 64 KiB.** `fetchJsonWithTimeout`
+  (the shared helper used by the LNURL metadata, callback, and
+  LUD-21 verify polls) now streams the response and aborts past
+  the cap. The previous timeout-only guard would not stop a
+  fast-but-huge response from exhausting worker memory.
+- **NIP-98 replay window tightened from 30 s to 10 s.**
+  `lib/nostr/verify.ts` halves the time a captured auth event
+  stays usable. A residual replay risk inside the 10 s window
+  remains; closing it fully requires a single-use-nonce store
+  and is deferred.
+- **JSON-LD output hardened against script-tag injection.**
+  `app/[locale]/layout.tsx` now escapes `</script` and `<!--`
+  sequences before embedding the schema.org payloads, so a
+  future contributor passing user data into the markup cannot
+  break out of the `<script>` island.
+- **Wapu webhook 500 responses no longer leak error detail.**
+  The internal exception message stays in the server log; the
+  HTTP body is `{ error: "internal_error" }` so a caller probing
+  with forged-but-signed payloads cannot infer schema or
+  order-state from the response.
+
+### Accessibility
+
+- **`.size-sm` buttons hit 44 px on mobile.** Desktop density is
+  unchanged; touch viewports get a `min-height: 44px` to meet
+  WCAG 2.5.5.
+- **Skip-to-content link confirmed.** The skip-link / `<main>`
+  landmark pair was already in `app/[locale]/layout.tsx`; the
+  audit finding was a false read.
+
 ### Changed
 
-- **Hero entrance animation on the landing.** The title now
-  assembles word-by-word with a blur-clear + rise, and the
-  gradient word ("SATS") arrives last with a soft spring
-  overshoot. Subtitle eases in afterwards and the two CTAs slide
-  in from opposite sides. Built with framer-motion; respects
-  `prefers-reduced-motion`. Also bumps "sats" → "SATS" inside the
-  landing hero gradient for both locales.
-- **Highlighted-courses reveal on scroll.** Section title and
-  subtitle fade in with a blur clear (no movement) as the section
-  enters the viewport; offering cards then slide in one by one
-  from the left. Runs once per page load and respects
-  `prefers-reduced-motion`.
-- **Need-motivation polaroid drop.** The Arena / Habits cards now
-  drop in from above with alternating tilts (-8° / +6°), a soft
-  scale-up, and a spring landing — like photos hitting a pinboard.
-  The header reuses the shared `RevealHeader` (blur-clear fade) for
-  rhythm consistency across landing sections.
-- **Travel-companions reveal.** The 6 logo polaroids now share the
-  same drop-in-with-tilt cascade as need-motivation via the lifted
-  `RevealPolaroids` primitive. Header uses the shared `RevealHeader`.
-  Tightened viewport triggers and added a delay knob so the header
-  reveals near screen center and the cards only cascade once their
-  grid is fully on-screen (fixes premature animation of below-the-
-  fold rows in both sections).
+- **Landing animations (framer-motion).** The hero title now
+  assembles word-by-word with a blur-clear + rise, ending with a
+  soft spring overshoot on the gradient word ("SATS"); the
+  subtitle and CTAs follow in cascade. The highlighted-courses
+  section reveals its title with a blur-clear fade and slides
+  offering cards in from the left. The need-motivation and
+  travel-companions polaroids drop in from above with alternating
+  tilts and a spring landing — same primitives in both, lifted to
+  `components/common/reveal-header` and
+  `components/common/reveal-polaroids`. Scroll triggers are tuned
+  per section so the cascade only starts once the relevant content
+  is well in view. Respects `prefers-reduced-motion`. Also bumps
+  "sats" → "SATS" inside the landing hero gradient for both
+  locales.
+
+- **`/explore` is personalised for signed-in users.** When a
+  logged-in buyer hits `/explore` with no filter / sort / search
+  active, a "Suggested for you" rail of four cards now sits above
+  the main grid (driven by `listRecommendedOfferings`). The rail
+  itself renders only on page 1, but the picked offering ids are
+  excluded from the main grid on every page — the buyer never sees
+  a recommended course duplicated as they paginate. Filtering or
+  sorting flips the page back to the canonical, unpersonalised
+  view (a deliberate query overrides personalisation). Anonymous
+  viewers and the previous experience are unchanged.
+  `listDiscoveryOfferingsPaged` gained an
+  `excludeOfferingIds` option (with `notInArray` applied to both
+  the row select and the total count so the pager math stays
+  right); `SuggestedForYou` learned an optional `result` prop so
+  the page can call `listRecommendedOfferings` itself and pass the
+  rows down (needed because the rail and the grid share the
+  exclusion set). New i18n key `catalog.list.moreToExplore`. ADR
+  0024.
+
+- **`/purchases` redesigned.** The page that signed-in buyers land
+  on after login is no longer a sparse list — it now adapts to
+  whether the buyer has any history. With nothing bought yet, an
+  empty-hero block ("You haven't bought any courses yet") sits
+  above a "Suggested for you" rail driven by the new
+  `listRecommendedOfferings` (falls through to the marketplace
+  highlights for a fresh buyer). With history, each order renders
+  as a denser row with a 56px cover thumbnail, the course title,
+  a seller byline (avatar + name, linking to `/[userSlug]`), the
+  date · sats meta, the status pill, and a CTA pair: a primary
+  link (Open course / View receipt / Continue checkout —
+  whichever fits the order's status) and a secondary "Course
+  page" link to the public listing. Pagination is server-side
+  (12 per page, reuses `components/catalog/explore-pager`); a
+  status filter (All / Paid / Pending / Failed) and a debounced
+  title-or-teacher search round out the controls — both
+  stateless, encoded into `?status=` and `?q=` so URLs stay
+  shareable. New `lib/purchases-params.ts` mirrors the shape of
+  `lib/explore-params.ts`. The previous N+1 (one
+  `getOfferingById` call per row) is replaced by a single
+  `listPurchasesPaged` in `lib/orders.ts` that joins offerings +
+  sellers in one shot. New i18n keys under `account.*`
+  (`emptyHero.{title,body}`, `filters.*`, `searchPlaceholder`,
+  `openCourse`, `viewReceipt`, `viewListing`, `continueCheckout`,
+  `noMatches`). The bottom of the populated page renders the same
+  `SuggestedForYou` component with `excludeOfferingIds` set to the
+  current page's offerings so the rail doesn't re-surface what the
+  buyer is already looking at.
+
 - **Specific error messages for failed Lightning Address checks.**
   When a seller's Lightning Address fails the settings-time probe
   or a buyer's mint at checkout, the UI now surfaces the underlying
@@ -46,6 +146,7 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   different course. Plumbed via a new `lightning_code` field on
   `OrderCreateError` and a `lightning_reason` field on the
   `/api/checkout` 503 response.
+
 - **Lightning checkout always mints against the seller's real
   Lightning Address.** `getLightningClient()` no longer branches
   on a `LIGHTNING_USE_REAL_CLIENT` env flag — production, staging,
@@ -56,6 +157,7 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   injection seam used by the LN integration tests. Removes a
   silent-failure footgun where unset env meant fake BOLT11s for
   every direct_lightning order.
+
 - **Course creation now gated on a configured payout method.**
   Submitting the create-course form when the seller has no payout
   destination on file for their current rail (`cbu_alias` → cbu
@@ -65,6 +167,74 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   the original submission. `POST /api/my-courses` enforces the
   same check server-side and returns `409 payout_not_configured`
   so a stale page can't slip an unsellable offering through.
+
+### Added
+
+- **Personalised recommendations module.** New
+  `lib/recommendations.ts:listRecommendedOfferings({ pubkey, limit,
+  excludeOfferingIds })` ranks active offerings by tag overlap with
+  the buyer's most recent paid orders (capped at 10) and, as a
+  secondary signal, by whether the offering's seller appears in the
+  buyer's purchase history. Tag overlap scores 2× per intersecting
+  tag; seller match scores 1; ties break by recency. Already-touched
+  offerings (any status) and the buyer's own listings are excluded.
+  When the personalised slice is short, the result tops up with
+  `listHighlightedOfferings`. The returned `fallback` discriminator
+  (`tags | sellers | highlights | mixed`) lets the UI pick a
+  context-aware subtitle. A new server component
+  `components/catalog/suggested-for-you/` consumes the module and
+  reuses `OfferingCard`, returning `null` when there are no rows
+  so the rail vanishes rather than rendering an awkward empty
+  state. A session-gated `GET /api/recommendations` route handler
+  (private 60s cache, optional `?limit=` and `?exclude=`) exposes
+  the same data for future client-side surfaces. New
+  `recommendations.*` i18n namespace in both `messages/es.json` and
+  `messages/en.json`. Foundation for the upcoming `/purchases`
+  redesign and the personalised `/explore` ordering for logged-in
+  users. ADR 0024.
+
+- **Tags on offerings.** Sellers can now label each course with up
+  to eight kebab-case tags from the create/edit form (a chip-input
+  field below the description; Enter or comma commits a chip,
+  backspace on an empty draft removes the most recent one). Tags
+  show as pill chips on `OfferingCard` (max three rendered) and
+  each chip links to `/explore?q=<tag>` so a buyer can pivot from a
+  course to its peers in one click. The `/explore` search bar
+  picks up tags transparently — typing `yoga` now matches courses
+  tagged `yoga` in addition to the existing title / description /
+  seller-name ILIKE branches. Validation in
+  `lib/admin/offerings.ts` (`TagSchema`, `TagsSchema`,
+  `MAX_TAGS_PER_OFFERING = 8`, `normalizeTags`); schema migration
+  `0009_offering_tags.sql` adds the `tags text[]` column and a GIN
+  index. Decision in ADR 0024. Foundation for the upcoming
+  suggested-for-you rail on `/purchases` and the personalised
+  `/explore` ordering for logged-in users.
+
+### Changed
+
+- **Breakpoint hygiene.** Replaced hardcoded `@media` queries in
+  `_common-mixins.scss`, the offering detail page, and the
+  receipt's nostr-prompt card with `@include mobile` /
+  `tabletAndUp` mixins so every breakpoint resolves to the same
+  three constants in `_media-mixins.scss`.
+- **Design-token hygiene.** Back-link bumped to 44 × 44 px
+  (WCAG 2.5.5) with `border-radius: $border-radius-full`;
+  checkout-status now uses `$border-radius-md`; confetti in the
+  zap modal references `var(--color-nostr)` /
+  `var(--accent-gold)` / etc. instead of hex literals so the
+  flipping accents pick up the right value per theme; polaroid
+  corner uses the new `$border-radius-xs` (4 px). Decorative
+  motion amplitudes in `bubble.module.scss` and
+  `polaroid.module.scss`, the polaroid's static
+  `rgba(0, 0, 0, ...)` shadows (intentionally non-flipping per
+  the file's own header comment), and the polaroid's fixed
+  320 px width are documented exceptions and stay as-is.
+- **Border-radius scale.** Renamed `$border-radius-xs` from 2 px
+  to 4 px and introduced `$border-radius-2xs: 2px`, so the
+  scale reads 2xs → xs → sm → md → lg → xl → full in
+  increasing radius. Three existing 2 px call-sites (the
+  attendance polaroid and offering-card focus rings) migrate to
+  `$border-radius-2xs` to keep their current look.
 - **Features page — deck-deal animation.** The polaroid grid now
   sets up like a hand of cards. On desktop the nine cards stack at
   the top-left where "Dos formas de cobrar" lands, then spring out

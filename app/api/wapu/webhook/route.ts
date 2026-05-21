@@ -168,9 +168,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       console.warn(`[wapu/webhook] unknown order: ${parsed.external_id}`);
       return NextResponse.json({ ok: true, ignored: "unknown_order" });
     }
+    // Log full detail for our own debugging; respond with a
+    // generic body so we don't leak schema/order-state hints to a
+    // caller probing the endpoint with forged-but-signed payloads.
     console.error("[wapu/webhook] mark-paid failed:", err);
     return NextResponse.json(
-      { error: "internal_error", detail: message },
+      { error: "internal_error" },
       { status: 500 }
     );
   }

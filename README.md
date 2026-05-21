@@ -37,8 +37,9 @@ rails in Settings (ADR
 No email integration — see ADR
 [0006](./docs/architecture/decisions/0006-nostr-and-inapp-delivery.md).
 
-Optional NWC-based auto-renewal can be enabled per seller;
-pre-paid one-shots are always on.
+Every purchase is a one-shot in v1. Auto-renewal was deferred from
+MVP — see ADR
+[0020](./docs/architecture/decisions/0020-defer-autorenewal-from-mvp.md).
 
 ## Stack
 

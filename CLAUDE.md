@@ -138,11 +138,12 @@ repo's copy is intentionally identical and should stay in sync.
   Postgres. Decision in ADR
   `docs/architecture/decisions/0010-no-yaml-config.md`.
 - **Auto-renewal is deferred from MVP.** The `users.features_
-  autorenewal` column and the `/api/settings` plumbing for it
-  still exist (no destructive migration), but the settings page
-  no longer surfaces a toggle and no checkout/cron code reads
-  it. Re-introducing the feature is a future-tracked item; in
-  v1 every purchase is one-shot. Decision in ADR
+  autorenewal` column was dropped in migration
+  `0009_drop_features_autorenewal.sql`, the input schema no
+  longer accepts the field, and no checkout/cron code reads it.
+  Re-introducing the feature is a future-tracked item and will
+  need a fresh migration; in v1 every purchase is one-shot.
+  Decision in ADR
   `docs/architecture/decisions/0020-defer-autorenewal-from-mvp.md`,
   superseding the runtime-toggle posture of ADR 0005.
 - **Creator surfaces are open to every signed-in user.** Any

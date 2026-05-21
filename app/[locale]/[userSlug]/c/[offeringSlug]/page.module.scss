@@ -10,7 +10,7 @@
   width: 100%;
   margin: 0 0 $spacing-48;
 
-  @media (min-width: 768px) {
+  @include tabletAndUp {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: start;
   }
@@ -136,7 +136,7 @@
   background-color: $color-bg-2;
   border: 1px solid $color-border;
 
-  @media (max-width: 480px) {
+  @include mobile {
     grid-template-columns: 1fr;
     text-align: center;
     justify-items: center;

@@ -98,6 +98,20 @@ export function OfferingCard({
           </Link>
         )}
         <p className={styles.description}>{offering.description}</p>
+        {offering.tags && offering.tags.length > 0 ? (
+          <ul className={styles.tags}>
+            {offering.tags.slice(0, 3).map((tag) => (
+              <li key={tag} className={styles.tagItem}>
+                <Link
+                  href={`/explore?q=${encodeURIComponent(tag)}`}
+                  className={styles.tag}
+                >
+                  {tag}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : null}
         <p className={styles.typeLabel}>{tType(offering.type)}</p>
       </div>
 

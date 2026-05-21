@@ -7,12 +7,12 @@
   align-items: center;
   justify-content: center;
   gap: $spacing-4;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   background: transparent;
   border: 1px solid $color-border;
-  border-radius: 999px;
+  border-radius: $border-radius-full;
   cursor: pointer;
   color: $color-text-secondary;
   font-family: inherit;

@@ -64,6 +64,20 @@
       "when": 1779300000000,
       "tag": "0008_user_preferences",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1779400000000,
+      "tag": "0009_offering_tags",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1779500000000,
+      "tag": "0010_drop_features_autorenewal",
+      "breakpoints": true
     }
   ]
 }

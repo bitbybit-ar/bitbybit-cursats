@@ -59,5 +59,19 @@ export async function GET(
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
-  return NextResponse.redirect(offering.download_url, 302);
+  // Defence-in-depth against `javascript:`/`data:` URLs that may have
+  // landed in legacy rows before the schema was tightened. Same opaque
+  // 404 the rest of this route uses so the proxy never tells callers
+  // whether a misconfigured row exists.
+  let target: URL;
+  try {
+    target = new URL(offering.download_url);
+  } catch {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+  if (target.protocol !== "https:") {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+
+  return NextResponse.redirect(target.toString(), 302);
 }

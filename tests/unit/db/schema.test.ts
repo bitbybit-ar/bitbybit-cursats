@@ -45,13 +45,10 @@ describe("db/schema users", () => {
     expect(slug?.isUnique).toBe(true);
   });
 
-  it("defaults active and features_autorenewal", () => {
+  it("defaults active to true on insert", () => {
     const active = config.columns.find((c) => c.name === "active");
     expect(active?.default).toBe(true);
     expect(active?.notNull).toBe(true);
-    const flag = config.columns.find((c) => c.name === "features_autorenewal");
-    expect(flag?.default).toBe(false);
-    expect(flag?.notNull).toBe(true);
   });
 
   it("makes cbu and alias nullable so a fresh row can render the panel", () => {

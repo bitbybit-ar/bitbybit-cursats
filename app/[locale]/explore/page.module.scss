@@ -19,6 +19,18 @@
   width: 100%;
 }
 
+// Section heading above the main grid when a personalised rail
+// sits above it. Slightly smaller than the page H1 — the rail's
+// own H2 ("Suggested for you") already pulls weight at the top.
+.mainHeading {
+  margin: $spacing-32 0 $spacing-12;
+  font-family: $font-family-display;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  letter-spacing: $letter-spacing-tight;
+  color: $color-text-primary;
+}
+
 .results {
   margin: 0 0 $spacing-16;
   color: $color-text-secondary;

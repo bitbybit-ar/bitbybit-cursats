@@ -16,7 +16,7 @@ describe("admin/sign-settings-payload", () => {
     const serialized = JSON.stringify({
       cbu: "0000003100000000000001",
       alias: null,
-      features_autorenewal: true,
+      payout_method: "cbu_alias",
     });
     const expected = createHash("sha256").update(serialized).digest("hex");
     const actual = await hashSettingsBody(serialized);
