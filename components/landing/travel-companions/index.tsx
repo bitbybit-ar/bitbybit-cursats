@@ -2,6 +2,8 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Section } from "@/components/ui/section";
 import { Bubble } from "@/components/common/bubble";
+import { RevealHeader } from "@/components/common/reveal-header";
+import { RevealPolaroids } from "@/components/common/reveal-polaroids";
 import { HeartIcon, BoltIcon, BookIcon } from "@/components/icons";
 import styles from "./travel-companions.module.scss";
 
@@ -107,40 +109,49 @@ export function TravelCompanions() {
         delay={3.2}
       />
 
-      <header className={styles.header}>
-        <h2 className={styles.title}>{t("title")}</h2>
-        <p className={styles.subtitle}>{t("subtitle")}</p>
-      </header>
+      <RevealHeader
+        className={styles.header}
+        titleClassName={styles.title}
+        subtitleClassName={styles.subtitle}
+        title={t("title")}
+        subtitle={t("subtitle")}
+        viewportMargin="-25% 0px"
+      />
 
-      <ul className={styles.board} aria-label={t("listLabel")}>
+      <RevealPolaroids
+        className={styles.board}
+        itemClassName={styles.boardItem}
+        ariaLabel={t("listLabel")}
+        viewportMargin="-30% 0px"
+        delay={0.4}
+      >
         {COMPANIONS.map((c) => (
-          <li key={c.name} className={styles.boardItem}>
-            <a
-              href={c.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={styles.polaroid}
+          <a
+            key={c.name}
+            href={c.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.polaroid}
+          >
+            <div
+              className={styles.photoFrame}
+              style={c.frameBg ? { background: c.frameBg } : undefined}
             >
-              <div
-                className={styles.photoFrame}
-                style={c.frameBg ? { background: c.frameBg } : undefined}
-              >
-                <Image
-                  src={c.logo}
-                  alt={c.name}
-                  width={256}
-                  height={256}
-                  className={styles.photo}
-                />
-              </div>
-              <div className={styles.caption}>
-                <h3 className={styles.name}>{c.name}</h3>
-                <p className={styles.description}>{t(c.descriptionKey)}</p>
-              </div>
-            </a>
-          </li>
+              <Image
+                src={c.logo}
+                alt={c.name}
+                width={256}
+                height={256}
+                className={styles.photo}
+              />
+            </div>
+            <div className={styles.caption}>
+              <h3 className={styles.name}>{c.name}</h3>
+              <p className={styles.description}>{t(c.descriptionKey)}</p>
+            </div>
+          </a>
         ))}
-      </ul>
+      </RevealPolaroids>
     </Section>
   );
 }
