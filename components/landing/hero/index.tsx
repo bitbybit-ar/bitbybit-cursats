@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { HeroBubbles } from "./hero-bubbles";
 import styles from "./hero.module.scss";
 
-const GRADIENT_RE = /^(.*?)<gradient>(.*?)<\/gradient>(.*)$/s;
+const GRADIENT_RE = /^(.*?)<gradient>(.*?)<\/gradient>(.*)$/;
 
 function splitWords(text: string): string[] {
   return text.split(/(\s+)/).filter((chunk) => chunk.length > 0);
