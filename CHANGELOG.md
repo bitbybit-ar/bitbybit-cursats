@@ -26,6 +26,17 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   `price_below_wapu_minimum` otherwise (`WAPU_MIN_NET_ARS` in
   `lib/wapu-limits.ts`). Decision folded into ADR
   [0026](docs/architecture/decisions/0026-price-currency-follows-payout-rail.md).
+- **One-tap mobile sign-in with your Nostr app.** On phones and
+  tablets, the NIP-46 sign-in flow now leads with an "Open in your
+  signer app" button that hands the `nostrconnect://` link straight
+  to an installed signer (Amber, Primal, nsec.app, …) — no scanning
+  your own screen, no copy-pasting a bunker URL, no exposing your
+  `nsec`. The QR drops to an "Or scan from another device" fold and
+  the desktop-only browser-extension button is hidden on mobile. The
+  relay handshake and the NIP-98 server contract are unchanged; this
+  is a mobile-first re-presentation of the existing remote-signer
+  flow. Decision in ADR
+  `docs/architecture/decisions/0025-mobile-login-via-nostrconnect-deep-link.md`.
 
 ### Changed
 

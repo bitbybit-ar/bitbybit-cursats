@@ -23,6 +23,7 @@ import {
   type LoginResult,
 } from "@/lib/contexts/signer-context";
 import { useAuthErrorLookup } from "@/lib/hooks/useAuthErrorLookup";
+import { useIsMobile } from "@/lib/hooks/useIsMobile";
 import {
   type AuthError,
   loginError,
@@ -90,6 +91,7 @@ export function SignInClient({ locale }: SignInClientProps) {
   const searchParams = useSearchParams();
   const nextPath = safeNext(searchParams.get("next"));
   const lookupAuthError = useAuthErrorLookup();
+  const isMobile = useIsMobile();
   const { completeLoginWithSigner } = useSignerContext();
 
   const [panel, setPanel] = useState<Panel>("picker");
@@ -313,7 +315,9 @@ export function SignInClient({ locale }: SignInClientProps) {
         <Modal
           onClose={closePanel}
           onBack={closePanel}
-          title={t("connectScanModalTitle")}
+          title={
+            isMobile ? t("connectAppModalTitle") : t("connectScanModalTitle")
+          }
           size="sm"
         >
           <NostrConnectPanel

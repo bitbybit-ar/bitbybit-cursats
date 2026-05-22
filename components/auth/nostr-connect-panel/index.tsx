@@ -17,7 +17,13 @@ import {
   reSignInError,
 } from "@/lib/nostr/auth-errors";
 import { Button } from "@/components/ui/button";
-import { CheckIcon, CopyIcon, LinkIcon } from "@/components/icons";
+import {
+  CheckIcon,
+  CopyIcon,
+  ExternalLinkIcon,
+  LinkIcon,
+} from "@/components/icons";
+import { useIsMobile } from "@/lib/hooks/useIsMobile";
 import styles from "./nostr-connect-panel.module.scss";
 
 type Mode = "qr" | "bunker";
@@ -80,6 +86,11 @@ export function NostrConnectPanel({
   expectedPubkey,
 }: NostrConnectPanelProps) {
   const t = useTranslations("login");
+  // On a phone/tablet we can hand the nostrconnect:// URI straight to
+  // an installed signer (Amber, Primal, …) via a deep link, so the
+  // QR — which you can't scan with the same screen — is demoted to a
+  // cross-device fallback.
+  const isMobile = useIsMobile();
   const [status, setStatus] = useState<ConnectStatus>(
     mode === "qr" ? "scanning" : "scanning"
   );
@@ -328,6 +339,49 @@ export function NostrConnectPanel({
     );
   }
 
+  const qrBlock = (
+    <div className={styles.qrWrapper} role="img" aria-label={t("connectQrAlt")}>
+      <QRCodeSVG
+        value={uri}
+        size={200}
+        level="M"
+        bgColor="transparent"
+        fgColor="currentColor"
+      />
+    </div>
+  );
+
+  const statusRow = (
+    <div className={styles.statusRow}>
+      <span className={styles.statusDot} aria-hidden />
+      <span className={styles.statusLabel}>{t("connectWaitingForSigner")}</span>
+      <span className={styles.statusTimer}>
+        {t("connectExpiresIn", { time: formatMmSs(remainingMs) })}
+      </span>
+    </div>
+  );
+
+  const copyField = (
+    <div className={styles.uriField}>
+      <input
+        type="text"
+        readOnly
+        value={uri}
+        className={styles.uriInput}
+        aria-label={t("connectCopyURI")}
+        onFocus={(e) => e.currentTarget.select()}
+      />
+      <button
+        type="button"
+        className={styles.uriCopyBtn}
+        onClick={handleCopyURI}
+        aria-label={isCopied ? t("connectCopiedURI") : t("connectCopyURI")}
+      >
+        {isCopied ? <CheckIcon size={14} /> : <CopyIcon size={14} />}
+      </button>
+    </div>
+  );
+
   return (
     <>
       {authChallengeUrl ? (
@@ -343,50 +397,47 @@ export function NostrConnectPanel({
         </a>
       ) : null}
 
-      <p className={styles.intro}>{t("connectScanModalIntro")}</p>
+      {isMobile ? (
+        <>
+          <p className={styles.intro}>{t("connectAppModalIntro")}</p>
 
-      <div
-        className={styles.qrWrapper}
-        role="img"
-        aria-label={t("connectQrAlt")}
-      >
-        <QRCodeSVG
-          value={uri}
-          size={200}
-          level="M"
-          bgColor="transparent"
-          fgColor="currentColor"
-        />
-      </div>
+          {/*
+            Custom-scheme hand-off to the OS: tapping this launches an
+            installed signer (Amber, Primal, nsec.app) with the
+            nostrconnect:// URI the relay session is already waiting
+            on. Deliberately NO target="_blank"/rel — a custom scheme
+            is not an external http(s) link, and opening it in a blank
+            tab would strand an empty tab instead of switching apps.
+          */}
+          <a
+            href={uri || undefined}
+            className={styles.openAppButton}
+            aria-disabled={uri ? undefined : true}
+          >
+            <ExternalLinkIcon size={20} />
+            {t("connectOpenInApp")}
+          </a>
 
-      <div className={styles.statusRow}>
-        <span className={styles.statusDot} aria-hidden />
-        <span className={styles.statusLabel}>
-          {t("connectWaitingForSigner")}
-        </span>
-        <span className={styles.statusTimer}>
-          {t("connectExpiresIn", { time: formatMmSs(remainingMs) })}
-        </span>
-      </div>
+          {statusRow}
 
-      <div className={styles.uriField}>
-        <input
-          type="text"
-          readOnly
-          value={uri}
-          className={styles.uriInput}
-          aria-label={t("connectCopyURI")}
-          onFocus={(e) => e.currentTarget.select()}
-        />
-        <button
-          type="button"
-          className={styles.uriCopyBtn}
-          onClick={handleCopyURI}
-          aria-label={isCopied ? t("connectCopiedURI") : t("connectCopyURI")}
-        >
-          {isCopied ? <CheckIcon size={14} /> : <CopyIcon size={14} />}
-        </button>
-      </div>
+          <details className={styles.scanFold}>
+            <summary className={styles.scanSummary}>
+              {t("connectScanFromAnotherDevice")}
+            </summary>
+            <div className={styles.scanFoldBody}>
+              {qrBlock}
+              {copyField}
+            </div>
+          </details>
+        </>
+      ) : (
+        <>
+          <p className={styles.intro}>{t("connectScanModalIntro")}</p>
+          {qrBlock}
+          {statusRow}
+          {copyField}
+        </>
+      )}
 
       {showSlowHint ? (
         <p className={styles.slowHint}>{t("connectSlowHint")}</p>

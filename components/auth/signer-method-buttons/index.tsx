@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { ExtensionSignerButton } from "@/components/auth/extension-signer-button";
 import { KeyIcon, LinkIcon, QrIcon } from "@/components/icons";
+import { useIsMobile } from "@/lib/hooks/useIsMobile";
 import type { SignerHandle, SignerType } from "@/lib/nostr/signers";
 import type { AuthError } from "@/lib/nostr/auth-errors";
 import styles from "./signer-method-buttons.module.scss";
@@ -54,6 +55,7 @@ export function SignerMethodButtons({
   animate = false,
 }: SignerMethodButtonsProps) {
   const t = useTranslations("login");
+  const isMobile = useIsMobile();
 
   const wrapperClassName = animate
     ? `${styles.methods} ${styles.animate}`
@@ -64,6 +66,12 @@ export function SignerMethodButtons({
   const showNip46 = allowed.has("nip46");
   const showNsec = allowed.has("nsec");
 
+  // Mobile browsers have no NIP-07 extension to call. Hide the
+  // extension button there — but only when another method is on
+  // offer, so a re-attach flow restricted to `extension` alone never
+  // renders an empty picker.
+  const hideExtensionOnMobile = isMobile && (showNip46 || showNsec);
+
   return (
     <div className={wrapperClassName}>
       {showExtension ? (
@@ -71,6 +79,7 @@ export function SignerMethodButtons({
           onSigner={onSigner}
           onError={onError}
           expectedPubkey={expectedPubkey}
+          hideIfUnavailable={hideExtensionOnMobile}
         />
       ) : null}
 
@@ -86,9 +95,13 @@ export function SignerMethodButtons({
           >
             <QrIcon size={20} />
             <div className={styles.methodInfo}>
-              <span className={styles.methodName}>{t("connectQrTitle")}</span>
+              <span className={styles.methodName}>
+                {isMobile ? t("connectAppTitle") : t("connectQrTitle")}
+              </span>
               <span className={styles.methodDescription}>
-                {t("connectQrDescription")}
+                {isMobile
+                  ? t("connectAppDescription")
+                  : t("connectQrDescription")}
               </span>
             </div>
           </Button>
