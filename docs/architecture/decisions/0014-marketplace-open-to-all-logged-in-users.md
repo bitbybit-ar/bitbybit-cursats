@@ -3,7 +3,7 @@
 - **Date**: 2026-05-09
 - **Status**: Accepted
 - **Deciders**: BitByBit team
-- **Last updated**: 2026-05-09
+- **Last updated**: 2026-05-22
 
 ---
 
@@ -11,6 +11,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-22 | Decision | Dropped the `PLATFORM_ADMIN_PUBKEYS` platform-admin line — that moderation lever was removed as dead code. The open-marketplace decision is unchanged. | The env var and its plumbing no longer exist; the doc must not present them as current. |
 | 2026-05-09 | — | Initial version. | The merchant-only `/panel/*` surface has been replaced with first-class top-level routes. Every signed-in Nostr user is implicitly a creator now; the merchant row is data, not a gate. |
 
 ---
@@ -68,8 +69,10 @@ Concretely:
   "claim a custom slug now" entry point but is reachable only from
   explicit prompts; users who land on `/mis-cursos` first get a
   placeholder slug (`user-<first-8-of-pubkey>`) they can rename.
-- The platform-admin posture (`PLATFORM_ADMIN_PUBKEYS`) is unchanged:
-  inactive merchants still 404; moderation lives elsewhere.
+- Inactive users still 404 (the `users.active` flag). There is no
+  platform-admin moderation lever in v1 — the
+  `PLATFORM_ADMIN_PUBKEYS` env and its plumbing were removed as
+  dead code.
 
 ## Consequences
 

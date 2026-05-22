@@ -1,9 +1,9 @@
 # 0006. Use Nostr DMs and in-app receipts for delivery, not email
 
 - **Date**: 2026-05-06
-- **Status**: Accepted (extended by [0007](0007-optional-nostr-buyer-login.md))
+- **Status**: Accepted (amended 2026-05-22 — the Nostr DM channel was removed; delivery is the in-app receipt page only)
 - **Deciders**: BitByBit team
-- **Last updated**: 2026-05-06
+- **Last updated**: 2026-05-22
 
 ---
 
@@ -11,6 +11,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-22 | Status, Decision | Removed the Nostr DM channel from the decision: the server signing key (`NOSTR_NSEC`) and DM code were deleted as dead code, so delivery is now the in-app receipt page only. The no-email and in-app-receipt decisions stand. The Context and Consequences below are left as the original record. | The DM push was never relied upon and was removed; the doc must not present it as a current channel. |
 | 2026-05-06 | Decision, Consequences | Added a third DM trigger — logged-in Nostr buyers — alongside npub-at-checkout and NWC-derived pubkey. Cross-linked to ADR 0007. | ADR 0007 introduces optional Nostr login for buyers; DM delivery should fire automatically for logged-in sessions, so this doc must reflect that. |
 | 2026-05-06 | — | Initial version. | Pin the delivery channel before scaffolding any notification code so we don't accidentally pull in an email provider. |
 
@@ -55,28 +56,19 @@ or a short-lived signed download URL (for `download` offerings),
 plus order summary. Always shown immediately after payment — does
 not require the buyer to provide any identity.
 
-**Optional Nostr DM** (NIP-44 encrypted) for buyers who connect a
-Nostr identity at checkout via NIP-07 (browser extension) or by
-pasting an npub. The DM contains the receipt URL.
-
-**Auto-renewal subscribers** automatically receive Nostr DMs for
-renewal confirmations and cancellation notices. Their pubkey
-comes from the NWC connection — no separate identity prompt.
-
-**Logged-in buyers** (ADR
-[0007](0007-optional-nostr-buyer-login.md)) automatically receive
-DMs for every order while a session is active — the session
-pubkey is the destination. They do not need to paste an
-identifier at checkout. This is the third DM trigger alongside
-npub-at-checkout (above) and NWC-derived pubkey (subscribers).
+**No Nostr DM channel** (amended 2026-05-22). The original
+decision added an optional NIP-44-encrypted Nostr DM — for buyers
+who pasted an npub at checkout, for logged-in buyers, and for
+auto-renewal subscribers — signed by a deployment `NOSTR_NSEC`.
+That channel was never relied upon; its code and the server
+signing key were removed as dead code. Delivery is now the in-app
+receipt page only. Because the receipt page was always the
+canonical, always-available channel, removing the DM push does not
+change what a buyer can rely on.
 
 **No email integration.** No email-sender provider, no email field
 at checkout, no inbox-deliverability concerns, no unsubscribe
 page.
-
-The deployment uses a server-side Nostr signing key (env:
-`NOSTR_NSEC`) to sign and encrypt outgoing DMs. Merchants do not
-manage Nostr keys; the deployment owns one.
 
 ## Consequences
 

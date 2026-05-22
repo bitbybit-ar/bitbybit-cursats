@@ -3,7 +3,7 @@
 - **Date**: 2026-05-06
 - **Status**: Accepted (supersedes ADR [0004](0004-static-config-deployment.md) for the configuration mechanism, not the deployment model)
 - **Deciders**: BitByBit team
-- **Last updated**: 2026-05-06
+- **Last updated**: 2026-05-22
 
 ---
 
@@ -11,6 +11,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-22 | Decision | Dropped `ADMIN_PUBKEYS` and `NSEC` from the config and migration tables — the platform-admin feature and the server Nostr signing key were removed as dead code. The no-YAML decision is unchanged. | Those env vars no longer exist; the tables must not list them as current config. |
 | 2026-05-06 | — | Initial version. | Record where every former `merchant.yaml` field lives now, so the next agent or developer does not waste time looking for a file that no longer exists. |
 
 ---
@@ -60,8 +61,7 @@ editing surface:
 | Branding tokens | the developer who forks | `styles/_theme.scss` |
 | Page copy, FAQ, terms, privacy | the developer who forks | `messages/{es,en}.json` (next-intl) |
 | Merchant identity, social links | the developer who forks | `lib/merchant.ts` (TS module exporting an object) |
-| Secrets (Wapu key, NSEC, DB URL) | the deployer | env vars |
-| Admin authorisation | the deployer | env var `ADMIN_PUBKEYS` (comma-separated) |
+| Secrets (Wapu key + host, cron secret, auth secret, DB URL) | the deployer | env vars |
 | Offerings | the merchant | Postgres `offerings` table, panel CRUD |
 | CBU, alias, autorenewal toggle | the merchant | Postgres `settings` row, panel form |
 | Orders, sessions, students | nobody | Postgres, system-managed |
@@ -75,7 +75,7 @@ Migration map for anyone who remembers a former YAML field:
 | `merchant.email` | removed entirely (ADR 0006 — no email integration) |
 | `theme.primary`, `theme.logo` | `styles/_theme.scss`, `public/icons/` |
 | `features.autorenewal` | `settings.features_autorenewal`, panel toggle |
-| `admin_pubkeys` | env var `ADMIN_PUBKEYS` |
+| `admin_pubkeys` | removed — no platform-admin feature in v1 |
 | `catalog[*]` | `offerings` table, panel CRUD |
 
 ## Consequences

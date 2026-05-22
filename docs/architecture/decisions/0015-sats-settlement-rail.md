@@ -3,7 +3,7 @@
 - **Date**: 2026-05-09
 - **Status**: Accepted
 - **Deciders**: BitByBit team
-- **Last updated**: 2026-05-09
+- **Last updated**: 2026-05-22
 
 ---
 
@@ -11,6 +11,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-22 | Consequences | The note that "the auto-renewal flow works on both rails via buyer-side NWC" is moot — autorenewal is deferred (ADR 0020) and the NWC env was removed as dead code. The dual-rail decision and the LUD-21 requirement are unchanged. | NWC/autorenewal code no longer exists; the doc must not present it as current. |
 | 2026-05-09 | — | Initial version. | Pin the second settlement rail and the LUD-21 requirement before merchants start using it. |
 
 ---
