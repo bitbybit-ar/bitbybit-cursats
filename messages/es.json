@@ -1,11 +1,10 @@
 {
   "metadata": {
-    "siteName": "BitByBit Cursats",
-    "siteTitle": "BitByBit Cursats — Sats para todos, pesos para los que los necesitan",
+    "siteName": "CURSATS",
+    "siteTitle": "CURSATS — Cursá tu próxima clase con sats.",
     "description": "Checkout Lightning para profes y creadores de contenido educativo. El comprador paga en sats; vos elegís cobrar sats en tu wallet o pesos en tu CBU.",
     "keywords": "bitbybit,cursats,checkout lightning,bitcoin,sats,lightning address,wapu,pagos,argentina,educación,clases,profes,creadores,la crypta",
-    "ogHeadline": "Sats para todos. Pesos para los que los necesitan.",
-    "ogTagline": "Checkout Lightning para profes y creadores de contenido educativo.",
+    "ogValueLine": "Cursá tu próxima clase con SATS.",
     "skipToContent": "Saltar al contenido"
   },
   "comingSoon": {

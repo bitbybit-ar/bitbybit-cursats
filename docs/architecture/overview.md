@@ -1,7 +1,7 @@
 # Architecture overview
 
 > **Status:** Active
-> **Last updated:** 2026-05-21
+> **Last updated:** 2026-05-22
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-22 | SEO surface | Rewrote the OG image description: it is now brand-led (block mark + `CURSATS` wordmark + giant wordmark hero + one `ogValueLine`) instead of a burned-in headline/tagline, and `og.png` is a baked twin of the route. Swapped the `ogHeadline`/`ogTagline` key reference for `ogValueLine`. | The social card duplicated its own headline/tagline in the link title and description, and its logo read "BitByBit Cursats" with horizontal off-brand blocks; the redesign fixes the mark and removes the repetition. |
 | 2026-05-21 | Auto-renewal flow, Ownership of state | Replaced the full autorenewal flow description and diagram with a deferred-from-MVP pointer to ADR 0020; removed the "Autorenewal toggle" row from the ownership table. | ADR 0020 was revised to drop the column outright (migration 0009). The overview was still describing the dormant-but-deployed posture the original ADR walked back. |
 | 2026-05-19 | External services | Added Yadio as the live sats↔ARS exchange-rate source. | The storefront was quoting against a 4-sats/ARS mock (~4.5× off); ADR 0022 wired the real rate. |
 | 2026-05-12 | — | Rebranded references from "Cursá" to "Cursats" and updated the deployment URL to `cursats.bitbybit.com.ar`. Aligned the example storefront URLs with ADR 0017 (flat `/<userSlug>` instead of `/m/<userSlug>`). | Brand rename per ADR 0018 — portmanteau of *cursá* (the voseo verb) and *sats*. |
@@ -237,9 +238,19 @@ Routes inventory and request shapes live in
   `parentOrganization` to BitByBit so search engines associate
   Cursats with the wider org.
 - Dynamic OG image rendered per locale via `next/og` at
-  `app/[locale]/opengraph-image.tsx`. Headline and tagline come
-  from `messages/{locale}.json` (`metadata.ogHeadline`,
-  `metadata.ogTagline`).
+  `app/[locale]/opengraph-image.tsx`. It is brand-led: the
+  vertically stacked block mark plus the `CURSATS` wordmark (the
+  same blue/lime/pink hues as `<LogoBlocks />` / `<Wordmark />`),
+  a giant wordmark hero, and one short value line from
+  `messages/{locale}.json` (`metadata.ogValueLine`). That value
+  line is the brand slogan ("Cursá tu próxima clase con sats" /
+  "Your next class, paid in sats"), which also doubles as the link
+  title (`metadata.siteTitle`); the long product description stays
+  out of the image and lives only in the link description.
+  `public/og.png` is a baked copy of the same design,
+  referenced first in the metadata for crawlers that miss the
+  file-convention endpoint (notably WhatsApp); regenerate it from
+  the same layout whenever the route's design changes.
 - `app/sitemap.ts` lists `/es` and `/en` with hreflang alternates.
 - `app/robots.ts` allows everything except `/api/` and `/_next/`.
 - `app/manifest.ts` declares the standalone PWA shell with
