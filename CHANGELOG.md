@@ -12,6 +12,15 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Removed
 
+- **"Your money, your keys" custody section removed from
+  how-it-works.** The claim that Cursats never holds the funds was
+  inaccurate: for the Wapu rail, a buyer's sats land in the Cursats
+  Wapu account and sit there until Wapu settles pesos to the
+  teacher's CBU, so there is a window where the platform custodies
+  the funds. Removed the section markup, its styles, and the
+  `howItWorks.custody` i18n keys in both locales rather than ship a
+  misleading guarantee.
+
 - **`users.features_autorenewal` column dropped.** Migration
   `0010_drop_features_autorenewal.sql` removes the column from
   Postgres; `UpdateUserProfileSchema` no longer accepts the field
@@ -72,6 +81,20 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   audit finding was a false read.
 
 ### Changed
+
+- **How-it-works animations (framer-motion).** The hero now fades
+  its title in with a blur clear, popping the gradient words
+  ("SATS", "PESOS" — now uppercase) in *first* with a spring and
+  fading the surrounding text in after; subtitle follows. The
+  pinned journey sequence (bubble → burst → polaroid) is now driven
+  by a spring-smoothed scroll progress so it glides instead of
+  tracking the scrollbar 1:1, and the polaroid forms as a
+  continuous scrub rather than a hard snap-in. The "who is who"
+  glossary reuses the landing's `RevealPolaroids` drop, and the
+  closing CTA block fades + rises in via a new shared
+  `components/common/reveal` primitive. Hero markup/styles moved
+  into a co-located `components/how-it-works/intro-hero`. Respects
+  `prefers-reduced-motion`.
 
 - **Landing animations (framer-motion).** The hero title now
   assembles word-by-word with a blur-clear + rise, ending with a

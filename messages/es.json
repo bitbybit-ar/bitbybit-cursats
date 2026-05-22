@@ -107,7 +107,7 @@
     "metadataTitle": "Cómo funciona",
     "metadataDescription": "Cursats usa Lightning para que el comprador pague en sats. El profe elige cómo cobrar: sats directo a su wallet, o pesos al CBU vía Wapu. Te lo contamos paso a paso.",
     "hero": {
-      "title": "<gradient>Sats</gradient> para todos. <gradient>Pesos</gradient> para los que los necesitan.",
+      "title": "<gradient>SATS</gradient> para todos. <gradient>PESOS</gradient> para los que los necesitan.",
       "subtitle": "Cursats conecta a quien quiere aprender con quien quiere enseñar. Lightning para pagar; sats o pesos para cobrar — el profe elige. La plataforma se sale del medio."
     },
     "buyers": {
@@ -142,10 +142,6 @@
       "lightningAddressBody": "Una dirección tipo email (vos@walletofsatoshi.com) donde el profe recibe sats directo en su wallet. Para profes que ya viven en sats, sin pasar por ningún convertidor.",
       "nostrTitle": "Nostr",
       "nostrBody": "Protocolo abierto de identidad y mensajería. Tu llave es tu cuenta — para los profes es obligatorio (es la única forma de crear y gestionar tus cursos), para los compradores es opcional."
-    },
-    "custody": {
-      "title": "Tu plata, tus llaves",
-      "body": "Cursats nunca custodia los fondos. Cada pago va directo al destino que eligió el profe — pesos al CBU vía Wapu, o sats a su Lightning Address. Si Cursats desaparece mañana, los pagos siguen llegando: los rails no somos nosotros."
     },
     "cta": {
       "title": "¿Listo para arrancar?",

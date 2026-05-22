@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Section } from "@/components/ui/section";
-import { Card } from "@/components/ui/card";
 import { Polaroid } from "@/components/ui/polaroid";
 import { Button } from "@/components/ui/button";
 import { alternatesFor } from "@/lib/seo";
 import { JourneySteps } from "@/components/how-it-works/journey-steps";
+import { IntroHero } from "@/components/how-it-works/intro-hero";
+import { Reveal } from "@/components/common/reveal";
+import { RevealPolaroids } from "@/components/common/reveal-polaroids";
 import styles from "./page.module.scss";
 
 // "Quién es quién" brand logos, vendored into `public/images/logos`
@@ -86,20 +88,7 @@ export default async function HowItWorksPage({ params }: Props) {
   return (
     <>
       <div className={styles.page}>
-        <section className={styles.heroSection}>
-          <div className={styles.heroInner}>
-            <header className={styles.hero}>
-              <h1 className={styles.heroTitle}>
-                {t.rich("hero.title", {
-                  gradient: (chunks) => (
-                    <span className={styles.gradientWord}>{chunks}</span>
-                  ),
-                })}
-              </h1>
-              <p className={styles.heroSubtitle}>{t("hero.subtitle")}</p>
-            </header>
-          </div>
-        </section>
+        <IntroHero />
 
         <JourneySteps
           variant="buyer"
@@ -114,43 +103,41 @@ export default async function HowItWorksPage({ params }: Props) {
         />
 
         <Section>
-          <h2 className={styles.sectionTitle}>{t("glossary.title")}</h2>
-          <ul className={styles.glossary} aria-label={t("glossary.title")}>
+          <Reveal>
+            <h2 className={styles.sectionTitle}>{t("glossary.title")}</h2>
+          </Reveal>
+          <RevealPolaroids
+            className={styles.glossary}
+            itemClassName={styles.glossaryItem}
+            ariaLabel={t("glossary.title")}
+            viewportMargin="-20% 0px"
+            delay={0.2}
+          >
             {glossary.map((item) => (
-              <li key={item.title} className={styles.glossaryItem}>
-                <Polaroid
-                  rotation={item.rotation}
-                  frame={
-                    <span
-                      className={`${styles.glossaryLogo} ${item.frameTone}`}
-                    >
-                      <Image
-                        src={item.logo}
-                        alt={item.title}
-                        width={128}
-                        height={128}
-                        className={styles.glossaryLogoImg}
-                      />
-                    </span>
-                  }
-                >
-                  <h3>{item.title}</h3>
-                  <p>{item.body}</p>
-                </Polaroid>
-              </li>
+              <Polaroid
+                key={item.title}
+                rotation={item.rotation}
+                frame={
+                  <span className={`${styles.glossaryLogo} ${item.frameTone}`}>
+                    <Image
+                      src={item.logo}
+                      alt={item.title}
+                      width={128}
+                      height={128}
+                      className={styles.glossaryLogoImg}
+                    />
+                  </span>
+                }
+              >
+                <h3>{item.title}</h3>
+                <p>{item.body}</p>
+              </Polaroid>
             ))}
-          </ul>
+          </RevealPolaroids>
         </Section>
 
         <Section>
-          <Card variant="highlight" className={styles.custodyCard}>
-            <h2 className={styles.custodyTitle}>{t("custody.title")}</h2>
-            <p className={styles.custodyBody}>{t("custody.body")}</p>
-          </Card>
-        </Section>
-
-        <Section>
-          <div className={styles.ctaBlock}>
+          <Reveal className={styles.ctaBlock}>
             <h2 className={styles.sectionTitle}>{t("cta.title")}</h2>
             <div className={styles.ctaButtons}>
               <Button
@@ -170,7 +157,7 @@ export default async function HowItWorksPage({ params }: Props) {
                 {t("cta.publish")}
               </Button>
             </div>
-          </div>
+          </Reveal>
         </Section>
       </div>
     </>
