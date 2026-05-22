@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-22 | Identity model, Payment flow, Notifications & delivery, Configuration model, Security, Stack, Routing | Removed the Nostr-DM delivery channel and the paste-your-npub buyer tier (no server signing key ships); made both rails poll-driven (no Wapu webhooks) with a daily settlement cron + on-demand `/api/orders/sync`; dropped `NOSTR_NSEC`, `PLATFORM_ADMIN_PUBKEYS`, and NWC from the config table, security list, and identity model. | The server Nostr-DM, platform-admin moderation, and NWC/auto-renewal env vars were removed as dead code, and the Wapu rebuild (ADR 0025) made the rail poll-driven; the overview still described webhooks, DMs, and those env vars. |
 | 2026-05-22 | SEO surface | Rewrote the OG image description: it is now brand-led (block mark + `CURSATS` wordmark + giant wordmark hero + one `ogValueLine`) instead of a burned-in headline/tagline, and `og.png` is a baked twin of the route. Swapped the `ogHeadline`/`ogTagline` key reference for `ogValueLine`. | The social card duplicated its own headline/tagline in the link title and description, and its logo read "BitByBit Cursats" with horizontal off-brand blocks; the redesign fixes the mark and removes the repetition. |
 | 2026-05-21 | Auto-renewal flow, Ownership of state | Replaced the full autorenewal flow description and diagram with a deferred-from-MVP pointer to ADR 0020; removed the "Autorenewal toggle" row from the ownership table. | ADR 0020 was revised to drop the column outright (migration 0009). The overview was still describing the dormant-but-deployed posture the original ADR walked back. |
 | 2026-05-19 | External services | Added Yadio as the live sats↔ARS exchange-rate source. | The storefront was quoting against a 4-sats/ARS mock (~4.5× off); ADR 0022 wired the real rate. |
@@ -58,11 +59,10 @@ or a creator storefront at `/<userSlug>`, opens an offering at
 `/<userSlug>/c/<offeringSlug>`, gets a Lightning invoice, pays
 it, and lands on a permanent receipt page at
 `/[locale]/receipt/[orderId]` that shows their redemption code or
-download link. If they connected a Nostr identity at checkout (or
-signed in with one), an encrypted DM with the same content lands
-in their Nostr client. Buyers may optionally sign in with Nostr
-to see their full order history at `/[locale]/purchases`;
-purchase never requires it.
+download link. The receipt page is the only delivery channel — no
+emails, no DMs — so buyers save the URL. Buyers may optionally sign
+in with Nostr to see their full order history at
+`/[locale]/purchases`; purchase never requires it.
 
 Sellers pick one of two payout rails in `/[locale]/settings`,
 stored as `users.payout_method`. Decision pinned in ADR
@@ -78,10 +78,12 @@ stored as `users.payout_method`. Decision pinned in ADR
   No converter, no platform-side wallet — the sats land in the
   seller's wallet of record.
 
-The checkout API dispatches on `users.payout_method`; the Wapu
-webhook only flips orders whose `rail === 'wapu_ars'`. Lightning-rail
-orders are confirmed by polling the seller's `lnurl_verify_url`
-from `/api/orders/[orderId]`.
+The checkout API dispatches on `users.payout_method`. Neither rail
+uses webhooks: a `wapu_ars` order polls its Wapu deposit transaction
+and a `lightning` order polls the seller's `lnurl_verify_url`, both
+from `/api/orders/[orderId]`. The `wapu_ars` seller payout leg is
+settled by a daily cron (`/api/cron/wapu-settlements`); sellers can
+also trigger it on demand from `/orders`.
 
 ## Stack
 
@@ -125,7 +127,8 @@ from `/api/orders/[orderId]`.
   and per-mutation re-sign at save time on payment-destination
   fields (CBU / alias / Lightning Address) in `/settings`.
 - **`jose`** — signs the session JWT held in an httpOnly cookie.
-- **Vercel** — Hobby plan plus Vercel Cron when auto-renewal is on.
+- **Vercel** — Hobby plan; a daily Vercel Cron
+  (`/api/cron/wapu-settlements`) settles the Wapu ARS payout leg.
 
 ## Routing
 
@@ -149,10 +152,11 @@ lives in [`routing.md`](routing.md). A short summary:
 /[locale]/my-courses             → seller's offerings (logged in)
 /[locale]/create-course          → new offering form (logged in)
 /[locale]/orders                 → seller's sales history (logged in)
-/[locale]/settings               → payout, slug, autorenewal toggle
+/[locale]/settings               → payout method, slug, display name
 
-/api/wapu/webhook                → Wapu payment events (rail = wapu_ars only)
-/api/orders/[orderId]            → order status (also probes LN verify URL)
+/api/orders/[orderId]            → order status (polls Wapu deposit / LN verify)
+/api/orders/sync                 → seller-triggered settlement sweep
+/api/cron/wapu-settlements       → daily Wapu payout settlement (cron)
 /api/auth/*                      → Nostr session
 /api/my-courses, /api/settings   → seller-scoped CRUD
 /api/notifications               → navbar bell
@@ -165,31 +169,17 @@ rationale for each slug.
 
 ## Identity model
 
-Three buyer identity tiers (ADR
+Two buyer identity tiers (ADR
 [0007](decisions/0007-optional-nostr-buyer-login.md)):
 
 1. **Anonymous.** Pay, land on `/receipt/[orderId]`, get the
-   code, walk away. The opaque URL is the only access key.
-2. **Anonymous with Nostr identifier.** Buyer pastes an
-   `npub1...` or NIP-05 (`name@domain.com`) at checkout; the
-   server resolves NIP-05 via `/api/nip05/resolve` and sends an
-   encrypted DM with the receipt URL. No session.
-3. **Logged-in via Nostr.** NIP-07 / nsec / NIP-46 sign-in
+   code, walk away. The opaque URL is the only access key — and the
+   only delivery channel.
+2. **Logged-in via Nostr.** NIP-07 / nsec / NIP-46 sign-in
    issues a `jose` JWT in an httpOnly cookie. Orders link to the
-   session pubkey; `/[locale]/purchases` lists them; DMs are
-   automatic. The same sign-in materialises the user row
-   (`ensureUserForPubkey`) so the same identity also unlocks the
-   creator surfaces.
-
-Auto-renewal subscribers get tier 3 implicitly — the NWC
-connection already exposes their pubkey.
-
-Platform-level moderation lives in `PLATFORM_ADMIN_PUBKEYS` (env,
-comma-separated) and gates a small set of admin tools. It is not
-the panel gate (the panel doesn't exist anymore); it controls
-inactivation/moderation of users by the BitByBit team. Decision
-pinned in ADR
-[0014](decisions/0014-marketplace-open-to-all-logged-in-users.md).
+   session pubkey; `/[locale]/purchases` lists them. The same
+   sign-in materialises the user row (`ensureUserForPubkey`) so the
+   same identity also unlocks the creator surfaces.
 
 ## Creator surfaces
 
@@ -207,15 +197,15 @@ created lazily on first hit (`requirePanelUser` in
 | `/[locale]/my-courses/[slug]/edit` | Edit offering, archive button lives here |
 | `/[locale]/create-course` | New offering form |
 | `/[locale]/orders` | Sales history, read-only in v1 |
-| `/[locale]/orders/[orderId]` | Sale detail (payment hash, rail, settlement ref, redemption) |
-| `/[locale]/settings` | Payout method (Wapu CBU/alias OR Lightning Address), slug + display name, autorenewal toggle |
+| `/[locale]/orders/[orderId]` | Sale detail (rail, deposit/withdrawal tx, payout status, redemption) |
+| `/[locale]/settings` | Payout method (Wapu CBU/alias OR Lightning Address), slug + display name |
 
 - **Auth.** Edge gate in `proxy.ts` requires a signed-in session;
   anonymous visitors bounce to `/sign-in?next=...`. Server-side,
   each page's `requirePanelUser` materialises the user row on
   first hit.
 - **Write in v1**: offerings (full CRUD), settings (CBU, alias,
-  Lightning Address, payout method, autorenewal toggle).
+  Lightning Address, payout method).
   Mutations to payment-destination fields (CBU, alias, Lightning
   Address) require a NIP-07 re-sign at save time, so a stolen
   session cookie cannot quietly redirect future settlement.
@@ -290,16 +280,15 @@ Routes inventory and request shapes live in
 Every offering in a seller's catalog is one of two types:
 
 1. **`code`** — buyer pays, the receipt page shows a redemption
-   code (and an optional Nostr DM mirrors the same content). The
-   buyer shows the code to the seller in person. Used for
+   code. The buyer shows the code to the seller in person. Used for
    single classes, lesson packs, monthly bonos.
 2. **`download`** — buyer pays, the receipt page shows a
    short-lived signed URL pointing at a private file. Used for
    PDF method books, sheet music, recorded course material.
 
 Both share: catalog → invoice (Wapu or LNURL-pay) → confirmation
-(Wapu webhook or LUD-21 verify poll) → receipt page (and optional
-Nostr DM). The receipt content is the only difference.
+(poll the Wapu deposit or the LUD-21 verify URL) → receipt page.
+The receipt content is the only difference.
 See [Notifications & delivery](#notifications--delivery) for the
 delivery model in detail.
 
@@ -315,18 +304,23 @@ take from there depends on which rail the seller picked in
 Buyer              Cursats app             Wapu              Seller bank
   │                    │                   │                     │
   │── click "Comprar" ▶│                   │                     │
-  │                    │── create invoice ▶│                     │
-  │                    │◀── invoice ───────│                     │
+  │                    │── deposit_lightning ▶                   │
+  │                    │◀── BOLT11 + tx id ─│                     │
   │◀── show QR + amt ──│                   │                     │
   │── pay invoice (LN) ────────────────────▶                     │
-  │                    │◀── webhook: paid ─│                     │
+  │                    │── poll deposit tx ▶│                     │
+  │                    │◀── Completed ──────│                     │
   │◀── receipt + code ─│                   │                     │
-  │                    │── (opt) Nostr DM ─────────────────────  │
-  │                    │                   │── ARS payout ──────▶│
+  │                    │── open withdrawal ▶│                     │
+  │                    │   (cron polls it)  │── ARS payout ──────▶│
 ```
 
-The Wapu webhook handler is the source of truth for "payment
-confirmed" on this rail.
+Leg 1 (deposit) credits USDT to our Wapu wallet; the checkout page
+polls the deposit transaction via `/api/orders/[orderId]` until it
+reads `Completed`. Leg 2 (withdrawal) opens once the deposit
+confirms and is polled to settlement by the daily cron. There are
+no webhooks. Decision in ADR
+[0025](decisions/0025-wapu-poll-driven-two-leg-rail.md).
 
 ### Rail = `lightning` (direct sats to seller's Lightning Address)
 
@@ -341,19 +335,13 @@ Buyer              Cursats app          Seller's LNURL provider
   │                    │── poll verify URL ───▶│
   │                    │◀── settled = true ────│
   │◀── receipt + code ─│                       │
-  │                    │── (opt) Nostr DM ─────│
 ```
 
 The seller's LNURL-pay `verify` URL (LUD-21) is the source of
-truth on this rail; `/api/orders/[orderId]` polls it. The Wapu
-webhook is refused with 404 for any order whose `rail` is not
-`wapu_ars`.
+truth on this rail; `/api/orders/[orderId]` polls it.
 
-In both cases, polling the checkout page is a UX nicety, not the
-trigger. Once confirmed, the buyer is redirected to their
-permanent receipt page at `/[locale]/receipt/[orderId]`; if they
-connected a Nostr identity at checkout, an encrypted DM with the
-same content goes out from the deployment's npub.
+Once confirmed, the buyer is redirected to their permanent receipt
+page at `/[locale]/receipt/[orderId]` — the only delivery channel.
 
 ## Auto-renewal flow (deferred from MVP)
 
@@ -365,17 +353,17 @@ field on `UpdateUserProfileSchema` are all gone (migration
 one-shot; the section is left here as a pointer for the
 re-introduction ADR so it has something to supersede.
 
-No NWC client, cron worker, or encrypted-secrets storage ships in
-v1; a future ADR that re-enables autorenewal will need a fresh
-schema (the original single-boolean column was not going to
+No subscription / auto-charge client or encrypted-secrets storage
+ships in v1; a future ADR that re-enables autorenewal will need a
+fresh schema (the original single-boolean column was not going to
 survive a real implementation anyway) and will rebuild the
 checkout's "Autorenovar" CTA from scratch.
 
 ## Notifications & delivery
 
-Cursats does not integrate with email. Two channels deliver content
-and notifications: an **in-app receipt page** and **optional
-Nostr DMs**. Decision pinned in ADR
+Cursats does not integrate with email, and there is no Nostr DM
+channel. Delivery is the **in-app receipt page** — the single,
+always-available channel. Decision pinned in ADR
 [0006-nostr-and-inapp-delivery](decisions/0006-nostr-and-inapp-delivery.md).
 
 ### In-app receipt page
@@ -386,34 +374,18 @@ unguessable identifier. It renders the redemption code (for
 `code` offerings) or a short-lived signed download URL (for
 `download` offerings) plus the order summary.
 
-The receipt page is the **always-available** delivery channel —
-it does not depend on the buyer providing any identity. Buyers
-save the URL or screenshot the code.
+It does not depend on the buyer providing any identity: buyers save
+the URL or screenshot the code at checkout. For expiring lesson
+packs, the storefront UI can show "Renová tu bono" CTAs to bring
+them back.
 
-### Optional Nostr push
+### In-app notifications
 
-A buyer who connects a Nostr identity at checkout (NIP-07 browser
-extension or pasted npub) receives a NIP-44-encrypted DM with the
-receipt URL right after the webhook confirms payment.
-
-**Auto-renewal subscribers** always receive Nostr DMs for renewal
-confirmations and cancellations: their pubkey is already known
-from the NWC connection. No separate identity prompt.
-
-### Non-Nostr buyers
-
-Pre-paid buyers who do not connect Nostr have no push channel.
-They keep the receipt URL they were shown at checkout. For
-expiring lesson packs, the storefront UI can show "Renová tu
-bono" CTAs to bring them back.
-
-### Cursats's signing identity
-
-The deployment uses a server-side Nostr key (env: `NOSTR_NSEC`)
-to sign and encrypt outgoing DMs. The key never reaches the
-client. A new key just means a new npub for outgoing DMs;
-buyers read by their own pubkey, not by Cursats's identity, so
-key rotation is bounded.
+Order and payout events surface in the navbar bell — a Postgres
+table polled by `/api/notifications`: `order.paid` /
+`sale.received` when a deposit confirms, and `payout.pending` /
+`payout.released` / `payout.failed` as the seller's ARS withdrawal
+settles. These reach signed-in users only.
 
 ## Configuration model
 
@@ -427,8 +399,7 @@ shape in ADR [0009](decisions/0009-offerings-and-settings-in-database.md).
 | Branding tokens | the developer | `styles/_theme.scss` |
 | Page copy, FAQ, terms | the developer | `messages/{es,en}.json` |
 | Site identity, social links | the developer | `lib/site.ts` |
-| Secrets (Wapu key, NSEC, DB URL) | the deployer | env vars |
-| Platform-admin authorisation | the deployer | env var `PLATFORM_ADMIN_PUBKEYS` (comma-separated) |
+| Secrets (Wapu key + host, cron secret, auth secret, DB URL) | the deployer | env vars |
 | Slug, display name, bio | the seller | Postgres `users`, `/[locale]/settings` |
 | Payout method + destination (CBU/alias OR Lightning Address) | the seller | Postgres `users`, `/[locale]/settings` |
 | Offerings (catalog) | the seller | Postgres `offerings`, `/[locale]/my-courses` |
@@ -447,23 +418,17 @@ in.
 ## Security
 
 - HTTPS via Vercel, HSTS preload set.
-- Wapu API key, NWC encryption key, the deployment's Nostr
-  signing key (`NOSTR_NSEC`), the session JWT signing key, the
-  Postgres connection string, and the `PLATFORM_ADMIN_PUBKEYS`
-  list all live in Vercel environment variables. Never reach the
-  client.
-- Wapu webhook signature is verified before any state mutation.
-- NWC connection strings are encrypted at rest with a
-  per-deployment key. Loss of that key means subscriptions are
-  unrecoverable; that is the intended trade-off versus running
-  our own KMS.
+- The Wapu API key + host, the `CRON_SECRET`, the session JWT
+  signing key, and the Postgres connection string all live in
+  Vercel environment variables. Never reach the client.
+- Both rails are confirmed by polling, never a webhook. The
+  settlement cron is guarded by a `CRON_SECRET` bearer token; the
+  manual sync endpoint (`/api/orders/sync`) requires a signed-in
+  session.
 - Signed download URLs expire after 24 hours and are single-use.
 - Receipt-page `orderId`s are opaque, unguessable identifiers
   (≥128 bits of entropy). Knowing one order's URL does not let
   you enumerate other orders.
-- Outgoing Nostr DMs are NIP-44 encrypted to the buyer's pubkey.
-  Relay delivery is best-effort; the in-app receipt page is the
-  canonical record.
 - The buyer session is a `jose`-signed JWT held in an httpOnly,
   Secure, SameSite=Lax cookie. It carries the pubkey and an
   expiry; never a private key.
@@ -472,8 +437,8 @@ in.
   `/create-course`, `/orders`, `/purchases`); anonymous visitors
   bounce to `/sign-in?next=...`. Server-side, each page's
   `requirePanelUser` resolves (or lazily creates) the user row.
-  Inactive users (set by `PLATFORM_ADMIN_PUBKEYS` moderation
-  tools) 404 instead of rendering.
+  Inactive users (the `users.active` flag) 404 instead of
+  rendering.
 - Updates to payment-destination fields (CBU, alias, Lightning
   Address) require a NIP-07 re-sign at save time. A stolen
   session cookie alone cannot redirect future settlement to an

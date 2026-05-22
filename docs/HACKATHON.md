@@ -1,7 +1,7 @@
 # Hackathon submission — La Crypta #3 (Commerce)
 
 > **Status:** Active
-> **Last updated:** 2026-05-21
+> **Last updated:** 2026-05-22
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-22 | Feature table | Removed the "NIP-44-encrypted Nostr DMs" row and the DM clause on anonymous checkout; updated the exchange-rate source from Yadio to Wapu's `/exchange_rates`. | The server Nostr-DM channel was removed as dead code, and the rate now comes from Wapu (ADR 0027). |
 | 2026-05-21 | — | Initial version. | Hackathon documentation pass — the judge-facing front door, orienting evaluators before they enter SUBMISSION.md or testing-plan.md. |
 
 ---
@@ -99,10 +100,9 @@ diagrams.
 | **Buyer-flow parity** | Buyers never see "Wapu" or "Lightning Address" — same QR, same wait, same receipt. The dispatch happens server-side on the seller's stored payout method. | [checkout-flow](./features/checkout-flow.md#why-the-rails-feel-identical-to-the-buyer) |
 | **Lazy user-row materialisation** | No sign-up step. The first signed sign-in materialises a `users` row seeded from your kind:0 profile metadata. | [nostr-identity](./features/nostr-identity.md#lazy-user-row-materialisation) |
 | **Re-sign on payment fields** | Editing the CBU, alias, Lightning Address, or payout method requires a fresh Nostr signature at save time — a stolen cookie alone is not enough. | [nostr-identity](./features/nostr-identity.md#re-sign-on-payment-destination-fields) |
-| **Anonymous-first checkout** | Buyers do not have to sign in. The opaque receipt URL is the only access key. Optional Nostr identifier enables an encrypted DM push. | [delivery-and-receipts](./features/delivery-and-receipts.md) |
+| **Anonymous-first checkout** | Buyers do not have to sign in. The opaque receipt URL is the only access key and the only delivery channel. | [delivery-and-receipts](./features/delivery-and-receipts.md) |
 | **Blossom for images** | Browser-direct, content-addressed image uploads — no image bytes ever pass through the Cursats server. | [offerings-catalog](./features/offerings-catalog.md#images-via-blossom) |
-| **Live exchange-rate display** | Sats and ARS shown side by side on every price-bearing surface, via Yadio with a 5-minute cache and last-good fallback. | [discovery](./features/discovery.md#exchange-rate-display) |
-| **NIP-44-encrypted Nostr DMs** | Optional push channel for receipts; the deployment signs with `NOSTR_NSEC`, never reaches the client. | [delivery-and-receipts](./features/delivery-and-receipts.md#optional-nostr-dms) |
+| **Live exchange-rate display** | Sats and ARS shown side by side on every price-bearing surface, via Wapu's `/exchange_rates` with a 5-minute cache and last-good fallback. | [discovery](./features/discovery.md#exchange-rate-display) |
 | **Notification bell** | Polled, persistent until marked read, available to any signed-in user — `order.paid` to buyers, `sale.received` to sellers. | [notifications](./features/notifications.md) |
 
 The architecture overview at

@@ -1,7 +1,7 @@
 # Delivery and receipts
 
 > **Status:** Active
-> **Last updated:** 2026-05-21
+> **Last updated:** 2026-05-22
 
 ---
 
@@ -9,42 +9,32 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-22 | — | Removed the Nostr-DM channel and the outgoing-signing-identity section: delivery is now the in-app receipt page only. | The server-side Nostr signing key (`NOSTR_NSEC`) and DM code were removed; the receipt page was always the system of record. |
 | 2026-05-21 | — | Initial version. | Hackathon documentation pass — describe the two delivery channels, the status-gated download proxy, the optional Nostr DM, and the claim flow. |
 
 ---
 
 ## Table of Contents
 
-1. [Two delivery channels](#two-delivery-channels)
+1. [Delivery model](#delivery-model)
 2. [The receipt page — always available](#the-receipt-page--always-available)
 3. [The download proxy](#the-download-proxy)
-4. [Optional Nostr DMs](#optional-nostr-dms)
-5. [Cursats's outgoing signing identity](#cursatss-outgoing-signing-identity)
-6. [The claim flow](#the-claim-flow)
-7. [What we deliberately do not do](#what-we-deliberately-do-not-do)
+4. [The claim flow](#the-claim-flow)
+5. [What we deliberately do not do](#what-we-deliberately-do-not-do)
 
 ---
 
-## Two delivery channels
+## Delivery model
 
 Once an order flips to `paid`, the platform must hand the buyer
 the thing they bought — a redemption code or a download URL.
-Cursats does this through two channels:
+Cursats does this through a single channel: an **in-app receipt
+page** at `/[locale]/receipt/[orderId]`. It is always available,
+regardless of whether the buyer is signed in or has a Nostr
+identity; the opaque URL is the only access key.
 
-1. **An in-app receipt page** at `/[locale]/receipt/[orderId]`.
-   Always available, regardless of whether the buyer is signed
-   in or even has a Nostr identity. The opaque URL is the only
-   access key.
-2. **An optional encrypted Nostr DM** delivered to the buyer's
-   pubkey, only if the buyer connected one at checkout or was
-   already signed in.
-
-The receipt page is the **canonical** channel — the system of
-record. The Nostr DM is a **push** channel that mirrors the same
-content; if the DM never arrives (relays down, recipient never
-opens their client), the receipt page is still there.
-
-There is no email channel. Decision in ADR
+There is no email channel and no Nostr DM channel — the receipt
+page is the system of record. Decision in ADR
 [0006-nostr-and-inapp-delivery](../architecture/decisions/0006-nostr-and-inapp-delivery.md).
 
 ## The receipt page — always available
@@ -117,55 +107,6 @@ future hardening, not wired in v1:
 The receipt URL (`orderId`) is the persistent access key for both
 the receipt page and the proxy.
 
-## Optional Nostr DMs
-
-When the order's rail confirms payment (Wapu webhook or LUD-21
-verify settle), and **if** the order has a buyer pubkey attached,
-the server sends an encrypted Nostr DM to that pubkey carrying
-the same receipt URL.
-
-How the buyer pubkey gets attached:
-
-- **At checkout (Tier 2 — anonymous + identifier).** The buyer
-  paste an `npub1…` or NIP-05 (`name@domain.com`) into the
-  checkout form before paying. The server resolves NIP-05 via
-  `/api/nip05/resolve` and stores the resolved pubkey on the
-  order row.
-- **From the session (Tier 3 — signed-in).** A signed-in buyer's
-  pubkey is taken from the session at order creation; no extra
-  step.
-
-The DM is **NIP-44 encrypted** to the buyer's pubkey (`@noble`'s
-secp256k1 + the spec's HKDF + ChaCha20). The body is plain text
-containing the receipt URL and a short summary line; everything
-else (the code, the download URL) is *not* in the DM — the buyer
-has to click through to the receipt page to get it. This means a
-leaked DM does not by itself leak the redemption code; the
-attacker would also need to compromise the URL (which sits
-behind opacity, not a key).
-
-Relay delivery is **best-effort**. Cursats publishes to a small
-set of public relays and the seller's preferred relays (if any
-are configured); a DM that does not arrive for any reason is
-recoverable via the receipt URL the buyer already has.
-
-## Cursats's outgoing signing identity
-
-The deployment signs outgoing DMs with a server-side Nostr key
-held in `NOSTR_NSEC` (env var, never reaches the client). The
-corresponding npub is the public identity of the deployment.
-
-Key rotation is bounded. Rotating `NOSTR_NSEC` does not invalidate
-any past receipts — the receipt page is what the buyer relies
-on; the DM is just an additional push. After rotation, future
-DMs go out from the new npub; the buyer's client picks them up
-the same way (the DM is encrypted *to* the buyer's pubkey, not
-*from* a specific signing identity the buyer must trust).
-
-The platform's npub appears on the landing footer and in the
-`Organization` JSON-LD so a Nostr-aware buyer can verify the
-deployment they paid is the deployment they think they paid.
-
 ## The claim flow
 
 A buyer who paid anonymously and *later* wants their order to
@@ -196,12 +137,8 @@ ones.
 
 - **No email.** Period. No email field at checkout, no
   email-sender provider, no inbox-deliverability concerns.
-- **No code/URL in the Nostr DM body.** The DM carries the
-  receipt URL only; the code or download URL must come from a
-  fresh receipt-page render. Two reasons: (a) one round-trip
-  through TLS to load the page is no worse than a DM round-trip
-  for the buyer, and (b) a leaked DM does not directly leak the
-  redemption value.
+- **No Nostr DM channel.** Delivery is the receipt page only;
+  there is no server-side signing key and no DM push.
 - **No resend-from-the-seller UI.** A seller cannot regenerate or
   resend a buyer's receipt URL or code from `/orders`. The buyer
   already has the URL; the seller never had it. Deferred to v1.1.

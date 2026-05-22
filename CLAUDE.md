@@ -219,9 +219,9 @@ repo's copy is intentionally identical and should stay in sync.
   kind:0 from public relays via `nostr-tools/pool`, caches in
   localStorage with a 24h freshness window, and falls through
   picture → letter → `UserIcon` for the navbar avatar.
-- **No email integration.** Delivery is the in-app receipt page
-  (`/[locale]/gracias/[orderId]`) plus optional Nostr DMs. Decision
-  in ADR
+- **No email integration and no Nostr DM channel.** Delivery is
+  the in-app receipt page (`/[locale]/receipt/[orderId]`) only.
+  Decision in ADR
   `docs/architecture/decisions/0006-nostr-and-inapp-delivery.md`.
 - **No buyer-side wallet detection.** Buyers came to a sats checkout
   to pay sats. Every purchase is one-shot — there are no renewable

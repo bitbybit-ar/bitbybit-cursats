@@ -36,12 +36,11 @@ An open marketplace where any signed-in Nostr user can sell two
 product primitives to learners:
 
 1. **Redeemable codes** — single class, lesson packs, monthly
-   bonos. Buyer gets a code on a permanent receipt page (and an
-   optional Nostr DM if they connected a pubkey at checkout) and
-   shows it in person.
+   bonos. Buyer gets a code on a permanent receipt page and shows
+   it in person.
 2. **Digital downloads** — PDFs, sheet music, recorded courses.
    Buyer gets a download link on the same receipt page (served
-   through a status-gated proxy), plus the optional Nostr DM.
+   through a status-gated proxy).
 
 Buyers always pay over Lightning. Sellers pick one of two payout
 rails in Settings (ADR
@@ -67,17 +66,16 @@ MVP — see ADR
 ```text
 1. Browse storefront or /explore        → public catalog, no login required
 2. Open offering, click "Comprar"       → Lightning invoice + QR
-3. Pay over Lightning                   → Wapu webhook OR LUD-21 verify poll
+3. Pay over Lightning                   → poll Wapu deposit OR LUD-21 verify
 4. Land on /receipt/[orderId]           → redemption code OR download link
-5. (Optional) Encrypted Nostr DM        → if the buyer connected a pubkey
-6. Sats settle to seller's chosen rail  → ARS to CBU (Wapu) OR sats to wallet (LN)
+5. Sats settle to seller's chosen rail  → ARS to CBU (Wapu) OR sats to wallet (LN)
 ```
 
 Step 3 splits by the seller's payout method: a `cbu_alias`
-seller's order rides the `wapu_ars` rail and confirms through the
-Wapu webhook; a `lightning_address` seller's order rides the
-`direct_lightning` rail and confirms by polling the seller's
-LNURL-pay `verify` URL. The buyer experience is identical either
+seller's order rides the `wapu_ars` rail and confirms by polling
+its Wapu deposit transaction; a `lightning_address` seller's order
+rides the `direct_lightning` rail and confirms by polling the
+seller's LNURL-pay `verify` URL. The buyer experience is identical either
 way — same QR, same wait, same receipt page.
 
 ## Stack
@@ -125,7 +123,7 @@ notes).
 For evaluators, the ordered walkthrough is in
 [`docs/testing-plan.md`](./docs/testing-plan.md) — numbered steps
 that cover sign-in, creating an offering, both payout rails
-(Wapu + Lightning Address), the receipt + Nostr DM delivery, and
+(Wapu + Lightning Address), the receipt-page delivery, and
 the notification bell.
 
 The project is the BitByBit team's entry to **La Crypta Hackathon

@@ -1,7 +1,7 @@
 # Contributing
 
 > **Status:** Active
-> **Last updated:** 2026-05-12
+> **Last updated:** 2026-05-22
 
 ---
 
@@ -25,8 +25,8 @@
   anything larger than a typo. Alignment first, code second.
 - Read `docs/architecture/overview.md` to understand the
   architecture (multi-tenant marketplace, two payout rails — Wapu
-  ARS and direct sats via Lightning Address, in-app receipt +
-  optional Nostr DM delivery).
+  ARS and direct sats via Lightning Address, in-app receipt
+  delivery).
 - Read the foundational ADRs in `docs/architecture/decisions/`
   before proposing changes that touch settlement, the catalog
   schema, the deployment model, the payment flows, or the
@@ -66,7 +66,7 @@ npm run dev
   rejects providers that don't advertise a `verify` URL. If you
   believe a third rail is needed, write a superseding ADR first.
 - **Do not introduce email delivery.** The receipt page is the
-  canonical channel; Nostr DMs are the optional push (ADR
+  only delivery channel — no email, no Nostr DMs (ADR
   `0006-nostr-and-inapp-delivery.md`). If you believe email is
   needed, write a superseding ADR first.
 - Translate every user-facing string in `messages/es.json` and
@@ -82,8 +82,8 @@ npm run dev
 
 ## Commit messages
 
-- Imperative mood: "Add Wapu webhook signature check", not "Added
-  the signature check".
+- Imperative mood: "Add Wapu deposit poll", not "Added the deposit
+  poll".
 - One concern per commit. Refactors and feature work do not share
   a commit.
 
@@ -93,13 +93,13 @@ npm run dev
 - Describe the user-visible change in the PR body.
 - Run `npm run build` locally and confirm there are no TypeScript
   or ESLint errors.
-- For payment-path changes: describe how you tested with the Wapu
-  sandbox (or live, if applicable) and what edge cases you
-  exercised (invoice expiry, webhook retry, cancellation, NWC
-  pull failure).
-- For notification-path changes: describe how you tested DM
-  delivery (which relays, which client) and what happens when
-  relays are offline.
+- For payment-path changes: describe how you tested against the
+  Wapu staging environment (or live, if applicable) and what edge
+  cases you exercised (invoice expiry, deposit-poll timing,
+  withdrawal failure).
+- For notification-path changes: describe how you tested the
+  in-app notification bell (`/api/notifications`) and the order
+  status poller.
 
 ## Architecture decisions
 
@@ -143,10 +143,9 @@ This applies in all project spaces — issues, PRs, commits, chats
 
 ## Reporting a vulnerability
 
-Cursats handles real money: it generates Lightning invoices,
-receives webhooks that trigger ARS payouts, holds buyer-granted
-NWC permissions when auto-renewal is on, and signs encrypted
-Nostr DMs to buyers. Vulnerability reports are taken seriously.
+Cursats handles real money: it generates Lightning invoices and
+triggers ARS payouts via Wapu (confirmed by polling, not webhooks).
+Vulnerability reports are taken seriously.
 
 If you find a security issue:
 
@@ -167,13 +166,12 @@ In scope:
 
 - The Cursats source code in this repository.
 - The default deployment at `cursats.bitbybit.com.ar`.
-- The Wapu integration code paths (invoice creation, webhook
-  signature verification, ARS payout triggers).
-- The NWC integration code paths (connection-string storage,
-  budgeted pull payments, retry and cancellation logic).
+- The Wapu integration code paths (deposit/withdrawal creation,
+  transaction-status polling, ARS payout triggers, the settlement
+  cron, and the seller sync endpoint).
 - The notification and delivery code paths: in-app receipt URL
-  generation, signed download URL generation, redemption-code
-  generation, Nostr DM signing and publishing.
+  generation, signed download URL generation, and redemption-code
+  generation.
 
 Out of scope:
 
@@ -193,7 +191,6 @@ Out of scope:
 - Receipt-page `orderId`s are opaque, unguessable identifiers
   with ≥128 bits of entropy.
 - Signed download URLs expire after 24 hours and are single-use.
-- Outgoing Nostr DMs are NIP-44 encrypted to the buyer's pubkey.
 - Security headers: CSP, X-Frame-Options DENY,
   X-Content-Type-Options nosniff, Referrer-Policy
   strict-origin-when-cross-origin, Permissions-Policy locks down

@@ -1,7 +1,7 @@
 # Offerings catalog
 
 > **Status:** Active
-> **Last updated:** 2026-05-21
+> **Last updated:** 2026-05-22
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-22 | Lifecycle | Replaced the "Wapu webhook handler / Nostr DM sender" aside with the poll-driven equivalents (Wapu deposit poller, settlement cron). | Webhooks and the server Nostr-DM channel were removed as dead code. |
 | 2026-05-21 | — | Initial version. | Hackathon documentation pass — describe the two product primitives, the URL shape, pricing currency picker, Blossom image upload, tags, and the lifecycle. |
 
 ---
@@ -81,8 +82,8 @@ proxy's access model.
 Both primitives share the same checkout, payment, confirmation,
 and notification surface. The receipt page is the only place
 where the primitive shows up at all — it picks `code` rendering
-vs `download` rendering on the type column. The Wapu webhook
-handler, the LUD-21 poller, the Nostr DM sender — none of them
+vs `download` rendering on the type column. The Wapu deposit
+poller, the LUD-21 poller, the settlement cron — none of them
 care which primitive an order is for.
 
 ## URL shape

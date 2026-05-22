@@ -1,7 +1,7 @@
 # Routing
 
 > **Status:** Active
-> **Last updated:** 2026-05-21
+> **Last updated:** 2026-05-22
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-22 | Subscriber, API | Removed the reserved NWC routes (`/api/nwc/*`, `/subscription` "manage NWC connection") from the deferred-subscriber tables; the recurring-charge mechanism is now left undecided for a future ADR. Noted that `/api/cron/wapu-settlements` is the shipped payout cron. | `NWC_CONNECTION_URL` and the NWC code were removed; the doc still reserved NWC-named routes. |
 | 2026-05-21 | Buyer flow, Account, Subscriber, API | Scrubbed `features_autorenewal` references; checkout, settings, and subscriber sections now state autorenewal is deferred per ADR 0020 and point at migration `0009_drop_features_autorenewal.sql`. | The column and its plumbing were removed; the doc was still describing the dormant-but-deployed posture the original ADR 0020 walked back. |
 | 2026-05-19 | Static content | `/how-it-works` restyled: a fixed ambient bubble backdrop plus the two journeys as titled rows of reused `<Polaroid>` step cards (view-triggered stagger; no toggle, no scroll-scrub, no query param). Same single route, same i18n keys/content; no routing or data change. Components under `components/how-it-works/*`. | Presentational only; logged so contributors know it is one static page (not parameterised) before the visual layer churned. |
 | 2026-05-19 | Conventions, Static content | Renamed the last two Spanish-slug public pages: `/como-funciona` → `/how-it-works`, `/caracteristicas` → `/features`. Clean pre-launch rename (no back-compat redirect — nothing links to the old slugs yet); reserved-slug list updated to the new names (plus `/faq`, previously missing). Updated the Features-page card list (dropped opt-in autorenewal and marketplace-or-self-host, which describe deferred/cut features per ADRs 0020 and 0014/0004; now one-shot + open marketplace) and the How-it-works glossary note (3 brand logos: Lightning / Wapu / Nostr). | ADR 0023: every public route is English/language-neutral; the "Spanish slug retained for share-link continuity" carve-out from ADR 0014 is moot pre-launch. The Features copy was advertising a deferred feature (autorenewal) and a retired model (per-merchant fork/self-host). |
@@ -146,13 +147,10 @@ No subscriber routes ship in v1. Autorenewal is deferred per ADR
 [0020](decisions/0020-defer-autorenewal-from-mvp.md); the
 `users.features_autorenewal` column was dropped in migration
 `0009_drop_features_autorenewal.sql` and no code branches on it
-anywhere. The table below is preserved as a hint for the future
-ADR that re-introduces the feature, so contributors building it
-do not invent a different shape.
-
-| Route | Status | Purpose |
-|---|---|---|
-| `/[locale]/subscription` *(reserved)* | Not built | Manage NWC connection: next renewal date, spend cap, revoke. Own page (not a section of `/purchases`) because revoking NWC has different consequences than cancelling a one-shot order. |
+anywhere. A future ADR that re-introduces the feature will define
+the subscriber surface (a page to manage the recurring-charge grant
+— renewal date, spend cap, revoke) and its underlying mechanism;
+v1 reserves no specific routes for it.
 
 ## Static content
 
@@ -173,9 +171,10 @@ appropriate session (buyer Nostr session for
 
 | Route | Method | Purpose |
 |---|---|---|
-| `/api/wapu/webhook` | POST | Receives Wapu payment events. Signature-verified before any state change (CLAUDE.md rule). Refuses with 404 (no body) for any order whose `rail !== 'wapu_ars'`. |
-| `/api/orders/[orderId]` | GET | Status polling for the checkout page. Public (the `orderId` is the access key). For Lightning-rail orders, also probes the seller's `lnurl_verify_url` (LUD-21) to detect settlement. |
-| `/api/checkout` | POST | Creates an order + invoice for an offering. Dispatches on the seller's `payout_method`: Wapu invoice for `wapu_ars`, LNURL-pay callback for `lightning`. |
+| `/api/orders/[orderId]` | GET | Status polling for the checkout page. Public (the `orderId` is the access key). Polls the Wapu deposit transaction for `wapu_ars` orders, and the seller's `lnurl_verify_url` (LUD-21) for `lightning` orders, to detect settlement. There are no webhooks. |
+| `/api/checkout` | POST | Creates an order + invoice for an offering. Dispatches on the seller's `payout_method`: Wapu deposit for `wapu_ars`, LNURL-pay callback for `lightning`. |
+| `/api/orders/sync` | POST | Seller-triggered settlement sweep for their own orders (auth-gated). |
+| `/api/cron/wapu-settlements` | POST | Daily Vercel Cron that settles the Wapu payout leg (guarded by `CRON_SECRET`). |
 | `/api/downloads/[orderId]` | GET | Issues a short-lived signed URL for a download-type offering. Validates the `orderId` and the order's paid state. |
 | `/api/zap/status` | GET | Backs the "Zap the devs" modal on the support section. |
 
@@ -211,16 +210,12 @@ returned hash-addressed URL lands in `offerings.image_url`.
 
 ### Subscriber (deferred — not built in v1)
 
-The cron and NWC routes are reserved but not built; autorenewal
-is deferred per ADR
-[0020](decisions/0020-defer-autorenewal-from-mvp.md). The table
-documents the expected shape for a future re-introduction.
-
-| Route | Method | Status | Purpose |
-|---|---|---|---|
-| `/api/cron/renew` | GET | Not built | Triggered by Vercel Cron daily; runs renewal pulls. |
-| `/api/nwc/connect` | POST | Not built | Receives an NWC connection string from a subscribing buyer. |
-| `/api/nwc/revoke` | POST | Not built | Buyer revokes the NWC grant from `/[locale]/subscription`. |
+Autorenewal is deferred per ADR
+[0020](decisions/0020-defer-autorenewal-from-mvp.md); no subscriber
+or recurring-charge routes ship in v1. A future ADR that
+re-introduces the feature will define its own routes and mechanism.
+(Note: `/api/cron/wapu-settlements` is a separate, shipped cron for
+the Wapu payout leg — not a renewal job.)
 
 ## Special files
 
@@ -292,8 +287,8 @@ The locale prefix is preserved across the redirect (`/en/mis-cursos`
   retired with the panel; creator-scoped routes are
   `/api/my-courses` and `/api/settings` directly.
 - **No `/api` versioning prefix in v1.** If we break a public
-  contract (only `/api/wapu/webhook` and `/api/orders/[orderId]`
-  qualify) we will add `/api/v2/...` at that time.
+  contract (only `/api/orders/[orderId]` qualifies) we will add
+  `/api/v2/...` at that time.
 - **No refund, resend, or DM-from-the-UI routes in v1.** Those
   are write actions over orders/buyers, deferred to v1.1.
 - **No legal pages routed yet** (`/[locale]/terminos`,

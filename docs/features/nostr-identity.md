@@ -1,7 +1,7 @@
 # Nostr identity
 
 > **Status:** Active
-> **Last updated:** 2026-05-21
+> **Last updated:** 2026-05-22
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-22 | Identity tiers, Platform admin moderation, What we do not do | Collapsed the identity tiers from three to two (dropped the anonymous-plus-Nostr-DM tier), removed the platform-admin moderation section, and dropped the server-signed-DM mention. | The server Nostr-DM channel and the `PLATFORM_ADMIN_PUBKEYS` moderation lever were removed as dead code. |
 | 2026-05-21 | — | Initial version. | Hackathon documentation pass — explain the three identity tiers, the sign-in surface, the lazy user-row materialisation, and the re-sign discipline on payment-destination fields. |
 
 ---
@@ -16,14 +17,13 @@
 ## Table of Contents
 
 1. [Why Nostr at all](#why-nostr-at-all)
-2. [The three identity tiers](#the-three-identity-tiers)
+2. [The two identity tiers](#the-two-identity-tiers)
 3. [Sign-in surface — three signers, one API](#sign-in-surface--three-signers-one-api)
 4. [Lazy user-row materialisation](#lazy-user-row-materialisation)
 5. [Kind:0 seeding (and the buyer avatar cache)](#kind0-seeding-and-the-buyer-avatar-cache)
 6. [Re-sign on payment-destination fields](#re-sign-on-payment-destination-fields)
 7. [Session shape](#session-shape)
-8. [Platform admin moderation](#platform-admin-moderation)
-9. [What we do not do](#what-we-do-not-do)
+8. [What we do not do](#what-we-do-not-do)
 
 ---
 
@@ -51,13 +51,12 @@ Decisions in ADRs
 and
 [0014-marketplace-open-to-all-logged-in-users](../architecture/decisions/0014-marketplace-open-to-all-logged-in-users.md).
 
-## The three identity tiers
+## The two identity tiers
 
 | Tier | Who | What they get | What they sign |
 |---|---|---|---|
 | **Anonymous** | A buyer who clicks Comprar | A redemption code on `/receipt/[orderId]`, accessible only via the opaque URL | Nothing |
-| **Anonymous + Nostr identifier** | A buyer who pastes an `npub1…` or NIP-05 at checkout | Same receipt page + an encrypted Nostr DM delivered to that pubkey | Nothing — pubkey is asserted but unverified at this tier |
-| **Signed-in via Nostr** | Any user who signs in on `/sign-in` | All of the above + persistent order history at `/purchases` + automatic seller surfaces at `/my-courses`, `/create-course`, `/orders`, `/settings` | A NIP-07-style auth event on sign-in (and another on payment-destination field saves) |
+| **Signed-in via Nostr** | Any user who signs in on `/sign-in` | The receipt page + persistent order history at `/purchases` + automatic seller surfaces at `/my-courses`, `/create-course`, `/orders`, `/settings` | A NIP-07-style auth event on sign-in (and another on payment-destination field saves) |
 
 The platform never *requires* an upgrade between tiers. A buyer
 who paid anonymously can later sign in and claim that order via
@@ -109,8 +108,8 @@ successful sign-in for a given pubkey calls
 route (`app/api/auth/nostr/route.ts`), the API-route gate
 `requireUser` (`lib/admin/require-user.ts`), and the page-side
 gate `requirePanelUser` (`lib/admin/panel-context.ts`). The gate
-either renders the page (user is active) or 404s (user is
-inactivated by platform admin).
+either renders the page (user is active) or 404s (the
+`users.active` flag is false).
 
 The same idempotent flow runs every sign-in: a returning user
 just looks up their existing row.
@@ -188,19 +187,6 @@ The JWT signing key lives in env vars and never reaches the
 client. Rotating it invalidates every active session at once;
 that is the intended trade-off versus per-user revocation lists.
 
-## Platform admin moderation
-
-A small env-list of trusted pubkeys (`PLATFORM_ADMIN_PUBKEYS`,
-comma-separated) controls platform-level moderation tools — the
-ability to inactivate users for abuse, primarily. An inactivated
-user's pages 404 instead of rendering; their `users.is_active =
-false` is the gate.
-
-This is **not** the panel gate. There is no panel anymore (ADR
-[0014](../architecture/decisions/0014-marketplace-open-to-all-logged-in-users.md)
-opened the creator surfaces to every signed-in user). Platform
-admin is the BitByBit team's moderation lever, nothing more.
-
 ## What we do not do
 
 - **Email.** No email field at sign-up, no email recovery, no
@@ -222,9 +208,6 @@ admin is the BitByBit team's moderation lever, nothing more.
 - **Writing your kind:0 profile.** Cursats reads kind:0 metadata
   to seed a user row (and re-reads it on an explicit sync), but
   never writes, edits, or annotates your kind:0 profile on its
-  own. Outgoing Nostr events do exist — the server-signed
-  encrypted DMs to buyers (see
-  [delivery-and-receipts](./delivery-and-receipts.md)), plus any
-  client-signed "share" events you choose to publish via
-  `lib/nostr/publish.ts` — but none of them mutate your profile
-  metadata.
+  own. The only outgoing Nostr events are the client-signed
+  "share" events you choose to publish via `lib/nostr/publish.ts`,
+  and none of them mutate your profile metadata.
