@@ -107,7 +107,7 @@
     "metadataTitle": "How it works",
     "metadataDescription": "Cursats uses Lightning so the buyer pays in sats. The teacher chooses how to get paid: sats straight to their wallet, or pesos to their CBU via Wapu. Here's how it works, step by step.",
     "hero": {
-      "title": "<gradient>Sats</gradient> for everyone. <gradient>Pesos</gradient> for those who need them.",
+      "title": "<gradient>SATS</gradient> for everyone. <gradient>PESOS</gradient> for those who need them.",
       "subtitle": "Cursats connects people who want to learn with people who want to teach. Lightning for payments; sats or pesos for payouts — the teacher decides. The platform stays out of the way."
     },
     "buyers": {
@@ -142,10 +142,6 @@
       "lightningAddressBody": "An email-style address (you@walletofsatoshi.com) where the teacher receives sats straight to their wallet. For teachers who already live in sats, with no converter in the middle.",
       "nostrTitle": "Nostr",
       "nostrBody": "An open protocol for identity and messaging. Your key is your account — required for teachers (it's the only way to create and manage your courses), optional for buyers."
-    },
-    "custody": {
-      "title": "Your money, your keys",
-      "body": "Cursats never holds the funds. Every payment goes straight to the destination the teacher picked — pesos to a CBU via Wapu, or sats to a Lightning Address. If Cursats disappears tomorrow, payments still land: we aren't the rail."
     },
     "cta": {
       "title": "Ready to get started?",

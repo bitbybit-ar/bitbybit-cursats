@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
+  easeInOut,
   motion,
-  useMotionValueEvent,
   useReducedMotion,
   useScroll,
+  useSpring,
   useTransform,
   type MotionValue,
   type Variants,
@@ -156,10 +157,13 @@ function JourneyStep({
   const r = stepRanges(index, span);
 
   // Bubble: off-screen-low → slot center → swallowed by the burst.
+  // `easeInOut` on the rise gives a gentle accel/decel so the bubble
+  // glides into its slot rather than tracking the scrollbar linearly.
   const bubbleY = useTransform(
     progress,
     [r.riseStart, r.riseEnd],
-    ["75vh", "0vh"]
+    ["75vh", "0vh"],
+    { ease: easeInOut }
   );
   const bubbleScale = useTransform(
     progress,
@@ -172,19 +176,30 @@ function JourneyStep({
     [0, 1, 1, 0]
   );
 
-  // The polaroid is a two-state element with a WIDE hysteresis
-  // band, not a frame-by-frame scrub. It forms only once the bubble
-  // has fully burst and vanished (`burstEnd`) — so the bubble never
-  // overlaps the card — and stays put; it only un-forms if you
-  // scroll up far enough to rewind this step past its bubble's
-  // rise. Small down-scroll jitter / rubber-band can never make a
-  // shown card disappear, while a genuine scroll-up still reverses
-  // it.
-  const [formed, setFormed] = useState(() => progress.get() >= r.burstEnd);
-  useMotionValueEvent(progress, "change", (v) => {
-    if (v >= r.burstEnd) setFormed(true);
-    else if (v <= r.riseStart) setFormed(false);
-  });
+  // The polaroid forms as a continuous scroll-scrub rather than a
+  // binary state flip: it ramps in over a short band that starts at
+  // `burstEnd` (so the bubble — already faded to 0 — never overlaps
+  // the card) and finishes before the next step begins. Because the
+  // driving `progress` is spring-smoothed upstream, small scroll
+  // jitter is damped out, so the old hysteresis state machine is no
+  // longer needed; scrolling up smoothly un-forms the card in step
+  // with the rest of the sequence.
+  const formEnd = Math.min(
+    r.burstEnd + span * 0.2,
+    STEP_LEAD + (index + 1) * span
+  );
+  const cardOpacity = useTransform(
+    progress,
+    [r.burstEnd, formEnd],
+    [0, 1],
+    { ease: easeInOut }
+  );
+  const cardScale = useTransform(
+    progress,
+    [r.burstEnd, formEnd],
+    [0.85, 1],
+    { ease: easeInOut }
+  );
 
   return (
     <div className={styles.slot}>
@@ -224,9 +239,7 @@ function JourneyStep({
 
       <motion.div
         className={styles.card}
-        initial={false}
-        animate={{ opacity: formed ? 1 : 0, scale: formed ? 1 : 0.82 }}
-        transition={{ duration: 0.35, ease: "easeOut" }}
+        style={{ opacity: cardOpacity, scale: cardScale }}
       >
         <Polaroid
           rotation={POLAROID_ROTATION[index % POLAROID_ROTATION.length]}
@@ -251,6 +264,17 @@ function PinnedJourney({ variant, title, steps }: JourneyStepsProps) {
     target: trackRef,
     offset: ["start start", "end end"],
   });
+  // Spring-smooth the raw scroll progress so every derived motion
+  // (bubble rise, burst, polaroid form) glides with a little inertia
+  // instead of tracking the scrollbar 1:1 and snapping with scroll
+  // speed. Critically-damped-ish (no overshoot past [0,1], which
+  // would confuse the clamped transforms).
+  const smoothProgress = useSpring(scrollYProgress, {
+    stiffness: 140,
+    damping: 30,
+    restDelta: 0.0005,
+  });
+
   // Separate progress for the title: 0 as the section first peeks
   // in from the bottom, 1 once it's pinned. The title stays hidden
   // through the slide-up and only fades in at its final, pinned
@@ -277,7 +301,7 @@ function PinnedJourney({ variant, title, steps }: JourneyStepsProps) {
                 step={step}
                 index={i}
                 color={STEP_HUES[i % STEP_HUES.length]}
-                progress={scrollYProgress}
+                progress={smoothProgress}
                 span={span}
               />
             ))}
