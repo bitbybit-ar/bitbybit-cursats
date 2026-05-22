@@ -10,6 +10,31 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **Social preview image redesigned.** The Open Graph card
+  (`app/[locale]/opengraph-image.tsx` and the static
+  `public/og.png` fallback) now leads with the brand: vertically
+  stacked blue/lime/pink blocks and the `CURSATS` wordmark
+  (matching `<LogoBlocks />` / `<Wordmark />`), a giant wordmark
+  hero, and the brand slogan as its value line. The old card
+  burned a long headline and tagline into the image, which then
+  repeated verbatim in the link title and description; the long
+  product description now lives only in the link description. New
+  `metadata.ogValueLine` key replaces the unused
+  `ogHeadline`/`ogTagline` keys in both locales.
+
+- **Brand title + slogan.** Dropped the "BitByBit" prefix from
+  `metadata.siteName` and `metadata.siteTitle` in both locales —
+  the link title, the `%s · …` sub-page suffix, and `og:site_name`
+  now read "CURSATS" (uppercase, matching the wordmark) rather
+  than "BitByBit Cursats". The title's
+  tagline is now the slogan "Cursá tu próxima clase con sats" (es)
+  / "Your next class, paid in sats" (en), the same line shown in
+  the OG image. The Organization JSON-LD still carries the full
+  name with `parentOrganization: BitByBit`, so the org
+  relationship is preserved for search engines.
+
 ### Removed
 
 - **"Your money, your keys" custody section removed from

@@ -1,11 +1,10 @@
 {
   "metadata": {
-    "siteName": "BitByBit Cursats",
-    "siteTitle": "BitByBit Cursats — Sats for everyone, pesos for those who need them",
+    "siteName": "CURSATS",
+    "siteTitle": "CURSATS — Your next class, paid in sats.",
     "description": "Lightning checkout for teachers and educational creators. Buyers pay in sats; you choose how to get paid — sats to your wallet, or pesos to your CBU.",
     "keywords": "bitbybit,cursats,lightning checkout,bitcoin,sats,lightning address,wapu,payments,argentina,education,classes,teachers,creators,la crypta",
-    "ogHeadline": "Sats for everyone. Pesos for those who need them.",
-    "ogTagline": "Lightning checkout for teachers and educational creators.",
+    "ogValueLine": "Your next class, paid in sats.",
     "skipToContent": "Skip to content"
   },
   "comingSoon": {
