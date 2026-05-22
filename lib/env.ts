@@ -61,19 +61,3 @@ export function getPlatformAdminPubkeys(): string[] {
 export function isPlatformAdminPubkey(pubkey: string): boolean {
   return getPlatformAdminPubkeys().includes(pubkey);
 }
-
-// Exchange-rate source for the sats↔ARS conversion shown across the
-// storefront (ADR 0022). Defaults to Yadio's Argentine crypto-market
-// BTC/ARS rate — the parallel rate buyers and Wapu actually transact
-// at, not the official rate. Overridable via env so staging can point
-// at a deterministic stub. The endpoint MUST return JSON carrying ARS
-// per 1 BTC as a positive number under `rate` or `result`
-// (Yadio `/convert/1/BTC/ARS` returns both). Not a secret — it is a
-// public read-only endpoint — so no NEXT_PUBLIC_ prefix and no
-// throw-on-missing: a missing value just uses the default.
-export function getExchangeRateApiUrl(): string {
-  return (
-    process.env.EXCHANGE_RATE_API_URL ??
-    "https://api.yadio.io/convert/1/BTC/ARS"
-  );
-}

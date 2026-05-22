@@ -1,9 +1,9 @@
 # 0019. Pricing currency picker on the offering form
 
 - **Date**: 2026-05-13
-- **Status**: Accepted
+- **Status**: Superseded by [0026](0026-price-currency-follows-payout-rail.md)
 - **Deciders**: BitByBit team
-- **Last updated**: 2026-05-19
+- **Last updated**: 2026-05-22
 
 ---
 
@@ -11,6 +11,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-22 | Status | Superseded by ADR [0026](0026-price-currency-follows-payout-rail.md): the free per-course currency picker is replaced by a currency derived from the seller's payout rail. | A peso-seller pricing in sats had an unpredictable ARS payout, and the Wapu fee was invisible at create time. |
 | 2026-05-19 | Decision (Rate source) | The deferred "one-place swap" landed: `getSatsPerArs()` now fetches a live rate. The "body currently returns `MOCK_SATS_PER_ARS`" text below is historical — see ADR [0022](0022-live-exchange-rate-via-yadio.md). | The mock constant (4 sats/ARS, ~4.5× off the real rate) was shipping wrong prices on the live storefront. |
 | 2026-05-13 | — | Initial version. | Pin the new pricing model before sellers start filling the catalog under it, and so the destructive `price_sats` drop is documented next to the migration that performs it. |
 

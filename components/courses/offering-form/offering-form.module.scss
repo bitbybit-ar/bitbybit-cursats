@@ -52,6 +52,18 @@
   gap: $spacing-4;
 }
 
+.payoutEstimate {
+  margin: 0;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+}
+
+.payoutWarning {
+  margin: $spacing-4 0 0;
+  font-size: $font-size-xs;
+  color: $color-error;
+}
+
 .fieldset {
   display: grid;
   grid-template-columns: 1fr 1fr;

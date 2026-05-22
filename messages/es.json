@@ -448,11 +448,10 @@
       "invalidPriceAmount": "El precio tiene que ser un número entero positivo.",
       "invalidCodeCount": "La cantidad de códigos tiene que estar entre 1 y 10.000.",
       "imageRequired": "Subí o pegá una imagen de portada antes de guardar.",
-      "priceCurrency": "Moneda del precio",
-      "priceCurrencyArs": "Pesos argentinos",
-      "priceCurrencyArsHint": "El comprador ve el equivalente en sats al tipo de cambio actual.",
-      "priceCurrencySats": "Satoshis",
-      "priceCurrencySatsHint": "El comprador ve el equivalente en ARS al tipo de cambio actual.",
+      "priceCurrencyNoteArs": "Cobrás en pesos (CBU/alias), así que fijás el precio en ARS. El comprador paga el equivalente en sats al tipo de cambio del momento.",
+      "priceCurrencyNoteSats": "Cobrás en sats (Lightning Address), así que fijás el precio en sats. Los recibís directo en tu wallet.",
+      "payoutEstimate": "Comisión estimada de Wapu: ~{fee} ARS · Recibís ≈ {net} ARS (estimado, varía con el tipo de cambio al momento de la venta).",
+      "priceBelowWapuMin": "Tu neto debe ser de al menos {min} ARS: Wapu no procesa retiros por debajo de ese monto. Subí el precio.",
       "priceAmountHint": "El monto se convierte a la otra moneda al momento de la compra.",
       "typeLocked": "El tipo no se puede cambiar después de crear el curso.",
       "saveCreate": "Crear curso",
@@ -492,8 +491,9 @@
       "anonymous": "Anónimo",
       "redemptionCode": "Código de canje",
       "paymentHash": "Hash de pago",
-      "wapuInvoiceId": "Wapu invoice ID",
-      "wapuSettlementRef": "Referencia de liquidación",
+      "wapuDepositTxId": "ID de depósito Wapu",
+      "wapuWithdrawalTxId": "ID de retiro Wapu",
+      "payoutStatus": "Estado del pago al vendedor",
       "unknownOffering": "Oferta desconocida",
       "readOnlyHint": "Los pedidos son de solo lectura en v1: ni reembolsos, ni reenvíos, ni marcado manual de entrega."
     }
@@ -619,6 +619,12 @@
       "aliasTooltip": "Alias de tu CBU (3 a 20 caracteres, letras/números/puntos). Solo lo ves vos en esta página; Wapu lo usa para acreditarte los pagos.",
       "aliasExample": "PROFE.MARIA.BITCOIN",
       "aliasPlaceholder": "MI.ALIAS.MP",
+      "transferSpeed": "Velocidad de acreditación",
+      "transferSpeedHint": "Elegí qué tan rápido Wapu deposita los pesos en tu cuenta. La opción rápida tiene una comisión más alta.",
+      "transferStandard": "Estándar",
+      "transferStandardHint": "Comisión más baja. La acreditación puede demorar un par de horas.",
+      "transferFast": "Rápida",
+      "transferFastHint": "Acreditación más veloz a cambio de una comisión más alta.",
       "save": "Guardar configuración",
       "saving": "Guardando…",
       "saved": "Configuración guardada.",
@@ -767,6 +773,20 @@
         "received": {
           "title": "Venta nueva",
           "body": "Alguien compró {offering}."
+        }
+      },
+      "payout": {
+        "pending": {
+          "title": "Pago en camino",
+          "body": "Tu cobro de {offering} se está acreditando. Puede tardar un par de horas."
+        },
+        "released": {
+          "title": "Pago acreditado",
+          "body": "Ya depositamos los pesos de {offering} en tu cuenta."
+        },
+        "failed": {
+          "title": "Problema con tu pago",
+          "body": "No pudimos acreditar el cobro de {offering}. Lo estamos revisando."
         }
       }
     }

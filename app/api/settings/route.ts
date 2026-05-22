@@ -151,6 +151,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
       alias: updated.alias,
       lightning_address: updated.lightning_address,
       payout_method: updated.payout_method,
+      transfer_speed: updated.transfer_speed,
       locale: updated.locale,
       notification_prefs: updated.notification_prefs,
     },

@@ -117,17 +117,24 @@ export default async function PanelOrderDetailPage({
             </>
           ) : null}
 
-          {order.wapu_tentative_uuid ? (
+          {order.wapu_deposit_tx_id ? (
             <>
-              <dt>{t("wapuInvoiceId")}</dt>
-              <dd className={styles.mono}>{order.wapu_tentative_uuid}</dd>
+              <dt>{t("wapuDepositTxId")}</dt>
+              <dd className={styles.mono}>{order.wapu_deposit_tx_id}</dd>
             </>
           ) : null}
 
-          {order.wapu_settlement_ref ? (
+          {order.wapu_withdrawal_tx_id ? (
             <>
-              <dt>{t("wapuSettlementRef")}</dt>
-              <dd className={styles.mono}>{order.wapu_settlement_ref}</dd>
+              <dt>{t("wapuWithdrawalTxId")}</dt>
+              <dd className={styles.mono}>{order.wapu_withdrawal_tx_id}</dd>
+            </>
+          ) : null}
+
+          {order.payout_status ? (
+            <>
+              <dt>{t("payoutStatus")}</dt>
+              <dd className={styles.mono}>{order.payout_status}</dd>
             </>
           ) : null}
         </dl>

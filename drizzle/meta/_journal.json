@@ -78,6 +78,20 @@
       "when": 1779500000000,
       "tag": "0010_drop_features_autorenewal",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1779600000000,
+      "tag": "0011_user_transfer_speed",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1779700000000,
+      "tag": "0012_wapu_two_leg_orders",
+      "breakpoints": true
     }
   ]
 }

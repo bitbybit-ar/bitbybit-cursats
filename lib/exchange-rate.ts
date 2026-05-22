@@ -1,22 +1,21 @@
-import { getExchangeRateApiUrl } from "@/lib/env";
-
 /**
  * Single source of truth for the ARS↔sats conversion the app
- * displays and quotes against (ADR 0019, source wired in ADR 0022).
+ * displays and quotes against (ADR 0019; rate source is Wapu per
+ * ADR 0027, superseding the Yadio source of ADR 0022).
  *
  * The seller prices an offering in ONE currency; every other place a
  * price is shown computes the other side through `convertPrice`,
- * which reads `getSatsPerArs()`. Wapu is the settlement rail and does
- * its own FX at funding time; we can't read Wapu's rate (no public
- * endpoint), so the storefront approximates it with Yadio's Argentine
- * crypto-market BTC/ARS rate — the parallel rate buyers and Wapu both
- * transact at. The "≈" prefix on the computed side already tells the
- * buyer it's an estimate; Wapu re-quotes at funding so a buyer never
- * pays against a stale figure (see `lib/orders.ts`, which locks an
- * ARS-equivalent at order creation).
+ * which reads `getSatsPerArs()`. We source the rate from Wapu's
+ * `/exchange_rates` so the storefront estimate matches the rail that
+ * actually settles the order. We use the **buy** side of both
+ * `USDT/ARS` and `BTC/USD`: ARS/BTC = (ARS per USDT, buy) × (USD per
+ * BTC, buy). That is the same side Wapu credits a Lightning deposit
+ * and debits a fiat withdrawal at, so a deposit sized from this rate
+ * credits just enough USDT to fund the seller's net ARS payout — the
+ * platform float nets to ~0 (see `lib/orders.ts` / ADR 0025/0026).
  *
  * Resolution order for `getSatsPerArs()`:
- *   1. Live Yadio rate, cached 5 min per process.
+ *   1. Live Wapu rate, cached 5 min per process.
  *   2. Last good rate we ever fetched (even if its 5-min window
  *      expired) — a slightly stale real rate beats a made-up one.
  *   3. A static cold-start fallback, logged loudly so an outage on
@@ -118,35 +117,39 @@ export async function getSatsPerArs(): Promise<number> {
 }
 
 /**
- * Fetch ARS-per-BTC from the configured provider (Yadio by default)
- * and convert to sats-per-ARS. Throws on timeout, non-2xx, malformed
- * body, or an out-of-bounds figure so the caller can fall back.
+ * Fetch Wapu's `/exchange_rates` and derive sats-per-ARS from the buy
+ * side of USDT/ARS and BTC/USD. Throws on timeout, non-2xx, malformed
+ * body, a missing pair, or an out-of-bounds figure so the caller can
+ * fall back.
  */
 async function fetchSatsPerArs(): Promise<number> {
-  const url = getExchangeRateApiUrl();
+  const host = process.env.WAPU_PAY_APU_HOST;
+  if (!host) {
+    throw new Error("exchange_rate_no_host: WAPU_PAY_APU_HOST is unset");
+  }
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), FETCH_TIMEOUT_MS);
   let body: unknown;
   try {
-    const res = await fetch(url, {
+    const headers: Record<string, string> = { Accept: "application/json" };
+    const apiKey = process.env.WAPU_API_KEY;
+    if (apiKey) headers["X-API-Key"] = apiKey;
+    const res = await fetch(`${host.replace(/\/+$/, "")}/exchange_rates`, {
       signal: ctl.signal,
-      headers: { Accept: "application/json" },
+      headers,
       // The 5-minute in-process cache above is our caching layer;
       // never let the platform fetch cache pin a stale rate.
       cache: "no-store",
     });
     if (!res.ok) {
-      throw new Error(`exchange_rate_http_${res.status}: ${url}`);
+      throw new Error(`exchange_rate_http_${res.status}`);
     }
     body = await res.json();
   } finally {
     clearTimeout(timer);
   }
 
-  // Yadio `/convert/1/BTC/ARS` → { result, rate, ... }; both are ARS
-  // per 1 BTC. Accept either key so an overridden provider only has
-  // to expose one of them.
-  const arsPerBtc = readArsPerBtc(body);
+  const arsPerBtc = readArsPerBtcFromWapu(body);
   if (
     !Number.isFinite(arsPerBtc) ||
     arsPerBtc < MIN_ARS_PER_BTC ||
@@ -161,11 +164,27 @@ async function fetchSatsPerArs(): Promise<number> {
   return satsPerArs;
 }
 
-function readArsPerBtc(body: unknown): number {
+/**
+ * Wapu `/exchange_rates` → `{ rates: [{ pair, buy, sell }] }`. We
+ * compute ARS per BTC from the buy side of USDT/ARS (ARS per USDT)
+ * and BTC/USD (USD per BTC), treating USDT as USD. Returns NaN when a
+ * required pair is absent so the bounds check rejects it.
+ */
+function readArsPerBtcFromWapu(body: unknown): number {
   if (typeof body !== "object" || body === null) return NaN;
-  const obj = body as Record<string, unknown>;
-  const raw = obj.rate ?? obj.result;
-  return typeof raw === "number" ? raw : Number(raw);
+  const rates = (body as { rates?: unknown }).rates;
+  if (!Array.isArray(rates)) return NaN;
+  const buyOf = (pair: string): number => {
+    const row = rates.find(
+      (r): r is Record<string, unknown> =>
+        typeof r === "object" && r !== null && (r as { pair?: unknown }).pair === pair
+    );
+    const raw = row?.buy;
+    return typeof raw === "number" ? raw : Number(raw);
+  };
+  const arsPerUsdt = buyOf("USDT/ARS");
+  const usdPerBtc = buyOf("BTC/USD");
+  return arsPerUsdt * usdPerBtc;
 }
 
 /**

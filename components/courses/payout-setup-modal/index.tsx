@@ -6,6 +6,7 @@ import { PayoutForm } from "@/components/settings/payout-form";
 import styles from "./payout-setup-modal.module.scss";
 
 type PayoutMethod = "cbu_alias" | "lightning_address";
+type TransferSpeed = "fiat_transfer" | "fast_fiat_transfer";
 
 export interface PayoutSavedValues {
   cbu: string;
@@ -17,6 +18,12 @@ interface PayoutSetupModalProps {
   initialCbu: string;
   initialAlias: string;
   initialPayoutMethod: PayoutMethod;
+  /**
+   * The modal only opens when the seller has no payout configured
+   * yet, so transfer speed is still the row default. Defaults to
+   * `fiat_transfer`; threaded as a prop for completeness.
+   */
+  initialTransferSpeed?: TransferSpeed;
   currentLightningAddress: string;
   onSaved: (next: PayoutSavedValues) => void;
   onClose: () => void;
@@ -33,6 +40,7 @@ export function PayoutSetupModal({
   initialCbu,
   initialAlias,
   initialPayoutMethod,
+  initialTransferSpeed = "fiat_transfer",
   currentLightningAddress,
   onSaved,
   onClose,
@@ -46,6 +54,7 @@ export function PayoutSetupModal({
         initialCbu={initialCbu}
         initialAlias={initialAlias}
         initialPayoutMethod={initialPayoutMethod}
+        initialTransferSpeed={initialTransferSpeed}
         currentLightningAddress={currentLightningAddress}
         onSaved={onSaved}
       />

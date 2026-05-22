@@ -1,9 +1,9 @@
 # 0022. Live sats↔ARS exchange rate via Yadio
 
 - **Date**: 2026-05-19
-- **Status**: Accepted
+- **Status**: Superseded by [0027](0027-exchange-rate-from-wapu.md)
 - **Deciders**: BitByBit team
-- **Last updated**: 2026-05-19
+- **Last updated**: 2026-05-22
 
 ---
 
@@ -11,6 +11,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-22 | Status | Superseded by ADR [0027](0027-exchange-rate-from-wapu.md): the rate is now derived from Wapu's `/exchange_rates`, not Yadio. The 5-min cache + last-good + static-fallback chain documented here is unchanged. | Source the storefront rate from the rail that actually settles the order, so a deposit sized from it funds the seller's payout. |
 | 2026-05-19 | — | Initial version. | Record the live rate source and the fallback chain before sellers price real catalog against it. |
 
 ---

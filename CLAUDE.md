@@ -11,9 +11,9 @@ the BitByBit Cursats project. Read it before editing the repo.
 - Built for La Crypta Hackathon #3 (Commerce). Wapu is the sponsor and
   the payment rail.
 - next-intl (es default, en secondary). next-themes for light/dark.
-- **Has a backend** — API routes for the Wapu webhook, scheduled jobs
-  for the optional auto-renewal flow. Cursats is **not** static-only
-  like the `home` repo.
+- **Has a backend** — API routes for the Wapu deposit/withdrawal
+  polling and a Vercel Cron that settles the seller payout leg.
+  Cursats is **not** static-only like the `home` repo.
 - Deploys to Vercel from a private GitHub repo at
   <https://github.com/bitbybit-ar/bitbybit-cursats>.
 
@@ -95,11 +95,27 @@ repo's copy is intentionally identical and should stay in sync.
 ## Code rules (enforced)
 
 - **Payment surfaces are server-only.** Wapu API keys, NWC connection
-  secrets, and webhook handlers live in API routes or server-only
+  secrets, and settlement logic live in API routes or server-only
   modules. Never expose them to the client. Use `NEXT_PUBLIC_*` only
   for non-secret display values.
-- **Verify Wapu webhook signatures.** Every incoming webhook must be
-  authenticated before any state change.
+- **Wapu is a poll-driven, two-leg flow — there are no webhooks.**
+  Wapu is a USDT-ledger wallet. Leg 1: a Lightning deposit
+  (`POST /wallet/deposit_lightning`) credits USDT to our wallet; the
+  buyer's checkout page polls the deposit transaction via
+  `/api/orders/[orderId]`. Leg 2: once the deposit is `Completed` we
+  open a fiat withdrawal (`POST /transactions/create`) to the
+  seller's CBU/alias; the cron `/api/cron/wapu-settlements` polls it
+  to completion. Auth is the `X-API-Key` header against
+  `WAPU_PAY_APU_HOST`. Orchestration lives in `lib/wapu-settlement.ts`;
+  the client is `lib/wapu.ts`. There is **no mock client**:
+  `getWapuClient()` always builds the real client and throws when
+  either env var is missing, so a misconfigured deploy fails loud
+  instead of silently faking payments. The integration is verified by
+  gated real-staging smoke tests (skipped without creds); order
+  lifecycle tests seed order rows directly rather than funding through
+  Wapu. Decision in ADR
+  `docs/architecture/decisions/0025-wapu-poll-driven-two-leg-rail.md`
+  (superseding the webhook posture of ADRs 0002 and 0012).
 - **Two settlement rails, picked per user.** Wapu is still the
   only ARS rail (sats→ARS via Lightning, push to CBU/alias). The
   second rail receives sats directly to a seller's Lightning
@@ -116,10 +132,26 @@ repo's copy is intentionally identical and should stay in sync.
   settings PATCH mints a 1-sat probe invoice when a seller
   sets/changes their LN address and rejects providers that do not
   advertise LUD-21.
-- **Wapu webhook only flips Wapu-rail orders.** A webhook delivery
-  for an order whose `rail !== 'wapu_ars'` is refused with 404 and
-  no body. The sats rail is verified by polling the order's
-  `lnurl_verify_url` from `/api/orders/[orderId]`.
+- **Both rails are verified by polling, never a webhook.** On
+  `/api/orders/[orderId]`: a `wapu_ars` order polls its Wapu deposit
+  transaction (`pollWapuDeposit`); a `direct_lightning` order polls
+  the seller's LUD-21 `lnurl_verify_url`. Buyer-paid effects
+  (`markOrderPaid` + draw code + notifications) are shared. The
+  `wapu_ars` seller payout leg is tracked separately on
+  `orders.payout_status` and advanced by the settlement cron.
+- **Price currency follows the payout rail; the seller bears the
+  Wapu fee.** `cbu_alias` sellers price in ARS, `lightning_address`
+  sellers price in sats — there is no free per-course picker
+  (`expectedPriceCurrency` in `lib/admin/users.ts`; `/api/my-courses`
+  rejects a mismatch). On the ARS rail the seller receives
+  `gross − fee`; the create-course form previews it via
+  `/api/payout-quote` and the withdrawal pays the net (both use
+  `quoteSellerPayout`). The net must clear Wapu's 10 000 ARS
+  withdrawal floor (`WAPU_MIN_NET_ARS` in `lib/wapu-limits.ts`); the
+  form and `/api/my-courses` reject `price_below_wapu_minimum` below
+  it. Decision in ADR
+  `docs/architecture/decisions/0026-price-currency-follows-payout-rail.md`
+  (superseding ADR 0019).
 - **Catalog and runtime settings live in Postgres.** Offerings,
   CBU/alias, Lightning Address, payout method, and the autorenewal
   toggle are rows in Postgres (drizzle), edited from
@@ -176,8 +208,10 @@ repo's copy is intentionally identical and should stay in sync.
   Reserved-slug list in `lib/admin/ar-bank-id.ts` blocks users from
   claiming any top-level route name (including `c` and `m`).
 - **Notifications are a Postgres table polled by the navbar
-  bell.** Wapu's `paid` webhook emits `order.paid` to the buyer
-  (when signed in) and `sale.received` to the seller. Helpers
+  bell.** When a deposit confirms, `order.paid` goes to the buyer
+  (when signed in) and `sale.received` to the seller. The wapu_ars
+  payout leg adds `payout.pending` (withdrawal opened),
+  `payout.released` (ARS settled), and `payout.failed`. Helpers
   live in `lib/notifications.ts`; the API surface is
   `/api/notifications` (GET/PATCH/POST).
 - **Buyer-side avatar uses kind:0 metadata.** The

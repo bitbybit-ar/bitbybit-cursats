@@ -10,6 +10,14 @@ export default defineConfig({
     setupFiles: ["./tests/setup.ts"],
     include: ["tests/**/*.test.{ts,tsx}"],
     pool: "threads",
+    // Run test files one at a time. The integration suite shares a
+    // single Neon test branch and each file TRUNCATEs the tables in
+    // beforeEach (tests/integration/setup.ts:cleanDb), so concurrent
+    // files would wipe each other's rows mid-test (FK violations,
+    // missing rows). Files run sequentially; tests within a file are
+    // already sequential. The unit suite is fast enough that serial
+    // file scheduling costs little.
+    fileParallelism: false,
     teardownTimeout: 10000,
     testTimeout: 15000,
     coverage: {

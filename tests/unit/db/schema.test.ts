@@ -135,12 +135,26 @@ describe("db/schema orders", () => {
     expect(fk).toBeDefined();
   });
 
-  it("renamed wapu_invoice_id to wapu_tentative_uuid (direct-payment)", () => {
+  it("carries the two-leg Wapu tx ids + payout columns (ADR 0025)", () => {
+    for (const name of [
+      "wapu_deposit_tx_id",
+      "wapu_withdrawal_tx_id",
+      "payout_status",
+      "payout_released_at",
+      "amount_usdt",
+      "transfer_speed",
+    ]) {
+      expect(
+        config.columns.find((c) => c.name === name),
+        `${name} should exist`
+      ).toBeDefined();
+    }
+    // Old single-leg names are gone.
     expect(
       config.columns.find((c) => c.name === "wapu_tentative_uuid")
-    ).toBeDefined();
+    ).toBeUndefined();
     expect(
-      config.columns.find((c) => c.name === "wapu_invoice_id")
+      config.columns.find((c) => c.name === "wapu_settlement_ref")
     ).toBeUndefined();
   });
 });

@@ -10,7 +10,66 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Payout speed setting for the Wapu rail.** Sellers paying out to a
+  CBU/alias choose **Standard** (`fiat_transfer`, lower fee) or
+  **Fast** (`fast_fiat_transfer`, higher fee) in `/settings`. Stored
+  on `users.transfer_speed` and snapshotted onto each order.
+- **Seller payout notifications.** The bell now surfaces
+  `payout.pending` (ARS withdrawal opened), `payout.released` (pesos
+  settled to the bank), and `payout.failed`.
+- **Minimum course price on the Wapu rail.** Wapu rejects fiat
+  withdrawals under 10 000 ARS, so an ARS course's net payout
+  (price − fee) must clear that floor. The create-course form blocks
+  submission and `POST`/`PATCH /api/my-courses` reject
+  `price_below_wapu_minimum` otherwise (`WAPU_MIN_NET_ARS` in
+  `lib/wapu-limits.ts`). Decision folded into ADR
+  [0026](docs/architecture/decisions/0026-price-currency-follows-payout-rail.md).
+
+### Changed
+
+- **Storefront exchange rate now comes from Wapu.** The sats↔ARS rate
+  is derived from Wapu's `/exchange_rates` (buy USDT/ARS × buy
+  BTC/USD) instead of Yadio, so the displayed estimate and the deposit
+  sizing match the rail that settles the order. The `EXCHANGE_RATE_API_URL`
+  env var is removed; the 5-min cache + last-good + static fallback are
+  unchanged. Decision in ADR
+  [0027](docs/architecture/decisions/0027-exchange-rate-from-wapu.md),
+  superseding ADR
+  [0022](docs/architecture/decisions/0022-live-exchange-rate-via-yadio.md).
+- **Course price currency now follows the payout rail.** CBU/alias
+  sellers price in ARS, Lightning-Address sellers price in sats — the
+  free per-course currency picker is gone. On the ARS rail the seller
+  bears the Wapu fee and the create-course form previews it live
+  ("estimated fee ~X · you receive ≈ Y") via `/api/payout-quote`; the
+  withdrawal pays the net. Decision in ADR
+  [0026](docs/architecture/decisions/0026-price-currency-follows-payout-rail.md),
+  superseding ADR
+  [0019](docs/architecture/decisions/0019-pricing-currency-picker.md).
+- **Wapu rebuilt as a poll-driven, two-leg rail (no webhooks).** A
+  Lightning deposit credits our USDT wallet; once it confirms we open
+  a fiat withdrawal to the seller's CBU/alias, polled to completion by
+  a new Vercel Cron (`/api/cron/wapu-settlements`, guarded by
+  `CRON_SECRET`). Both rails now settle by polling
+  `/api/orders/[orderId]`. New env: `WAPU_PAY_APU_HOST`. Decision in
+  ADR
+  [0025](docs/architecture/decisions/0025-wapu-poll-driven-two-leg-rail.md).
+- **Wapu client has no mock fallback — it fails loud.**
+  `getWapuClient()` always builds the real client and throws when
+  `WAPU_API_KEY`/`WAPU_PAY_APU_HOST` are missing, so a misconfigured
+  deploy errors instead of silently faking payments. The in-process
+  mock is gone; the integration is verified by two gated real-staging
+  smoke tests (create-order → deposit invoice → `Pending`; open
+  withdrawal → reaches the live endpoint), and order-lifecycle tests
+  seed order rows directly.
+
 ### Removed
+
+- **Wapu webhook route + `WAPU_WEBHOOK_SECRET`.** Wapu has no webhook
+  product; `/api/wapu/webhook` and the HMAC verifier are gone,
+  replaced by polling (see the Changed entry above). Supersedes the
+  unreleased "webhook secret fails fast in production" hardening below.
 
 - **"Your money, your keys" custody section removed from
   how-it-works.** The claim that Cursats never holds the funds was
@@ -32,12 +91,6 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
-- **Wapu webhook secret fails fast in production.**
-  `lib/wapu.ts` now throws at boot when `NODE_ENV=production` and
-  `WAPU_WEBHOOK_SECRET` is unset. Dev and CI continue to fall
-  back to the deterministic `mock-webhook-secret`. Closes the
-  forge-a-paid-webhook risk if a deployment was missing the env
-  var.
 - **Download proxy restricted to https.** The offering schema's
   `download_url` field now rejects `javascript:`, `data:`,
   `file:`, and bare http; the `/api/downloads/[orderId]` route
