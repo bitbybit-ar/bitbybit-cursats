@@ -476,6 +476,10 @@
     "empty": "Todavía no hay ventas.",
     "anonymous": "Anónimo",
     "unknownOffering": "Oferta desconocida",
+    "sync": "Sincronizar pedidos",
+    "syncing": "Sincronizando…",
+    "syncDone": "Pedidos sincronizados con Wapu.",
+    "syncFailed": "No pudimos sincronizar con Wapu. Probá de nuevo en un momento.",
     "detail": {
       "metadataTitle": "Detalle del pedido",
       "back": "Volver a pedidos",

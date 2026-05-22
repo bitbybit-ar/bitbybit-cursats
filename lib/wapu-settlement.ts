@@ -1,5 +1,5 @@
 import "server-only";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull, type SQL } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { orders } from "@/lib/db/schema";
 import {
@@ -301,4 +301,79 @@ export async function pollWapuWithdrawal(order: OrderRow): Promise<void> {
       });
     }
   }
+}
+
+/** Batch ceiling for one settlement sweep. */
+const SETTLEMENT_BATCH = 100;
+
+export interface SettlementSweepResult {
+  /** Pending deposits polled (buyer-paid-but-left-the-page safety net). */
+  polled_deposits: number;
+  /** Paid orders whose seller withdrawal was (re)opened. */
+  retried_withdrawals: number;
+  /** Pending withdrawals polled toward release/failure. */
+  polled_payouts: number;
+}
+
+/**
+ * Run the three idempotent settlement passes for the wapu_ars rail:
+ * confirm pending deposits, open any missing seller withdrawal, and
+ * poll pending withdrawals toward settlement. Scoped to one seller
+ * when `userId` is given (the on-demand "sync my orders" button),
+ * otherwise sweeps every order (the daily cron). Idempotent, so the
+ * cron and a manual sync can overlap safely.
+ */
+export async function runWapuSettlements(
+  opts: { userId?: string } = {}
+): Promise<SettlementSweepResult> {
+  const db = getDb();
+  const scope: SQL[] = opts.userId ? [eq(orders.user_id, opts.userId)] : [];
+
+  // 1. Pending deposits (buyer left the checkout before its poller saw
+  //    the confirmation).
+  const pendingDeposits = await db
+    .select()
+    .from(orders)
+    .where(
+      and(eq(orders.rail, "wapu_ars"), eq(orders.status, "pending"), ...scope)
+    )
+    .limit(SETTLEMENT_BATCH);
+  for (const order of pendingDeposits) {
+    await pollWapuDeposit(order);
+  }
+
+  // 2. Paid orders whose withdrawal never opened.
+  const needWithdrawal = await db
+    .select()
+    .from(orders)
+    .where(
+      and(
+        eq(orders.rail, "wapu_ars"),
+        eq(orders.status, "paid"),
+        isNull(orders.payout_status),
+        ...scope
+      )
+    )
+    .limit(SETTLEMENT_BATCH);
+  for (const order of needWithdrawal) {
+    await openSellerWithdrawal(order.id);
+  }
+
+  // 3. Pending withdrawals awaiting fiat settlement.
+  const pendingPayouts = await db
+    .select()
+    .from(orders)
+    .where(
+      and(eq(orders.rail, "wapu_ars"), eq(orders.payout_status, "pending"), ...scope)
+    )
+    .limit(SETTLEMENT_BATCH);
+  for (const order of pendingPayouts) {
+    await pollWapuWithdrawal(order);
+  }
+
+  return {
+    polled_deposits: pendingDeposits.length,
+    retried_withdrawals: needWithdrawal.length,
+    polled_payouts: pendingPayouts.length,
+  };
 }

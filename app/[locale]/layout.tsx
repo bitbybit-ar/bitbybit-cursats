@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/lib/contexts/theme-context";
 import { SignerProviderClient } from "@/components/auth/signer-provider-client";
 import type { SessionUser } from "@/lib/contexts/signer-context";
-import { getSession, sessionIsPlatformAdmin } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { getUserByPubkey } from "@/lib/admin/users";
 import { ToastProvider } from "@/components/ui/toast";
 import { Navbar } from "@/components/layout/navbar";
@@ -45,7 +45,6 @@ async function resolveInitialSession(): Promise<SessionUser | null> {
             display_name: user.display_name,
           }
         : null,
-    platform_admin: sessionIsPlatformAdmin(session),
   };
 }
 

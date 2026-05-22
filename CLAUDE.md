@@ -94,10 +94,10 @@ repo's copy is intentionally identical and should stay in sync.
 
 ## Code rules (enforced)
 
-- **Payment surfaces are server-only.** Wapu API keys, NWC connection
-  secrets, and settlement logic live in API routes or server-only
-  modules. Never expose them to the client. Use `NEXT_PUBLIC_*` only
-  for non-secret display values.
+- **Payment surfaces are server-only.** Wapu API keys and settlement
+  logic live in API routes or server-only modules. Never expose them
+  to the client. Use `NEXT_PUBLIC_*` only for non-secret display
+  values.
 - **Wapu is a poll-driven, two-leg flow — there are no webhooks.**
   Wapu is a USDT-ledger wallet. Leg 1: a Lightning deposit
   (`POST /wallet/deposit_lightning`) credits USDT to our wallet; the
@@ -165,7 +165,7 @@ repo's copy is intentionally identical and should stay in sync.
 - **No `merchant.yaml`.** There is no YAML configuration file in
   the repo. Branding is in `styles/_theme.scss`, copy is in
   `messages/{es,en}.json`, site identity is in
-  `lib/site.ts`, secrets and `ADMIN_PUBKEYS` are in env
+  `lib/site.ts`, secrets are in env
   vars, and operational state (offerings, settings) is in
   Postgres. Decision in ADR
   `docs/architecture/decisions/0010-no-yaml-config.md`.
@@ -223,9 +223,6 @@ repo's copy is intentionally identical and should stay in sync.
   (`/[locale]/gracias/[orderId]`) plus optional Nostr DMs. Decision
   in ADR
   `docs/architecture/decisions/0006-nostr-and-inapp-delivery.md`.
-- **Nostr signing keys are server-only.** The deployment's
-  `NOSTR_NSEC` lives in env vars and is consumed by API routes or
-  server-only modules. Never ship it to the client.
 - **No buyer-side wallet detection.** Buyers came to a sats checkout
   to pay sats. Every purchase is one-shot — there are no renewable
   subscriptions in v1 (see the auto-renewal deferral above).

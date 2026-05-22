@@ -476,6 +476,10 @@
     "empty": "No orders yet.",
     "anonymous": "Anonymous",
     "unknownOffering": "Unknown offering",
+    "sync": "Sync orders",
+    "syncing": "Syncing…",
+    "syncDone": "Orders synced with Wapu.",
+    "syncFailed": "Couldn't sync with Wapu. Try again in a moment.",
     "detail": {
       "metadataTitle": "Order detail",
       "back": "Back to orders",

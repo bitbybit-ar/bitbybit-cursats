@@ -45,20 +45,17 @@ npm run dev
 
 ## Making changes
 
-- **Payment surfaces are server-only.** Wapu API keys, NWC
-  connection secrets, and webhook handlers must live in API
-  routes or server-only modules. Never in client components. Use
-  `NEXT_PUBLIC_*` only for non-secret display values.
-- **Nostr signing keys are server-only.** The deployment's
-  `NOSTR_NSEC` lives in env vars and is used by API routes /
-  server-only modules to sign and encrypt outgoing DMs. Never
-  ship it to the client. Decision pinned in ADR
-  `0006-nostr-and-inapp-delivery.md`.
-- **Verify Wapu webhook signatures.** Every webhook handler must
-  authenticate the request before any state change. The Wapu
-  webhook only flips orders whose `rail === 'wapu_ars'`; for
-  `rail === 'lightning'` orders the receipt page polls the
-  seller's LNURL-pay `verify` URL via `/api/orders/[orderId]`.
+- **Payment surfaces are server-only.** Wapu API keys and
+  settlement logic must live in API routes or server-only modules.
+  Never in client components. Use `NEXT_PUBLIC_*` only for
+  non-secret display values.
+- **No webhooks — verify by polling.** Both rails are confirmed by
+  polling, never a webhook: a `wapu_ars` order polls its Wapu
+  deposit transaction and a `direct_lightning` order polls the
+  seller's LUD-21 `verify` URL, both via `/api/orders/[orderId]`.
+  The `wapu_ars` seller payout leg is polled by the settlement cron
+  (`/api/cron/wapu-settlements`). Decision in ADR
+  `0025-wapu-poll-driven-two-leg-rail.md`.
 - **Two payout rails — do not add a third.** Cursats supports Wapu
   (sats → ARS to a CBU/alias) and direct sats to a seller's
   Lightning Address (ADR
@@ -188,10 +185,11 @@ Out of scope:
 ### Hardening already in place
 
 - HTTPS-only via Vercel, HSTS preload header set.
-- Wapu webhook signatures verified before any state mutation.
-- Secrets (Wapu API key, NWC encryption key, Nostr signing key)
-  live in Vercel environment variables and never reach the
-  client.
+- The settlement cron is guarded by a `CRON_SECRET` bearer token;
+  the manual sync endpoint requires a signed-in session.
+- Secrets (Wapu API key, the session JWT signing key, the Postgres
+  connection string) live in Vercel environment variables and never
+  reach the client.
 - Receipt-page `orderId`s are opaque, unguessable identifiers
   with ≥128 bits of entropy.
 - Signed download URLs expire after 24 hours and are single-use.

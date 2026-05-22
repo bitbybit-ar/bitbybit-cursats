@@ -1,6 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { getAuthSecret, isPlatformAdminPubkey } from "@/lib/env";
+import { getAuthSecret } from "@/lib/env";
 import {
   SESSION_COOKIE_NAME,
   SESSION_INACTIVITY_MINUTES,
@@ -27,11 +27,6 @@ const SESSION_DURATION = `${SESSION_INACTIVITY_MINUTES}m` as const;
  *   `lib/admin/users.getUserByPubkey`, so deactivating a user
  *   revokes their access immediately without waiting for the JWT
  *   to expire.
- * - There is no `platform_admin` flag — platform-admin status is
- *   computed at every request by checking the pubkey against
- *   `PLATFORM_ADMIN_PUBKEYS` (env). If a platform admin's key is
- *   removed from the env list, every existing session immediately
- *   loses moderation access without needing to be re-issued.
  */
 export interface AuthSession {
   pubkey: string;
@@ -103,17 +98,6 @@ export async function verifySessionToken(
   } catch {
     return null;
   }
-}
-
-/**
- * Computed at request time, never serialised into the JWT. See the
- * comment on AuthSession for why. Marketplace-mode replacement for
- * the old `sessionIsAdmin` — the platform-admin role is a separate
- * moderation surface, not the per-user panel.
- */
-export function sessionIsPlatformAdmin(session: AuthSession | null): boolean {
-  if (!session) return false;
-  return isPlatformAdminPubkey(session.pubkey);
 }
 
 export async function clearSession(): Promise<void> {

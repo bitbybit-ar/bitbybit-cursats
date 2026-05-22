@@ -85,23 +85,20 @@ DATABASE_URL=postgresql://…                    # your Neon/Postgres URL
 
 AUTH_SECRET=<run: openssl rand -base64 32>     # JWT signing key
 
-NOSTR_NSEC=nsec1…                              # the deployment's signing key for outgoing DMs
+WAPU_API_KEY=<from be-stage.wapu.app>          # Wapu API key (staging is fine)
+WAPU_PAY_APU_HOST=https://be-stage.wapu.app    # Wapu API base URL
 
-WAPU_API_KEY=<from staging.wapu.app>           # Wapu API key (staging is fine)
-
-ADMIN_PUBKEYS=                                  # leave empty unless you want platform admin
+CRON_SECRET=<run: openssl rand -base64 32>     # secures the settlement cron
 ```
 
 Optional but useful:
 
 - `NEXT_PUBLIC_BLOSSOM_SERVERS` — has a public default that
   works; override only if you want to host images yourself.
-- `EXCHANGE_RATE_API_URL` — leave unset to use Yadio's live
-  Argentine rate; override only to point at a deterministic
-  stub.
-- `NWC_CONNECTION_URL` — leave empty in v1; the autorenewal
-  feature it gates is deferred (see ADR
-  [0020](./docs/architecture/decisions/0020-defer-autorenewal-from-mvp.md)).
+
+The sats↔ARS rate comes from Wapu's `/exchange_rates` (no separate
+env var). The settlement cron runs daily on Vercel Hobby; sellers can
+sync their own orders on demand from `/orders`.
 
 The `.env.example` itself documents every var; consult it if
 something here is unclear.

@@ -1,12 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { and, eq, isNull } from "drizzle-orm";
-import { getDb } from "@/lib/db";
-import { orders } from "@/lib/db/schema";
-import {
-  pollWapuDeposit,
-  openSellerWithdrawal,
-  pollWapuWithdrawal,
-} from "@/lib/wapu-settlement";
+import { runWapuSettlements } from "@/lib/wapu-settlement";
 
 export const dynamic = "force-dynamic";
 // Belt-and-suspenders: never let this run as a static/edge function.
@@ -26,9 +19,12 @@ export const runtime = "nodejs";
  *      `released`/`failed` once Wapu reports back (can take hours).
  *
  * Every step is idempotent, so overlapping runs are safe.
+ *
+ * On Vercel Hobby this runs once a day (vercel.json); sellers can
+ * trigger the same sweep for their own orders on demand via the "sync"
+ * button on /orders (POST /api/orders/sync). Both share
+ * `runWapuSettlements`.
  */
-
-const BATCH = 100;
 
 function authorized(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET;
@@ -44,49 +40,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const db = getDb();
-
-  // 1. Pending deposits (buyer-left-the-page safety net).
-  const pendingDeposits = await db
-    .select()
-    .from(orders)
-    .where(and(eq(orders.rail, "wapu_ars"), eq(orders.status, "pending")))
-    .limit(BATCH);
-  for (const order of pendingDeposits) {
-    await pollWapuDeposit(order);
-  }
-
-  // 2. Paid orders whose withdrawal never opened.
-  const needWithdrawal = await db
-    .select()
-    .from(orders)
-    .where(
-      and(
-        eq(orders.rail, "wapu_ars"),
-        eq(orders.status, "paid"),
-        isNull(orders.payout_status)
-      )
-    )
-    .limit(BATCH);
-  for (const order of needWithdrawal) {
-    await openSellerWithdrawal(order.id);
-  }
-
-  // 3. Pending withdrawals awaiting fiat settlement.
-  const pendingPayouts = await db
-    .select()
-    .from(orders)
-    .where(
-      and(eq(orders.rail, "wapu_ars"), eq(orders.payout_status, "pending"))
-    )
-    .limit(BATCH);
-  for (const order of pendingPayouts) {
-    await pollWapuWithdrawal(order);
-  }
-
-  return NextResponse.json({
-    polled_deposits: pendingDeposits.length,
-    retried_withdrawals: needWithdrawal.length,
-    polled_payouts: pendingPayouts.length,
-  });
+  const result = await runWapuSettlements();
+  return NextResponse.json(result);
 }
