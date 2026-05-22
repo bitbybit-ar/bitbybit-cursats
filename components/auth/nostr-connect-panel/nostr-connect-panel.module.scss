@@ -2,6 +2,7 @@
 @use "@/styles/spacing" as *;
 @use "@/styles/typography" as *;
 @use "@/styles/media-mixins" as *;
+@use "@/styles/common-mixins" as *;
 
 .intro {
   font-size: $font-size-sm;
@@ -264,4 +265,77 @@
   padding: $spacing-8 $spacing-12;
   background: alpha($color-primary, 8%);
   border-radius: $border-radius-md;
+}
+
+// Primary CTA on mobile: hands the nostrconnect:// URI to an
+// installed signer (Amber, Primal, …). Mirrors the filled primary
+// Button so it reads as the main action without routing through the
+// next-intl <Link> (which can't carry a custom scheme).
+.openAppButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-8;
+  width: 100%;
+  min-height: 44px;
+  padding: $spacing-12 $spacing-16;
+  margin-bottom: $spacing-12;
+  border: 2px solid transparent;
+  border-radius: $border-radius-md;
+  font-weight: $font-weight-bold;
+  font-size: $font-size-sm;
+  text-decoration: none;
+  cursor: pointer;
+  @include ceramic-surface($color-primary, 28%);
+  color: $static-white;
+  transition: box-shadow 0.2s;
+
+  &:hover {
+    box-shadow:
+      0 8px 24px alpha($color-primary, 35%),
+      inset 0 1px 0 alpha($static-white, 50%);
+  }
+
+  &:focus-visible {
+    outline: 2px solid $color-primary;
+    outline-offset: 3px;
+  }
+
+  &[aria-disabled="true"] {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+}
+
+// The QR demoted to a cross-device fold on mobile.
+.scanFold {
+  margin-bottom: $spacing-12;
+}
+
+.scanSummary {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-secondary;
+  text-align: center;
+  cursor: pointer;
+  list-style: none;
+  padding: $spacing-8;
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+
+  &:hover {
+    color: $color-primary;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $focus-ring;
+    outline-offset: 2px;
+    border-radius: $border-radius-md;
+  }
+}
+
+.scanFoldBody {
+  padding-top: $spacing-8;
 }
