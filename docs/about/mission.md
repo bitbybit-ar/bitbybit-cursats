@@ -1,7 +1,7 @@
 # Mission
 
 > **Status:** Active
-> **Last updated:** 2026-05-12
+> **Last updated:** 2026-05-21
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-21 | Body | Rewrote the opening paragraph to anchor the mission in two concrete Argentine teacher archetypes — the piano teacher reaching international students (Bitcoin in, pesos out) and the tango professor charging digital nomads (Bitcoin in, Bitcoin out). Different phrasing from the README's "Where this came from" so the two read as complementary. | Hackathon documentation pass — the opening previously stated the dual-rail stance abstractly. Pairing it with two concrete characters makes the underserved audience legible at a glance and threads into the README story without duplicating it. |
 | 2026-05-12 | —, A note on the name | Rebranded references from "Cursá" to "Cursats" and rewrote "A note on the name" as the portmanteau etymology (*cursá* + *sats*). Updated example URLs to `cursats.bitbybit.com.ar`. | Brand rename per ADR 0018 — the wordmark now surfaces the sats positioning while preserving the voseo verb in body copy. |
 | 2026-05-12 | Body, What we value, What we don't do | Reframed the tagline from "buyers pay sats, merchants think in pesos" to the dual-rail story: buyers always pay sats; sellers pick pesos (Wapu) or sats (Lightning Address). Broadened the audience bullet from "Educators only" to "Educational creators — broadly". Replaced "merchant" with "seller" throughout. Updated the example flow to mention both rails. Updated the no-second-rail claim in "What we don't do" to the no-third-rail claim from ADR 0015. | The mission was three pivots behind: ADR 0014 opened the marketplace beyond a narrowly-defined educator set, ADR 0015 added the sats settlement rail, ADR 0016 collapsed `merchants` into `users`. The doc still framed Wapu as the only rail and educators as the only audience. |
 | 2026-05-08 | Body, What we value, What we don't do | Pivoted from single-tenant tool to multi-tenant marketplace per ADR 0012. Onboarding is now "sign in with Nostr, claim a slug, paste your CBU/alias", not "developer forks the repo." Wapu direct-payment routes ARS straight to each merchant; the platform never custodies. | The single-tenant model required a developer per merchant — unsustainable for the educator audience. Wapu's direct-payment API removed the only blocker against per-invoice merchant routing. |
@@ -19,11 +20,15 @@
 
 ---
 
-BitByBit Cursats exists so a piano teacher in Buenos Aires can
-accept Bitcoin without learning what Lightning is and receive
-pesos in her bank the same day — *and* so the Bitcoin-native
-tutor across town can take the same payments straight to sats in
-his Lightning wallet, no converter in the middle.
+BitByBit Cursats exists for the two Argentine teachers most
+underserved by today's payment tooling. The piano teacher in
+Buenos Aires whose method books and weekly lessons would sell
+internationally if accepting cross-border payment were not a
+multi-step ordeal — she wants Bitcoin in, pesos in her bank the
+same day, no friction. The tango professor whose digital-nomad
+students already carry sats but cannot pay him directly without
+one of them learning the other's payment universe — he wants
+Bitcoin in, Bitcoin out, no converter in the middle.
 
 Educational creators — music schools, tutors, language academies,
 yoga studios, code bootcamps, and anyone else publishing

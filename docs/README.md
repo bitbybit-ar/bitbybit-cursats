@@ -1,7 +1,7 @@
 # Documentation
 
 > **Status:** Active
-> **Last updated:** 2026-05-12
+> **Last updated:** 2026-05-21
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-21 | Structure, What to write in each doc | Added the `HACKATHON.md` judge front door, the ordered `testing-plan.md` walkthrough, and the new `features/` subfolder with the eight per-feature deep dives. Updated the "What to write in each doc" table accordingly. | Hackathon documentation pass — the docs tree gained a judge-facing surface and a feature-doc layer that did not previously exist; the structural index needed to reflect them so contributors can find the new files. |
 | 2026-05-12 | What this folder is, Structure | Rebranded "BitByBit Cursá" to "BitByBit Cursats" throughout. | Brand rename per ADR 0018 — portmanteau of *cursá* (the voseo verb) and *sats*. |
 | 2026-05-05 | — | Initial version. | Bootstrap the docs tree using the canonical template from the `home` repo. |
 
@@ -28,18 +29,31 @@ authoritative explanation of every section.
 docs/
 ├── README.md                 ← you are here
 ├── _template.md              ← copy this for new docs
+├── HACKATHON.md              ← judge front door (hackathon submission framing)
+├── testing-plan.md           ← ordered numbered judge walkthrough
 ├── about/
 │   └── mission.md            ← what Cursats is, who it's for, why
-└── architecture/
-    ├── overview.md           ← system shape + key invariants
-    └── decisions/            ← Architecture Decision Records (ADRs)
-        ├── 0001-record-architecture-decisions.md
-        ├── 0002-settlement-via-wapu.md
-        ├── 0003-educator-vertical.md
-        ├── 0004-static-config-deployment.md
-        ├── 0005-prepaid-default-autorenewal-optin.md
-        └── template.md       ← copy this for new ADRs
+├── architecture/
+│   ├── overview.md           ← system shape + key invariants
+│   ├── routing.md            ← full route map
+│   └── decisions/            ← Architecture Decision Records (ADRs)
+│       ├── 0001-record-architecture-decisions.md
+│       ├── …                 ← NNNN-*.md per decision
+│       └── template.md       ← copy this for new ADRs
+└── features/                 ← per-feature deep dives
+    ├── checkout-flow.md
+    ├── settlement-rails.md
+    ├── nostr-identity.md
+    ├── offerings-catalog.md
+    ├── delivery-and-receipts.md
+    ├── notifications.md
+    ├── settings-and-payouts.md
+    └── discovery.md
 ```
+
+`SUBMISSION.md` (judge quickstart) lives at the **repo root**
+next to `README.md`, not under `docs/`, so a judge cloning the
+repo finds it without traversal.
 
 `CHANGELOG.md` (project release log) and `CONTRIBUTING.md`
 (contribution + vulnerability disclosure) live at the **repo root**,
@@ -86,11 +100,17 @@ header fields but still carry an inline `## Change Log`.
 
 | File | Purpose |
 |---|---|
+| Root `README.md` | Project pitch, origin story, top-level pointers |
+| Root `SUBMISSION.md` | Judge quickstart — clone → env → run → buy |
 | Root `CHANGELOG.md` | Every product-level change, grouped by release |
 | Root `CONTRIBUTING.md` | How to contribute + vulnerability disclosure |
+| `HACKATHON.md` | Judge front door — submission framing + doc map |
+| `testing-plan.md` | Ordered numbered walkthrough for evaluators |
 | `about/mission.md` | What the project is, who it's for, why it exists |
 | `architecture/overview.md` | System shape + key invariants |
+| `architecture/routing.md` | Full route map (buyer, account, creator, API) |
 | `architecture/decisions/NNNN-*.md` | One decision per file, frozen once accepted |
+| `features/*.md` | Per-feature deep dives — design, code pointers, mermaid sequence diagrams |
 | `guides/*.md` | Tutorials and how-tos for contributors |
 | `runbooks/*.md` | Step-by-step recovery procedures for incidents |
 | `reference/*.md` | Lookup material — glossary, FAQ, API surface |
