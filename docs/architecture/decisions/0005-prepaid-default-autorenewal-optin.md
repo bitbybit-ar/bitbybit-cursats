@@ -3,7 +3,7 @@
 - **Date**: 2026-05-05
 - **Status**: Superseded by [0020](0020-defer-autorenewal-from-mvp.md) — autorenewal is deferred from v1; pre-paid one-shot purchases are the only flow we ship.
 - **Deciders**: BitByBit team
-- **Last updated**: 2026-05-14
+- **Last updated**: 2026-05-22
 
 ---
 
@@ -11,6 +11,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-22 | — | Note: the NWC client, cron handler, and `NWC_CONNECTION_URL` env referenced throughout this (already superseded) ADR were removed as dead code. | Those env vars and code no longer exist; the doc must not imply they ship. |
 | 2026-05-14 | Status | Marked Superseded by ADR 0020. The pre-paid half of this decision stands; the autorenewal half is dropped from MVP. | The settings page no longer surfaces an autorenewal toggle and no checkout/cron code reads the flag. Keeping ADR 0005 "Accepted" would mislead a future contributor reading the docs cold. |
 | 2026-05-06 | Decision, Consequences | Autorenewal flag moves from a build-time `merchant.yaml` field to a runtime panel toggle stored in `settings.features_autorenewal` (Postgres). Reworded "stay unwired" to "stay dormant when the flag is false, gated by a runtime check": the NWC client, cron handler, and encrypted-secrets storage are now deployed in every build but only execute when the toggle is on. | ADR 0009 moves runtime settings into Postgres and ADR 0008 introduces a panel where the merchant can flip this flag at any time. A build-time flag cannot be flipped at runtime, so the code must always be present; the security posture changes from "absent" to "dormant", which has to be recorded. |
 | 2026-05-06 | Decision | Replaced "an email is sent" with "a Nostr DM is sent" for cancellation notices, consistent with ADR 0006. The auto-renewal payment model itself is unchanged. | The original phrasing assumed an email channel that ADR 0006 explicitly rules out. NWC subscribers' pubkey is already known, so DMs are the natural push channel. |

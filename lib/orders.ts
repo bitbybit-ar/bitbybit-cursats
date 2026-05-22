@@ -1,7 +1,7 @@
 import { and, eq, desc, ilike, sql, type SQL } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { orders, offerings, users } from "@/lib/db/schema";
-import { getWapuClient, type DirectPaymentFunding } from "@/lib/wapu";
+import { getWapuClient } from "@/lib/wapu";
 import {
   getLightningClient,
   LightningMintError,
@@ -175,34 +175,39 @@ async function fundWapuOrder(opts: {
   const payoutAlias = pickPayoutAlias(opts.seller);
   if (!payoutAlias) throw new OrderCreateError("seller_payout_missing");
 
+  // Leg 1 of the wapu_ars rail: mint a Lightning deposit the buyer
+  // pays. The sats credit USDT to our Wapu wallet; the seller's ARS
+  // withdrawal (leg 2) is opened only after the deposit confirms —
+  // see `pollWapuDeposit` in lib/wapu-settlement.ts.
+  //
+  // We size the deposit from the ARS price at the current rate.
+  // OPEN DECISION: the Wapu withdrawal fee and any rate drift between
+  // deposit and withdrawal are absorbed by the platform float in v1.
+  // If sellers should net the fee instead, size/withdraw differently.
+  const amount_sats = await convertPrice(opts.amount_ars, "ars", "sats");
+
   const wapu = getWapuClient();
-  const tentative = await wapu.createDirectPayment({
-    amount_ars: opts.amount_ars,
-    alias: payoutAlias,
-    receiver_name: opts.seller.display_name,
-    external_id: opts.order_id,
-  });
-  const funding: DirectPaymentFunding = await wapu.issueDirectPaymentFunding(
-    tentative.uuid
-  );
+  const deposit = await wapu.createLightningDeposit(amount_sats);
 
   await db
     .update(orders)
     .set({
-      amount_sats: funding.amount_sats,
-      payment_hash: funding.payment_hash,
-      wapu_tentative_uuid: tentative.uuid,
-      bolt11: funding.bolt11,
+      amount_sats: deposit.amount_sats,
+      wapu_deposit_tx_id: deposit.transaction_id,
+      bolt11: deposit.bolt11,
+      transfer_speed: opts.seller.transfer_speed,
       updated_at: new Date(),
     })
     .where(eq(orders.id, opts.order_id));
 
   return {
-    bolt11: funding.bolt11,
-    amount_sats: funding.amount_sats,
-    amount_ars: funding.amount_ars,
-    expires_at: funding.expires_at,
-    payment_hash: funding.payment_hash,
+    bolt11: deposit.bolt11,
+    amount_sats: deposit.amount_sats,
+    amount_ars: opts.amount_ars,
+    expires_at: deposit.expires_at,
+    // Wapu deposits don't expose a separate payment hash; the order
+    // is correlated by wapu_deposit_tx_id, not the hash.
+    payment_hash: "",
   };
 }
 
@@ -258,20 +263,18 @@ async function fundDirectLightningOrder(opts: {
 }
 
 /**
- * Idempotent transition to `paid`. The Wapu webhook may fire more
- * than once for the same payment (network retries, at-least-once
- * delivery); for direct_lightning, the LUD-21 status poller may
- * race itself across overlapping requests. This guard makes any
- * second call a no-op.
+ * Idempotent transition of the buyer leg to `paid`. The status
+ * poller may race itself across overlapping requests, and the
+ * settlement cron may retry; this guard makes any second call a
+ * no-op. Rail-agnostic.
  *
- * Rail-agnostic. settlement_ref is only meaningful for the Wapu
- * rail (it's Wapu's bookkeeping reference for the ARS push); on
- * direct_lightning callers should pass `null`.
+ * `amount_usdt` is the USDT credited to our Wapu wallet by the
+ * confirmed deposit (wapu_ars only); pass null/undefined for
+ * direct_lightning.
  */
 export async function markOrderPaid(opts: {
   order_id: string;
-  payment_hash: string;
-  settlement_ref: string | null;
+  amount_usdt?: number | null;
   paid_at: Date;
 }): Promise<{ updated: boolean }> {
   const db = getDb();
@@ -287,25 +290,48 @@ export async function markOrderPaid(opts: {
   if (existing.status === "paid") {
     return { updated: false };
   }
-  if (existing.payment_hash && existing.payment_hash !== opts.payment_hash) {
-    // Defence against a webhook tied to a different invoice colliding
-    // with this order id. Should not happen with a working Wapu, but
-    // we'd rather refuse the update than corrupt the row.
-    throw new Error(
-      `payment_hash mismatch for order ${opts.order_id}: ` +
-        `expected ${existing.payment_hash}, got ${opts.payment_hash}`
-    );
-  }
 
   await db
     .update(orders)
     .set({
       status: "paid",
       paid_at: opts.paid_at,
-      payment_hash: opts.payment_hash,
-      wapu_settlement_ref: opts.settlement_ref,
+      amount_usdt:
+        opts.amount_usdt != null
+          ? String(opts.amount_usdt)
+          : existing.amount_usdt,
       updated_at: new Date(),
     })
+    .where(eq(orders.id, opts.order_id));
+  return { updated: true };
+}
+
+/**
+ * Idempotent transition of the buyer leg to `failed` (the deposit
+ * expired or Wapu reported it Rejected/Canceled). Only flips a
+ * `pending` order; a no-op otherwise so a late poll can't undo a
+ * paid order.
+ */
+export async function markOrderFailed(opts: {
+  order_id: string;
+}): Promise<{ updated: boolean }> {
+  const db = getDb();
+  const [existing] = await db
+    .select()
+    .from(orders)
+    .where(eq(orders.id, opts.order_id))
+    .limit(1);
+
+  if (!existing) {
+    throw new Error(`Order ${opts.order_id} not found`);
+  }
+  if (existing.status !== "pending") {
+    return { updated: false };
+  }
+
+  await db
+    .update(orders)
+    .set({ status: "failed", updated_at: new Date() })
     .where(eq(orders.id, opts.order_id));
   return { updated: true };
 }

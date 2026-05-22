@@ -66,6 +66,7 @@ export const UpdateUserProfileSchema = z
     cbu: CbuSchema.nullable(),
     lightning_address: LightningAddressSchema.nullable(),
     payout_method: z.enum(["cbu_alias", "lightning_address"]),
+    transfer_speed: z.enum(["fiat_transfer", "fast_fiat_transfer"]),
     locale: z.enum(["es", "en"]),
     notification_prefs: NotificationPrefsSchema,
   })
@@ -311,6 +312,9 @@ export async function updateUserProfile(
   if (patch.payout_method !== undefined) {
     next.payout_method = patch.payout_method;
   }
+  if (patch.transfer_speed !== undefined) {
+    next.transfer_speed = patch.transfer_speed;
+  }
   if (patch.locale !== undefined) next.locale = patch.locale;
   // Merge notification_prefs on top of the existing row instead of
   // overwriting — clients send partial patches (just the kind they
@@ -390,4 +394,15 @@ export function hasPayoutConfigured(user: User): boolean {
     return Boolean(user.lightning_address?.trim());
   }
   return Boolean(user.cbu?.trim() || user.alias?.trim());
+}
+
+/**
+ * The course-pricing currency a seller must use, derived from their
+ * payout rail (ADR 0026). A `lightning_address` seller receives sats
+ * and thinks in sats; a `cbu_alias` seller cashes out to pesos and
+ * thinks in ARS. The currency follows the rail rather than being a
+ * free per-course choice.
+ */
+export function expectedPriceCurrency(user: User): "ars" | "sats" {
+  return user.payout_method === "lightning_address" ? "sats" : "ars";
 }

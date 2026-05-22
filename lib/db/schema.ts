@@ -5,6 +5,7 @@ import {
   varchar,
   text,
   integer,
+  numeric,
   boolean,
   timestamp,
   jsonb,
@@ -23,11 +24,15 @@ export const offeringType = pgEnum("offering_type", ["code", "download"]);
 // currency picker).
 export const priceCurrency = pgEnum("price_currency", ["ars", "sats"]);
 
-// Order status lifecycle.
+// Order status lifecycle. Tracks the *buyer* leg — i.e. whether the
+// Lightning payment came in. The seller-facing ARS payout leg on the
+// wapu_ars rail is tracked separately by `payout_status`.
 //   pending  — invoice created, awaiting Lightning payment
-//   paid     — Wapu webhook (wapu_ars rail) or LUD-21 verify
-//              (direct_lightning rail) confirmed settlement
-//   failed   — invoice expired or webhook reported failure
+//   paid     — buyer's Lightning deposit confirmed. For wapu_ars,
+//              polled from Wapu's deposit transaction; for
+//              direct_lightning, the LUD-21 verify URL.
+//   failed   — invoice expired or the deposit transaction reported
+//              Rejected/Canceled
 //   refunded — manual reversal (write actions are v1.1; column exists
 //              now so the enum does not need migration when refunds land)
 export const orderStatus = pgEnum("order_status", [
@@ -48,11 +53,36 @@ export const payoutMethod = pgEnum("payout_method", [
   "lightning_address",
 ]);
 
+// Wapu fiat-transfer speed for the cbu_alias rail. `fiat_transfer`
+// is standard (lower fee, slower); `fast_fiat_transfer` costs more
+// but settles to the seller's bank faster. Only meaningful when
+// payout_method = 'cbu_alias'.
+export const transferSpeed = pgEnum("transfer_speed", [
+  "fiat_transfer",
+  "fast_fiat_transfer",
+]);
+
 // Which settlement rail an individual order rode. Stamped at order
 // creation from the seller's then-current `payout_method`. We
 // snapshot it on the order so a user flipping their rail later
 // does not retroactively change the receipt of an already-paid order.
 export const orderRail = pgEnum("order_rail", ["wapu_ars", "direct_lightning"]);
+
+// Settlement state of the seller-facing ARS payout leg on a
+// `wapu_ars` order. Null until the buyer's Lightning deposit is
+// confirmed; then we open a Wapu withdrawal to the seller's CBU/alias.
+//   pending  — withdrawal created at Wapu, awaiting fiat settlement
+//              (can take a couple of hours)
+//   released — Wapu reported the withdrawal Completed; ARS landed
+//   failed   — Wapu reported the withdrawal Rejected/Canceled
+// Only meaningful on the wapu_ars rail; direct_lightning orders leave
+// it null (the buyer's payment is the settlement; there is no
+// second leg).
+export const payoutStatus = pgEnum("payout_status", [
+  "pending",
+  "released",
+  "failed",
+]);
 
 // --- Users ---
 // One row per signed-in account. Keyed by Nostr pubkey — the user's
@@ -93,6 +123,12 @@ export const users = pgTable(
     payout_method: payoutMethod("payout_method")
       .notNull()
       .default("cbu_alias"),
+    // Wapu fiat-transfer speed for the cbu_alias rail (see enum).
+    // Sellers pick standard vs fast in /settings; fast costs a
+    // higher Wapu fee.
+    transfer_speed: transferSpeed("transfer_speed")
+      .notNull()
+      .default("fiat_transfer"),
     // Default UI language for this user. The navbar's locale switch
     // is a temporary session-only override (URL prefix); this is the
     // value applied on next sign-in. ADR 0021.
@@ -195,14 +231,16 @@ export const offerings = pgTable(
 // could be derived through a join, but every per-seller query
 // filters on it, so the index pays for itself.
 //
-// The Wapu integration moved from invoice-based (single-tenant) to
-// direct-payment (marketplace, ADR 0012). `wapu_tentative_uuid`
-// holds the direct-payment tentative the buyer is funding; the row
-// also still carries `payment_hash` and `bolt11` because those are
-// the artifacts the buyer's wallet sees and the UI renders.
+// The wapu_ars rail is a two-leg flow against Wapu's USDT-ledger
+// wallet (no webhooks — both legs are polled). Leg 1: the buyer
+// funds a Lightning deposit (`wapu_deposit_tx_id`, `bolt11`), which
+// credits USDT to our wallet (`amount_usdt`). Leg 2: once the deposit
+// is Completed we open a fiat withdrawal to the seller's CBU/alias
+// (`wapu_withdrawal_tx_id`, `payout_status`), which the settlement
+// cron polls to completion.
 //
-// `rail` (ADR 0015) snapshots which settlement rail the order
-// rides. `lnurl_verify_url` is set only on direct_lightning orders.
+// `rail` (ADR 0015) snapshots which settlement rail the order rides.
+// `lnurl_verify_url` is set only on direct_lightning orders.
 export const orders = pgTable(
   "orders",
   {
@@ -223,17 +261,36 @@ export const orders = pgTable(
     // seller's `payout_method`. ADR 0015.
     rail: orderRail("rail").notNull().default("wapu_ars"),
     payment_hash: varchar("payment_hash", { length: 64 }),
-    wapu_tentative_uuid: text("wapu_tentative_uuid"),
-    // BOLT11 invoice string. For wapu_ars: returned by Wapu's funding
-    // endpoint. For direct_lightning: minted by lib/lightning from
-    // the seller's LNURL-pay callback. Cached so the checkout page
-    // survives reloads (and the QR can re-render) without re-calling
-    // the upstream.
+    // Wapu deposit (leg 1) transaction id — the Lightning deposit the
+    // buyer funds. Polled via GET /transactions/{id} until Completed.
+    // Null on direct_lightning orders.
+    wapu_deposit_tx_id: text("wapu_deposit_tx_id"),
+    // BOLT11 invoice string. For wapu_ars: Wapu's `lnurl_pr_invoice`
+    // from deposit_lightning. For direct_lightning: minted by
+    // lib/lightning from the seller's LNURL-pay callback. Cached so
+    // the checkout page survives reloads (and the QR can re-render)
+    // without re-calling the upstream.
     bolt11: text("bolt11"),
-    wapu_settlement_ref: text("wapu_settlement_ref"),
-    // LUD-21 verify URL. Only set on direct_lightning orders. The
-    // status poller GETs it to check settlement; null on wapu_ars
-    // orders (Wapu fires a webhook there).
+    // Wapu withdrawal (leg 2) transaction id — the fiat_transfer that
+    // settles ARS to the seller's CBU/alias. Opened after the deposit
+    // confirms; polled by the settlement cron. Null until then, and
+    // always null on direct_lightning orders.
+    wapu_withdrawal_tx_id: text("wapu_withdrawal_tx_id"),
+    // Settlement state of the ARS payout leg (see payoutStatus enum).
+    // Null until the buyer's deposit confirms on a wapu_ars order.
+    payout_status: payoutStatus("payout_status"),
+    payout_released_at: timestamp("payout_released_at"),
+    // USDT credited to our Wapu wallet by the buyer's confirmed
+    // deposit (Wapu's `payment_amount` when payment_currency=USDT).
+    // Recorded for reconciliation against the withdrawal leg.
+    amount_usdt: numeric("amount_usdt", { precision: 18, scale: 8 }),
+    // Wapu fiat-transfer speed snapshotted from the seller's
+    // `transfer_speed` at order creation, so a later flip does not
+    // re-price an in-flight withdrawal. Null on direct_lightning.
+    transfer_speed: transferSpeed("transfer_speed"),
+    // LUD-21 verify URL. Only set on direct_lightning orders; the
+    // status poller GETs it to confirm settlement. Null on wapu_ars
+    // orders (those poll the Wapu deposit transaction instead).
     lnurl_verify_url: text("lnurl_verify_url"),
     redemption_code: text("redemption_code"),
     created_at: timestamp("created_at").notNull().defaultNow(),

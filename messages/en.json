@@ -447,11 +447,10 @@
       "invalidPriceAmount": "Price must be a positive integer.",
       "invalidCodeCount": "Code count must be between 1 and 10,000.",
       "imageRequired": "Upload or paste a cover image before saving.",
-      "priceCurrency": "Price currency",
-      "priceCurrencyArs": "Argentine pesos",
-      "priceCurrencyArsHint": "Buyers see the sats equivalent at the current exchange rate.",
-      "priceCurrencySats": "Satoshis",
-      "priceCurrencySatsHint": "Buyers see the ARS equivalent at the current exchange rate.",
+      "priceCurrencyNoteArs": "You get paid in pesos (CBU/alias), so you set the price in ARS. The buyer pays the sats equivalent at the exchange rate of the moment.",
+      "priceCurrencyNoteSats": "You get paid in sats (Lightning Address), so you set the price in sats. They land directly in your wallet.",
+      "payoutEstimate": "Estimated Wapu fee: ~{fee} ARS · You receive ≈ {net} ARS (estimate; varies with the exchange rate at sale time).",
+      "priceBelowWapuMin": "Your net payout must be at least {min} ARS — Wapu won't process withdrawals below that. Raise the price.",
       "priceAmountHint": "The amount converts to the other currency at purchase time.",
       "typeLocked": "Type cannot be changed after the course is created.",
       "saveCreate": "Create course",
@@ -477,6 +476,10 @@
     "empty": "No orders yet.",
     "anonymous": "Anonymous",
     "unknownOffering": "Unknown offering",
+    "sync": "Sync orders",
+    "syncing": "Syncing…",
+    "syncDone": "Orders synced with Wapu.",
+    "syncFailed": "Couldn't sync with Wapu. Try again in a moment.",
     "detail": {
       "metadataTitle": "Order detail",
       "back": "Back to orders",
@@ -491,8 +494,9 @@
       "anonymous": "Anonymous",
       "redemptionCode": "Redemption code",
       "paymentHash": "Payment hash",
-      "wapuInvoiceId": "Wapu invoice ID",
-      "wapuSettlementRef": "Settlement reference",
+      "wapuDepositTxId": "Wapu deposit tx ID",
+      "wapuWithdrawalTxId": "Wapu withdrawal tx ID",
+      "payoutStatus": "Seller payout status",
       "unknownOffering": "Unknown offering",
       "readOnlyHint": "Orders are read-only in v1: no refunds, no resends, no manual delivery flagging."
     }
@@ -618,6 +622,12 @@
       "aliasTooltip": "Human-readable alias for your CBU (3–20 characters, letters/numbers/dots). Only you see this page; Wapu uses the value to route the deposit.",
       "aliasExample": "TEACHER.MARIA.BITCOIN",
       "aliasPlaceholder": "MY.ALIAS.MP",
+      "transferSpeed": "Payout speed",
+      "transferSpeedHint": "Pick how fast Wapu deposits the pesos into your account. The fast option carries a higher fee.",
+      "transferStandard": "Standard",
+      "transferStandardHint": "Lower fee. Settlement can take a couple of hours.",
+      "transferFast": "Fast",
+      "transferFastHint": "Quicker settlement in exchange for a higher fee.",
       "save": "Save settings",
       "saving": "Saving…",
       "saved": "Settings saved.",
@@ -772,6 +782,20 @@
         "received": {
           "title": "New sale",
           "body": "Someone bought {offering}."
+        }
+      },
+      "payout": {
+        "pending": {
+          "title": "Payout on the way",
+          "body": "Your payout for {offering} is settling. It can take a couple of hours."
+        },
+        "released": {
+          "title": "Payout settled",
+          "body": "We deposited the pesos for {offering} into your account."
+        },
+        "failed": {
+          "title": "Payout problem",
+          "body": "We couldn't settle the payout for {offering}. We're looking into it."
         }
       }
     }

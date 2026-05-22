@@ -1,7 +1,7 @@
 # Judge walkthrough
 
 > **Status:** Active
-> **Last updated:** 2026-05-21
+> **Last updated:** 2026-05-22
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-22 | Steps 5–7, What you've covered | Removed the paste-npub / Nostr-DM steps and the webhook/tunnel instructions; the Wapu rail now confirms by polling the deposit transaction. Updated the exchange-rate source to Wapu. | The server Nostr-DM channel and Wapu webhooks were removed; the rate now comes from Wapu (ADR 0027). |
 | 2026-05-21 | — | Initial version. | Hackathon documentation pass — ordered numbered walkthrough of every major surface, naming visible buttons and underlying flows. |
 
 ---
@@ -139,21 +140,14 @@ buyer session is separate from the seller session.
 3. On the checkout page (`/checkout/[orderId]`), the QR shows a
    Wapu-minted BOLT11 invoice. Note the sats amount and the
    conversion line ("≈ <ARS> ARS").
-4. Optionally, paste an `npub1…` or NIP-05 (`name@example.com`)
-   into the "Connect a Nostr identity" field. This enables the
-   encrypted DM push for the receipt.
-5. Pay the invoice with any Lightning wallet you have around —
+4. Pay the invoice with any Lightning wallet you have around —
    Wapu staging accepts fake money, so keep the amount small
    (the seeder's defaults use 21 or 100 sats).
-6. Watch the page advance: Wapu's webhook hits
-   `/api/wapu/webhook`, the server verifies the signature, flips
-   the order to `paid`, and redirects you to
-   `/receipt/[orderId]`.
-
-If your local dev server is not reachable from Wapu's webhook
-origin, use a tunnel (`ngrok`, `cloudflared`) and set
-`NEXT_PUBLIC_BASE_URL` and your Wapu webhook URL to the public
-tunnel URL.
+5. Watch the page advance: the checkout page polls
+   `/api/orders/[orderId]`, which polls the Wapu deposit
+   transaction until it reads `Completed`; the order then flips
+   to `paid` and you're redirected to `/receipt/[orderId]`. There
+   are no webhooks, so no tunnel is needed.
 
 ## Step 6 — Buy from your own storefront (Lightning Address rail)
 
@@ -176,24 +170,21 @@ take the new one. See
    probes your provider's LUD-21 verify URL until settled.
 5. On settle, the page redirects to `/receipt/[orderId]`.
 
-The Wapu webhook is **refused** for this rail. Verify by tailing
-your dev-server logs while paying the LN-rail invoice: no flip
-happens until the verify poll succeeds.
+This rail never touches Wapu. Verify by tailing your dev-server
+logs while paying the LN-rail invoice: no flip happens until the
+LUD-21 verify poll succeeds.
 
-## Step 7 — Receipt page and Nostr DM
+## Step 7 — Receipt page
 
 1. On `/receipt/[orderId]`, confirm the page renders:
    - For a `code` offering: the redemption code, the seller's
      instructions, and a Copy button.
    - For a `download` offering: a Descargar button pointing at
      the download proxy `/api/downloads/[orderId]`.
-2. Bookmark or copy the URL. This is the **canonical** delivery
+2. Bookmark or copy the URL. This is the **only** delivery
    channel — it works forever, regardless of the buyer's
    identity.
-3. If you connected an `npub1…` at checkout (§5 step 4), open
-   that Nostr client. A NIP-44-encrypted DM should arrive
-   carrying the receipt URL.
-4. (Optional) For a `download` offering, click **Descargar** and
+3. (Optional) For a `download` offering, click **Descargar** and
    confirm the file streams through `/api/downloads/[orderId]`.
    The proxy gates on the order's `paid` status (it 403s an
    unpaid order); per-order expiry and single-use are named in
@@ -277,14 +268,13 @@ Quick i18n + theme pass.
 
 By the end of these eleven steps you'll have exercised: all
 three Nostr sign-in methods, kind:0 seeding, both payout rails
-(Wapu webhook confirmation and Lightning Address LUD-21 verify
+(Wapu deposit polling and Lightning Address LUD-21 verify
 polling), the re-sign discipline on payment-destination fields,
 the LUD-21 1-sat probe, both product primitives (`code` and
 `download`) including the status-gated download proxy, the receipt
-page as the canonical delivery channel, the optional encrypted
-Nostr DM as the push channel, the claim flow for anonymous
+page as the only delivery channel, the claim flow for anonymous
 purchases, the notification bell with mark-read and
 mark-all-read, the explore filter chips, the storefront
 flat-URL convention (`/<userSlug>` and `/<userSlug>/c/<offeringSlug>`),
-the live Yadio exchange-rate display, the locale toggle, and the
+the live Wapu exchange-rate display, the locale toggle, and the
 dark/light theme.

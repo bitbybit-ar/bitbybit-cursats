@@ -3,7 +3,7 @@
 - **Date**: 2026-05-06
 - **Status**: Accepted
 - **Deciders**: BitByBit team
-- **Last updated**: 2026-05-06
+- **Last updated**: 2026-05-22
 
 ---
 
@@ -11,6 +11,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-22 | Decision | The NWC-derived-pubkey identity tier and the automatic-DM behaviour described here are gone — the server Nostr-DM channel and the NWC env were removed as dead code. The optional-buyer-login decision (anonymous vs signed-in) is unchanged. | The DM/NWC code no longer exists; the doc must not present those tiers as current. |
 | 2026-05-06 | — | Initial version. | Pin the buyer-identity model before any auth or order-persistence code lands, and reconcile with ADR 0006 which assumed no buyer accounts. |
 
 ---

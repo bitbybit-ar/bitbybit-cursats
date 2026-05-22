@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import {
   readSessionCookieAndVerify,
-  sessionIsPlatformAdmin,
   SESSION_COOKIE_NAME,
 } from "@/lib/auth";
 import { getUserByPubkey } from "@/lib/admin/users";
@@ -37,7 +36,6 @@ export async function GET(): Promise<NextResponse> {
               display_name: user.display_name,
             }
           : null,
-      platform_admin: sessionIsPlatformAdmin(session),
     },
   });
 }

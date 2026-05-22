@@ -1,309 +1,354 @@
-import { createHmac, timingSafeEqual, randomBytes } from "node:crypto";
-import { getSatsPerArs } from "@/lib/exchange-rate";
-
 /**
- * Wapu integration seam (marketplace edition, ADR 0012).
+ * Wapu integration seam.
  *
- * The buyer flow talks to Wapu through the WapuClient interface
- * defined below. Two implementations live in this file:
+ * Wapu is a USDT-ledger wallet with no webhooks. The wapu_ars rail is
+ * a two-leg, poll-driven flow:
  *
- *   - MockWapuClient: deterministic, in-process, no network. Used
- *     in dev and tests so the whole buyer flow runs end-to-end
- *     without any Wapu credentials.
- *   - UnimplementedWapuClient: throws clearly until the real
- *     direct-payment endpoint is wired through to a live Wapu
- *     account.
+ *   1. Deposit (buyer → our wallet): POST /wallet/deposit_lightning
+ *      mints a BOLT11 the buyer pays; the sats credit USDT to our
+ *      Wapu balance. We poll GET /transactions/{id} until `Completed`.
+ *   2. Withdrawal (our wallet → seller): POST /transactions/create
+ *      opens a fiat_transfer that settles ARS to the seller's
+ *      CBU/alias. The settlement cron polls it to `Completed`.
  *
- * `getWapuClient()` returns the mock when WAPU_API_KEY is unset
- * (default for dev and CI) and the real client otherwise.
+ * There is exactly one implementation, RealWapuClient, talking to
+ * `WAPU_PAY_APU_HOST` with the `X-API-Key` header. There is no mock:
+ * `getWapuClient()` throws when the env is missing so a misconfigured
+ * deploy fails loudly instead of silently faking payments. Tests hit
+ * the live staging rail and assert only what our integration controls
+ * — that a freshly created deposit/withdrawal reads back `Pending`.
+ * Whether Wapu then settles it is Wapu's side and is not asserted.
  *
- * Direct-payment shape (per `wapu-app/wapu-cli#7`):
- *   - POST /transactions/direct-fiat/tentatives
- *       body { amount_ars, type, alias, receiver_name,
- *              funding_method, network }
- *       → { uuid, status: "CREATED" }
- *   - POST /transactions/direct-fiat/tentatives/{uuid}/funding
- *       body {}
- *       → funding instructions (BOLT11 invoice + amount + expiry)
- *
- * The webhook signature scheme below (HMAC-SHA256 of raw body
- * with WAPU_WEBHOOK_SECRET, base64-encoded, sent in
- * `X-Wapu-Signature`) is a placeholder matching the pattern most
- * webhook providers use. TODO(Q1): when Wapu publishes the
- * direct-payment settlement-event shape, swap the verifier and
- * `WapuWebhookEvent` accordingly.
+ * Response shapes mirror the live API (staging `be-stage.wapu.app`):
+ * a transaction carries `transaction_id`, `status`
+ * (Pending|Completed|Taken|Canceled|UserPending|Rejected),
+ * `payment_amount`/`payment_currency`, `currency_taken`/
+ * `total_amount_taken`, `fee_taken`, `current_rate`,
+ * `lnurl_pr_invoice` (BOLT11), and `lnurl_verify_invoice`.
  */
 
-// --- Direct-payment types ----------------------------------------
+// --- Status ------------------------------------------------------
 
-/** Funding rails Wapu accepts; we only use LIGHTNING in v1. */
-export type WapuFundingMethod = "LIGHTNING" | "USDT";
-export type WapuFundingNetwork = "LIGHTNING" | "POLYGON";
-export type WapuTransferType = "fiat_transfer" | "fast_fiat_transfer";
+export type WapuTxStatus =
+  | "Pending"
+  | "Completed"
+  | "Taken"
+  | "Canceled"
+  | "UserPending"
+  | "Rejected";
 
-export interface CreateDirectPaymentRequest {
-  amount_ars: number;
-  /**
-   * Argentine bank alias OR 22-digit CBU. Wapu accepts both via
-   * the same `alias` field per the CLI (validated by us before
-   * we get here — see `lib/admin/ar-bank-id.ts`).
-   */
-  alias: string;
-  /** Seller's display name; appears on the buyer's Wapu receipt. */
-  receiver_name: string;
-  type?: WapuTransferType;
-  funding_method?: WapuFundingMethod;
-  network?: WapuFundingNetwork;
-  /** Internal order id we want correlated back in the webhook. */
-  external_id: string;
+/** Terminal success for both deposit and withdrawal legs. */
+export function isWapuTxComplete(status: string): boolean {
+  return status === "Completed";
 }
 
-export interface DirectPaymentTentative {
-  /** UUID Wapu issued. Stored on orders.wapu_tentative_uuid. */
-  uuid: string;
-  status: string;
+/** Terminal failure for both legs. */
+export function isWapuTxFailed(status: string): boolean {
+  return status === "Canceled" || status === "Rejected";
 }
 
-export interface DirectPaymentFunding {
-  /** BOLT11-encoded Lightning invoice the buyer pays. */
+// --- Types -------------------------------------------------------
+
+/** Normalized transaction, the same shape for deposits and withdrawals. */
+export interface WapuTransaction {
+  transaction_id: string;
+  status: WapuTxStatus;
+  type: string;
+  /** Receiver-facing amount; currency is `payment_currency`. */
+  payment_amount: number;
+  payment_currency: string;
+  /** Currency debited from our wallet (USDT for withdrawals; SAT for deposits). */
+  currency_taken: string;
+  total_amount_taken: number;
+  fee_taken: number;
+  current_rate: number;
+  /** BOLT11 invoice the buyer pays (deposits only). */
+  bolt11: string | null;
+  verify_url: string | null;
+  /** Unix seconds, or null when the upstream value is absent/unparseable. */
+  expires_at: number | null;
+  alias: string | null;
+  receiver_name: string | null;
+}
+
+export interface LightningDepositResult {
+  transaction_id: string;
   bolt11: string;
-  /** 32-byte payment hash, hex-encoded. */
-  payment_hash: string;
-  /** Amount the buyer will be charged, in sats. */
   amount_sats: number;
-  /** Amount Wapu will settle to the seller, in whole pesos. */
-  amount_ars: number;
-  /** Unix seconds. */
   expires_at: number;
 }
 
-export type WapuTentativeStatus = "pending" | "paid" | "expired" | "failed";
+export type WapuTransferType = "fiat_transfer" | "fast_fiat_transfer";
 
-export interface WapuTentativeState {
-  uuid: string;
-  status: WapuTentativeStatus;
-  payment_hash: string;
-  paid_at: number | null;
-  /** Wapu's reference for the ARS settlement to the seller's CBU. */
-  settlement_ref: string | null;
+export interface CreateWithdrawalRequest {
+  type: WapuTransferType;
+  /** ARS the seller receives in their bank. */
+  payment_amount_ars: number;
+  /** Argentine bank alias OR 22-digit CBU (Wapu accepts both here). */
+  alias: string;
+  receiver_name: string;
 }
 
-/**
- * Webhook event shape. v1 mirrors the prior invoice-based vocabulary
- * (paid / expired / failed) but keys on `tentative_uuid` instead of
- * `invoice_id`. TODO(Q1): confirm against the real Wapu direct-
- * payment settlement webhook once the contract is shared.
- */
-export interface WapuWebhookEvent {
-  event_type: "direct_fiat.paid" | "direct_fiat.expired" | "direct_fiat.failed";
-  tentative_uuid: string;
-  payment_hash: string;
-  /** Unix seconds. */
-  occurred_at: number;
-  amount_sats: number;
-  amount_ars: number;
-  external_id: string;
-  settlement_ref: string | null;
+export interface WithdrawalResult {
+  transaction_id: string;
+  status: WapuTxStatus;
+}
+
+export interface WapuRate {
+  pair: string;
+  buy: number;
+  sell: number;
+}
+
+export interface WapuExchangeRates {
+  rates: WapuRate[];
+}
+
+export type WapuPaymentCurrency = "ARS" | "BRL" | "USD";
+export type WapuTakenCurrency = "USDT" | "SAT";
+
+export interface TentativeAmountRequest {
+  amount: number;
+  currency_payment: WapuPaymentCurrency;
+  currency_taken: WapuTakenCurrency;
+  type: WapuTransferType;
+}
+
+export interface TentativeAmount {
+  exchange_rate: number;
+  /** Fee in `currency_taken` units. */
+  fee: number;
+  /** total_amount = usdt_amount + fee, in `currency_taken` units. */
+  total_amount: number;
+  /** Amount excluding fee, in `currency_taken` units (Wapu's field name). */
+  usdt_amount: number;
 }
 
 export interface WapuClient {
-  createDirectPayment(
-    req: CreateDirectPaymentRequest
-  ): Promise<DirectPaymentTentative>;
-  issueDirectPaymentFunding(
-    tentative_uuid: string
-  ): Promise<DirectPaymentFunding>;
-  getTentative(tentative_uuid: string): Promise<WapuTentativeState>;
-  /**
-   * Verify a webhook delivery. Returns true iff the signature
-   * matches the body under the configured secret. Implementations
-   * MUST use a constant-time comparison.
-   */
-  verifyWebhookSignature(
-    rawBody: string,
-    signatureHeader: string | null
-  ): boolean;
+  /** Leg 1: mint a Lightning deposit invoice for `amount_sats`. */
+  createLightningDeposit(amount_sats: number): Promise<LightningDepositResult>;
+  /** Poll a transaction (either leg) by id. */
+  getTransaction(transaction_id: string): Promise<WapuTransaction>;
+  /** Leg 2: open a fiat withdrawal to the seller's CBU/alias. */
+  createWithdrawal(req: CreateWithdrawalRequest): Promise<WithdrawalResult>;
+  /** Preview cost/fee for a hypothetical transaction (no side effects). */
+  tentativeAmount(req: TentativeAmountRequest): Promise<TentativeAmount>;
+  getExchangeRates(): Promise<WapuExchangeRates>;
 }
-
-// --- Mock ---------------------------------------------------------
 
 /**
- * Deterministic mock used by dev and tests. The sats amount is
- * derived from the shared `getSatsPerArs()` seam (ADR 0022) — the
- * same rate the storefront's PriceTag uses — so in dev/demo the
- * buyer's "≈ X sats" matches what the mock actually charges at
- * funding. The rate is snapshotted at `createDirectPayment` and
- * reused at funding so it can't drift between the two calls. The
- * BOLT11 payload is a non-routable placeholder (clients will
- * recognise it as not real and refuse to pay it — intentional), and
- * getTentative always reports `pending` so the only way to mark an
- * order paid is to deliver a webhook via the test helpers.
+ * USDT credited to our wallet by a confirmed deposit. Wapu reports
+ * the credited fiat-ledger amount in `payment_amount` with
+ * `payment_currency = "USDT"`. Returns null if the transaction is not
+ * a USDT-denominated credit (e.g. not yet confirmed in that shape).
  */
-const MOCK_TENTATIVE_TTL_SECONDS = 600;
-
-interface StoredTentative {
-  amount_ars: number;
-  amount_sats: number;
-  alias: string;
-  receiver_name: string;
-  external_id: string;
-  payment_hash: string;
-  bolt11: string;
+export function depositUsdtCredited(tx: WapuTransaction): number | null {
+  return tx.payment_currency === "USDT" ? tx.payment_amount : null;
 }
 
-export class MockWapuClient implements WapuClient {
-  private readonly tentatives = new Map<string, StoredTentative>();
+// --- Real client -------------------------------------------------
 
-  constructor(private readonly secret: string = "mock-webhook-secret") {}
+export class WapuApiError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly body: string,
+    public readonly endpoint: string
+  ) {
+    super(`Wapu API ${status} on ${endpoint}: ${body.slice(0, 300)}`);
+    this.name = "WapuApiError";
+  }
+}
 
-  async createDirectPayment(
-    req: CreateDirectPaymentRequest
-  ): Promise<DirectPaymentTentative> {
-    const uuid = `mock_dp_${randomBytes(8).toString("hex")}`;
-    const paymentHash = randomBytes(32).toString("hex");
-    const rate = await getSatsPerArs();
-    const amountSats = Math.round(req.amount_ars * rate);
-    this.tentatives.set(uuid, {
-      amount_ars: req.amount_ars,
-      amount_sats: amountSats,
-      alias: req.alias,
-      receiver_name: req.receiver_name,
-      external_id: req.external_id,
-      payment_hash: paymentHash,
-      bolt11: `lnbc${amountSats}n1mock${paymentHash.slice(0, 32)}`,
-    });
-    return { uuid, status: "CREATED" };
+type RawRecord = Record<string, unknown>;
+
+function asNumber(v: unknown): number {
+  if (typeof v === "number") return v;
+  if (typeof v === "string" && v.trim() !== "") {
+    const n = Number(v);
+    if (!Number.isNaN(n)) return n;
+  }
+  return 0;
+}
+
+function asString(v: unknown): string | null {
+  return typeof v === "string" && v.length > 0 ? v : null;
+}
+
+function parseExpiresAt(v: unknown): number | null {
+  if (typeof v === "number") {
+    // Heuristic: treat large values as milliseconds.
+    return v > 1e12 ? Math.floor(v / 1000) : Math.floor(v);
+  }
+  if (typeof v === "string") {
+    const t = Date.parse(v);
+    return Number.isNaN(t) ? null : Math.floor(t / 1000);
+  }
+  return null;
+}
+
+function normalizeTransaction(raw: RawRecord): WapuTransaction {
+  return {
+    transaction_id: asString(raw.transaction_id) ?? "",
+    status: (asString(raw.status) ?? "Pending") as WapuTxStatus,
+    type: asString(raw.type) ?? "",
+    payment_amount: asNumber(raw.payment_amount),
+    payment_currency: asString(raw.payment_currency) ?? "",
+    currency_taken: asString(raw.currency_taken) ?? "",
+    total_amount_taken: asNumber(raw.total_amount_taken),
+    fee_taken: asNumber(raw.fee_taken),
+    current_rate: asNumber(raw.current_rate),
+    bolt11: asString(raw.lnurl_pr_invoice),
+    verify_url: asString(raw.lnurl_verify_invoice),
+    expires_at: parseExpiresAt(raw.expires_at),
+    alias: asString(raw.alias),
+    receiver_name: asString(raw.receiver_name),
+  };
+}
+
+const DEPOSIT_DEFAULT_TTL_SECONDS = 600;
+
+export class RealWapuClient implements WapuClient {
+  private readonly baseUrl: string;
+  private readonly apiKey: string;
+
+  constructor(opts: { baseUrl: string; apiKey: string }) {
+    this.baseUrl = opts.baseUrl.replace(/\/+$/, "");
+    this.apiKey = opts.apiKey;
   }
 
-  async issueDirectPaymentFunding(
-    tentative_uuid: string
-  ): Promise<DirectPaymentFunding> {
-    const stored = this.tentatives.get(tentative_uuid);
-    if (!stored) {
-      throw new Error(`mock_tentative_not_found: ${tentative_uuid}`);
+  private async request(
+    path: string,
+    init: RequestInit & { body?: BodyInit }
+  ): Promise<RawRecord> {
+    const res = await fetch(`${this.baseUrl}${path}`, {
+      ...init,
+      headers: {
+        "X-API-Key": this.apiKey,
+        accept: "application/json",
+        ...(init.headers ?? {}),
+      },
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      throw new WapuApiError(res.status, text, path);
+    }
+    try {
+      return text ? (JSON.parse(text) as RawRecord) : {};
+    } catch {
+      throw new WapuApiError(res.status, `non-JSON body: ${text}`, path);
+    }
+  }
+
+  async createLightningDeposit(
+    amount_sats: number
+  ): Promise<LightningDepositResult> {
+    const raw = await this.request("/wallet/deposit_lightning", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ amount: amount_sats }),
+    });
+    const tx = normalizeTransaction(raw);
+    if (!tx.bolt11) {
+      throw new WapuApiError(
+        502,
+        `deposit_lightning returned no invoice: ${JSON.stringify(raw)}`,
+        "/wallet/deposit_lightning"
+      );
     }
     return {
-      bolt11: stored.bolt11,
-      payment_hash: stored.payment_hash,
-      // Reuse the snapshot from createDirectPayment so a rate move
-      // between the two calls can't re-price an in-flight tentative.
-      amount_sats: stored.amount_sats,
-      amount_ars: stored.amount_ars,
-      expires_at: Math.floor(Date.now() / 1000) + MOCK_TENTATIVE_TTL_SECONDS,
+      transaction_id: tx.transaction_id,
+      bolt11: tx.bolt11,
+      amount_sats,
+      expires_at:
+        tx.expires_at ??
+        Math.floor(Date.now() / 1000) + DEPOSIT_DEFAULT_TTL_SECONDS,
     };
   }
 
-  async getTentative(uuid: string): Promise<WapuTentativeState> {
-    return {
-      uuid,
-      status: "pending",
-      payment_hash: this.tentatives.get(uuid)?.payment_hash ?? "",
-      paid_at: null,
-      settlement_ref: null,
-    };
-  }
-
-  verifyWebhookSignature(
-    rawBody: string,
-    signatureHeader: string | null
-  ): boolean {
-    return verifyHmacSignature(this.secret, rawBody, signatureHeader);
-  }
-
-  /**
-   * Test/dev-only helper: produce the exact bytes a webhook delivery
-   * would carry, plus the signature header that would prove
-   * authenticity. Lets the integration tests POST a "real" webhook
-   * without spinning up a real Wapu environment.
-   */
-  signWebhookPayload(event: WapuWebhookEvent): {
-    rawBody: string;
-    signature: string;
-  } {
-    const rawBody = JSON.stringify(event);
-    const signature = createHmac("sha256", this.secret)
-      .update(rawBody, "utf8")
-      .digest("base64");
-    return { rawBody, signature };
-  }
-}
-
-// --- Shared HMAC helper ------------------------------------------
-
-function verifyHmacSignature(
-  secret: string,
-  rawBody: string,
-  signatureHeader: string | null
-): boolean {
-  if (!signatureHeader) return false;
-  const expected = createHmac("sha256", secret)
-    .update(rawBody, "utf8")
-    .digest();
-  let provided: Buffer;
-  try {
-    provided = Buffer.from(signatureHeader, "base64");
-  } catch {
-    return false;
-  }
-  if (provided.length !== expected.length) return false;
-  return timingSafeEqual(expected, provided);
-}
-
-// --- Real client (placeholder) ----------------------------------
-
-class UnimplementedWapuClient implements WapuClient {
-  private fail(method: string): never {
-    throw new Error(
-      `RealWapuClient.${method} is not implemented yet. The Wapu direct-payment endpoints are documented at ` +
-        `https://github.com/wapu-app/wapu-cli/pull/7 but not yet wired here. ` +
-        `Set WAPU_API_KEY to empty (the default) to fall back to MockWapuClient.`
+  async getTransaction(transaction_id: string): Promise<WapuTransaction> {
+    const raw = await this.request(
+      `/transactions/${encodeURIComponent(transaction_id)}`,
+      { method: "GET" }
     );
+    return normalizeTransaction(raw);
   }
-  async createDirectPayment(): Promise<DirectPaymentTentative> {
-    this.fail("createDirectPayment");
+
+  async createWithdrawal(
+    req: CreateWithdrawalRequest
+  ): Promise<WithdrawalResult> {
+    // transactions/create is multipart/form-data. Let fetch set the
+    // boundary by passing a FormData instance (no explicit
+    // content-type header).
+    const form = new FormData();
+    form.set("type", req.type);
+    form.set("payment_amount", String(req.payment_amount_ars));
+    form.set("currency_taken", "USDT");
+    form.set("alias", req.alias);
+    form.set("receiver_name", req.receiver_name);
+    const raw = await this.request("/transactions/create", {
+      method: "POST",
+      body: form,
+    });
+    const tx = normalizeTransaction(raw);
+    return { transaction_id: tx.transaction_id, status: tx.status };
   }
-  async issueDirectPaymentFunding(): Promise<DirectPaymentFunding> {
-    this.fail("issueDirectPaymentFunding");
+
+  async tentativeAmount(req: TentativeAmountRequest): Promise<TentativeAmount> {
+    const raw = await this.request("/transactions/tentative-amount", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(req),
+    });
+    return {
+      exchange_rate: asNumber(raw.exchange_rate),
+      fee: asNumber(raw.fee),
+      total_amount: asNumber(raw.total_amount),
+      usdt_amount: asNumber(raw.usdt_amount),
+    };
   }
-  async getTentative(): Promise<WapuTentativeState> {
-    this.fail("getTentative");
-  }
-  verifyWebhookSignature(): boolean {
-    this.fail("verifyWebhookSignature");
+
+  async getExchangeRates(): Promise<WapuExchangeRates> {
+    const raw = await this.request("/exchange_rates", { method: "GET" });
+    const rates = Array.isArray(raw.rates) ? raw.rates : [];
+    return {
+      rates: (rates as RawRecord[]).map((r) => ({
+        pair: asString(r.pair) ?? "",
+        buy: asNumber(r.buy),
+        sell: asNumber(r.sell),
+      })),
+    };
   }
 }
 
-// --- Factory ------------------------------------------------------
+// --- Factory -----------------------------------------------------
 
 let cached: WapuClient | null = null;
 
-/**
- * Reset the cached client. Test-only. Production callers must not
- * use this — the WapuClient is meant to be a process-wide singleton
- * so a misconfigured second instance can't accidentally talk to a
- * different Wapu account.
- */
+/** Reset the cached client so the next call rebuilds from env. Test-only. */
 export function _resetWapuClientForTests(): void {
   cached = null;
 }
 
+/**
+ * Returns the live Wapu client, built from WAPU_API_KEY +
+ * WAPU_PAY_APU_HOST. Throws when either is missing — in EVERY
+ * environment, dev included. There is deliberately no mock: a missing
+ * or half-set Wapu config must fail loudly (a 500 on the route that
+ * needs Wapu) instead of silently faking payments, which would hide the
+ * misconfiguration until real money was on the line.
+ */
 export function getWapuClient(): WapuClient {
   if (cached) return cached;
   const apiKey = process.env.WAPU_API_KEY;
-  if (!apiKey) {
-    // Production must never run on the mock client with a deterministic
-    // fallback secret — that secret is public in this file, so anyone
-    // could forge a valid `paid` webhook. Fail at boot if a deployment
-    // somehow lands here without an explicit override.
-    const explicitSecret = process.env.WAPU_WEBHOOK_SECRET;
-    if (process.env.NODE_ENV === "production" && !explicitSecret) {
-      throw new Error(
-        "WAPU_WEBHOOK_SECRET is required in production. Either set WAPU_API_KEY to use the real client, or set WAPU_WEBHOOK_SECRET to a high-entropy value shared with Wapu.",
-      );
-    }
-    cached = new MockWapuClient(explicitSecret || "mock-webhook-secret");
-    return cached;
+  const host = process.env.WAPU_PAY_APU_HOST;
+  if (!apiKey || !host) {
+    throw new Error(
+      "Wapu is not configured. Set WAPU_API_KEY and WAPU_PAY_APU_HOST " +
+        "(e.g. https://be-stage.wapu.app or https://be-prod.wapu.app). " +
+        "There is no mock fallback: a missing config fails loudly rather " +
+        "than silently mocking payments."
+    );
   }
-  cached = new UnimplementedWapuClient();
+  cached = new RealWapuClient({ baseUrl: host, apiKey });
   return cached;
 }

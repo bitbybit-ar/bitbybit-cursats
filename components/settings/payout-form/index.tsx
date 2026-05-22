@@ -15,11 +15,13 @@ import { isSignerCancellation } from "@/lib/nostr/auth-errors";
 import styles from "./payout-form.module.scss";
 
 type PayoutMethod = "cbu_alias" | "lightning_address";
+type TransferSpeed = "fiat_transfer" | "fast_fiat_transfer";
 
 interface PayoutFormProps {
   initialCbu: string;
   initialAlias: string;
   initialPayoutMethod: PayoutMethod;
+  initialTransferSpeed: TransferSpeed;
   /**
    * Read-only display value. The actual Lightning Address is owned
    * by the Profile form; this section only shows the rail picker
@@ -48,6 +50,7 @@ export function PayoutForm({
   initialCbu,
   initialAlias,
   initialPayoutMethod,
+  initialTransferSpeed,
   currentLightningAddress,
   onSaved,
 }: PayoutFormProps) {
@@ -62,6 +65,8 @@ export function PayoutForm({
     useState<PayoutMethod>(initialPayoutMethod);
   const [cbu, setCbu] = useState(initialCbu);
   const [alias, setAlias] = useState(initialAlias);
+  const [transferSpeed, setTransferSpeed] =
+    useState<TransferSpeed>(initialTransferSpeed);
   const [isPending, setIsPending] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -93,6 +98,7 @@ export function PayoutForm({
         cbu: nextCbu,
         alias: nextAlias,
         payout_method: payoutMethod,
+        transfer_speed: transferSpeed,
       });
 
       const headers: Record<string, string> = {
@@ -203,6 +209,7 @@ export function PayoutForm({
         </fieldset>
 
         {payoutMethod === "cbu_alias" ? (
+          <>
           <div className={styles.row}>
             <div className={styles.field}>
               <label htmlFor="cbu" className={styles.label}>
@@ -247,6 +254,46 @@ export function PayoutForm({
               />
             </div>
           </div>
+
+          <fieldset className={styles.fieldset}>
+            <legend className={styles.legend}>{t("transferSpeed")}</legend>
+            <p className={styles.sectionHint}>{t("transferSpeedHint")}</p>
+            <label
+              className={`${styles.radio} ${transferSpeed === "fiat_transfer" ? styles.radioSelected : ""}`}
+            >
+              <input
+                type="radio"
+                name="transfer_speed"
+                value="fiat_transfer"
+                checked={transferSpeed === "fiat_transfer"}
+                onChange={() => setTransferSpeed("fiat_transfer")}
+              />
+              <span>
+                <strong>{t("transferStandard")}</strong>
+                <span className={styles.radioHint}>
+                  {t("transferStandardHint")}
+                </span>
+              </span>
+            </label>
+            <label
+              className={`${styles.radio} ${transferSpeed === "fast_fiat_transfer" ? styles.radioSelected : ""}`}
+            >
+              <input
+                type="radio"
+                name="transfer_speed"
+                value="fast_fiat_transfer"
+                checked={transferSpeed === "fast_fiat_transfer"}
+                onChange={() => setTransferSpeed("fast_fiat_transfer")}
+              />
+              <span>
+                <strong>{t("transferFast")}</strong>
+                <span className={styles.radioHint}>
+                  {t("transferFastHint")}
+                </span>
+              </span>
+            </label>
+          </fieldset>
+          </>
         ) : (
           <p className={styles.payoutLnNote}>
             {t("payoutLnNote", {

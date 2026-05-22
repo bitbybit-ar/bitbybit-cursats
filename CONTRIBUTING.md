@@ -1,7 +1,7 @@
 # Contributing
 
 > **Status:** Active
-> **Last updated:** 2026-05-12
+> **Last updated:** 2026-05-22
 
 ---
 
@@ -25,8 +25,8 @@
   anything larger than a typo. Alignment first, code second.
 - Read `docs/architecture/overview.md` to understand the
   architecture (multi-tenant marketplace, two payout rails — Wapu
-  ARS and direct sats via Lightning Address, in-app receipt +
-  optional Nostr DM delivery).
+  ARS and direct sats via Lightning Address, in-app receipt
+  delivery).
 - Read the foundational ADRs in `docs/architecture/decisions/`
   before proposing changes that touch settlement, the catalog
   schema, the deployment model, the payment flows, or the
@@ -45,20 +45,17 @@ npm run dev
 
 ## Making changes
 
-- **Payment surfaces are server-only.** Wapu API keys, NWC
-  connection secrets, and webhook handlers must live in API
-  routes or server-only modules. Never in client components. Use
-  `NEXT_PUBLIC_*` only for non-secret display values.
-- **Nostr signing keys are server-only.** The deployment's
-  `NOSTR_NSEC` lives in env vars and is used by API routes /
-  server-only modules to sign and encrypt outgoing DMs. Never
-  ship it to the client. Decision pinned in ADR
-  `0006-nostr-and-inapp-delivery.md`.
-- **Verify Wapu webhook signatures.** Every webhook handler must
-  authenticate the request before any state change. The Wapu
-  webhook only flips orders whose `rail === 'wapu_ars'`; for
-  `rail === 'lightning'` orders the receipt page polls the
-  seller's LNURL-pay `verify` URL via `/api/orders/[orderId]`.
+- **Payment surfaces are server-only.** Wapu API keys and
+  settlement logic must live in API routes or server-only modules.
+  Never in client components. Use `NEXT_PUBLIC_*` only for
+  non-secret display values.
+- **No webhooks — verify by polling.** Both rails are confirmed by
+  polling, never a webhook: a `wapu_ars` order polls its Wapu
+  deposit transaction and a `direct_lightning` order polls the
+  seller's LUD-21 `verify` URL, both via `/api/orders/[orderId]`.
+  The `wapu_ars` seller payout leg is polled by the settlement cron
+  (`/api/cron/wapu-settlements`). Decision in ADR
+  `0025-wapu-poll-driven-two-leg-rail.md`.
 - **Two payout rails — do not add a third.** Cursats supports Wapu
   (sats → ARS to a CBU/alias) and direct sats to a seller's
   Lightning Address (ADR
@@ -69,7 +66,7 @@ npm run dev
   rejects providers that don't advertise a `verify` URL. If you
   believe a third rail is needed, write a superseding ADR first.
 - **Do not introduce email delivery.** The receipt page is the
-  canonical channel; Nostr DMs are the optional push (ADR
+  only delivery channel — no email, no Nostr DMs (ADR
   `0006-nostr-and-inapp-delivery.md`). If you believe email is
   needed, write a superseding ADR first.
 - Translate every user-facing string in `messages/es.json` and
@@ -85,8 +82,8 @@ npm run dev
 
 ## Commit messages
 
-- Imperative mood: "Add Wapu webhook signature check", not "Added
-  the signature check".
+- Imperative mood: "Add Wapu deposit poll", not "Added the deposit
+  poll".
 - One concern per commit. Refactors and feature work do not share
   a commit.
 
@@ -96,13 +93,13 @@ npm run dev
 - Describe the user-visible change in the PR body.
 - Run `npm run build` locally and confirm there are no TypeScript
   or ESLint errors.
-- For payment-path changes: describe how you tested with the Wapu
-  sandbox (or live, if applicable) and what edge cases you
-  exercised (invoice expiry, webhook retry, cancellation, NWC
-  pull failure).
-- For notification-path changes: describe how you tested DM
-  delivery (which relays, which client) and what happens when
-  relays are offline.
+- For payment-path changes: describe how you tested against the
+  Wapu staging environment (or live, if applicable) and what edge
+  cases you exercised (invoice expiry, deposit-poll timing,
+  withdrawal failure).
+- For notification-path changes: describe how you tested the
+  in-app notification bell (`/api/notifications`) and the order
+  status poller.
 
 ## Architecture decisions
 
@@ -146,10 +143,9 @@ This applies in all project spaces — issues, PRs, commits, chats
 
 ## Reporting a vulnerability
 
-Cursats handles real money: it generates Lightning invoices,
-receives webhooks that trigger ARS payouts, holds buyer-granted
-NWC permissions when auto-renewal is on, and signs encrypted
-Nostr DMs to buyers. Vulnerability reports are taken seriously.
+Cursats handles real money: it generates Lightning invoices and
+triggers ARS payouts via Wapu (confirmed by polling, not webhooks).
+Vulnerability reports are taken seriously.
 
 If you find a security issue:
 
@@ -170,13 +166,12 @@ In scope:
 
 - The Cursats source code in this repository.
 - The default deployment at `cursats.bitbybit.com.ar`.
-- The Wapu integration code paths (invoice creation, webhook
-  signature verification, ARS payout triggers).
-- The NWC integration code paths (connection-string storage,
-  budgeted pull payments, retry and cancellation logic).
+- The Wapu integration code paths (deposit/withdrawal creation,
+  transaction-status polling, ARS payout triggers, the settlement
+  cron, and the seller sync endpoint).
 - The notification and delivery code paths: in-app receipt URL
-  generation, signed download URL generation, redemption-code
-  generation, Nostr DM signing and publishing.
+  generation, signed download URL generation, and redemption-code
+  generation.
 
 Out of scope:
 
@@ -188,14 +183,14 @@ Out of scope:
 ### Hardening already in place
 
 - HTTPS-only via Vercel, HSTS preload header set.
-- Wapu webhook signatures verified before any state mutation.
-- Secrets (Wapu API key, NWC encryption key, Nostr signing key)
-  live in Vercel environment variables and never reach the
-  client.
+- The settlement cron is guarded by a `CRON_SECRET` bearer token;
+  the manual sync endpoint requires a signed-in session.
+- Secrets (Wapu API key, the session JWT signing key, the Postgres
+  connection string) live in Vercel environment variables and never
+  reach the client.
 - Receipt-page `orderId`s are opaque, unguessable identifiers
   with ≥128 bits of entropy.
 - Signed download URLs expire after 24 hours and are single-use.
-- Outgoing Nostr DMs are NIP-44 encrypted to the buyer's pubkey.
 - Security headers: CSP, X-Frame-Options DENY,
   X-Content-Type-Options nosniff, Referrer-Policy
   strict-origin-when-cross-origin, Permissions-Policy locks down

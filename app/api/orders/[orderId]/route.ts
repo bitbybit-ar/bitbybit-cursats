@@ -1,24 +1,25 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { drawAndAssignCode, getOrder, markOrderPaid } from "@/lib/orders";
-import { getOfferingById } from "@/lib/offerings";
-import { getUserById } from "@/lib/admin/users";
-import { emitNotification } from "@/lib/notifications";
+import {
+  pollWapuDeposit,
+  emitOrderPaidNotifications,
+} from "@/lib/wapu-settlement";
 import { getLightningClient } from "@/lib/lightning";
 
 /**
  * Status poll for the checkout page. Public — the orderId in the
  * URL is the access key (≥128 bits of entropy, see ADR 0006).
  *
- * Rails (ADR 0015):
+ * Neither rail has a webhook; both are polled on this GET:
  *
- *   - wapu_ars: the Wapu webhook flips the row to `paid`. This GET
- *     is just a DB read.
- *   - direct_lightning: there is no webhook. We poll the seller's
- *     LUD-21 verify URL on each status check, and if the upstream
- *     reports `settled: true`, we run markOrderPaid + drawAndAssignCode
- *     + the same notifications fan-out as the Wapu path. Failures
- *     (timeouts, 5xx, malformed responses) leave the status untouched
- *     so the buyer page polls again.
+ *   - wapu_ars: `pollWapuDeposit` checks the Wapu deposit transaction.
+ *     On `Completed` it marks the order paid, draws the code, emits
+ *     notifications, and opens the seller's ARS withdrawal.
+ *   - direct_lightning: we poll the seller's LUD-21 verify URL; on
+ *     `settled` we mark paid + draw code + the same notifications.
+ *
+ * Both paths leave the status untouched on transient upstream
+ * failures so the buyer page just polls again.
  *
  * Payload is intentionally minimal — the buyer only needs to know
  * whether to keep waiting or pivot to the receipt page. The full
@@ -35,6 +36,18 @@ export async function GET(
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
+  if (order.status === "pending" && order.rail === "wapu_ars") {
+    const status = await pollWapuDeposit(order);
+    return NextResponse.json({
+      order_id: order.id,
+      status,
+      paid_at:
+        status === "paid"
+          ? (order.paid_at ?? new Date()).toISOString()
+          : null,
+    });
+  }
+
   if (
     order.status === "pending" &&
     order.rail === "direct_lightning" &&
@@ -47,8 +60,6 @@ export async function GET(
       if (verify.settled) {
         const result = await markOrderPaid({
           order_id: order.id,
-          payment_hash: order.payment_hash,
-          settlement_ref: null,
           paid_at: new Date(),
         });
         if (result.updated) {
@@ -58,36 +69,7 @@ export async function GET(
               `[orders/${order.id}] code pool empty on direct_lightning settle — manual intervention required`
             );
           }
-          // Mirror the Wapu webhook's notifications fan-out: buyer
-          // (when signed in) gets order.paid, seller always gets
-          // sale.received. Non-fatal if the emit fails — order is
-          // already paid.
-          try {
-            const [offering, seller] = await Promise.all([
-              getOfferingById(order.offering_id),
-              getUserById(order.user_id),
-            ]);
-            const payload = {
-              order_id: order.id,
-              offering_title: offering?.title ?? "",
-            };
-            if (order.pubkey) {
-              await emitNotification({
-                recipient_pubkey: order.pubkey,
-                kind: "order.paid",
-                payload,
-              });
-            }
-            if (seller?.pubkey) {
-              await emitNotification({
-                recipient_pubkey: seller.pubkey,
-                kind: "sale.received",
-                payload,
-              });
-            }
-          } catch (err) {
-            console.warn(`[orders/${order.id}] notification emit failed:`, err);
-          }
+          await emitOrderPaidNotifications(order);
         }
         return NextResponse.json({
           order_id: order.id,

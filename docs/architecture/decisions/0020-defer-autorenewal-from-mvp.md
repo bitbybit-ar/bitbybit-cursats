@@ -3,7 +3,7 @@
 - **Date**: 2026-05-14
 - **Status**: Accepted
 - **Deciders**: BitByBit team
-- **Last updated**: 2026-05-21
+- **Last updated**: 2026-05-22
 
 ---
 
@@ -11,6 +11,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-22 | — | Note: `NWC_CONNECTION_URL` was also removed from the env (dead code). A future autorenewal ADR will define its own recurring-charge mechanism. | The env var no longer exists. |
 | 2026-05-21 | Decision, Consequences | Drop the `users.features_autorenewal` column outright (migration `0009_drop_features_autorenewal.sql`) and remove the field from `UpdateUserProfileSchema` and the PATCH response. | The hackathon judges will be reading the schema and the API surface. Carrying a dead boolean column plus an input field with no UI invited the same "what does this do?" confusion the original ADR was supposed to remove. A future autorenewal feature will need a fresh migration anyway — the original shape probably won't survive. |
 | 2026-05-14 | — | Initial version. | Record that the autorenewal toggle is gone from MVP scope before the settings refresh ships, so a future contributor can find the decision next to the code change instead of digging through commit messages. |
 

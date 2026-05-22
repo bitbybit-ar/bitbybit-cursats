@@ -9,6 +9,14 @@
   margin-bottom: $spacing-32;
 }
 
+.headerTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-12;
+  flex-wrap: wrap;
+}
+
 .title {
   margin: 0;
   font-family: $font-family-display;

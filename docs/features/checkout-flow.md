@@ -1,7 +1,7 @@
 # Checkout flow
 
 > **Status:** Active
-> **Last updated:** 2026-05-21
+> **Last updated:** 2026-05-22
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-22 | Sequence diagrams, Confirmation table, Polling, Pointers | Switched the wapu_ars flow to poll-driven (no webhook): deposit-poll sequence + confirmation source, settlement cron/sync pointers; removed the optional-Nostr-DM step. | The Wapu rebuild (ADR 0025) made the rail poll-driven and the server Nostr-DM channel was removed as dead code. |
 | 2026-05-21 | — | Initial version. | Hackathon documentation pass — feature-level deep dive on the buyer flow, with sequence diagrams for both payout rails. |
 
 ---
@@ -66,7 +67,7 @@ corresponding rail value:
 
 | `users.payout_method` | `orders.rail` | Confirmation source |
 |---|---|---|
-| `cbu_alias` | `wapu_ars` | Wapu webhook |
+| `cbu_alias` | `wapu_ars` | Wapu deposit poll |
 | `lightning_address` | `direct_lightning` | LUD-21 verify poll |
 
 Once stamped, the rail is immutable for that order — a seller who
@@ -91,10 +92,13 @@ sequenceDiagram
   Wapu-->>App: BOLT11 invoice + tx id
   App-->>Buyer: QR + sats amount
   Buyer->>Wapu: Pay invoice (Lightning)
-  Wapu-->>App: Webhook → /api/wapu/webhook (signed)
-  App->>App: Verify signature, flip order to "paid"
+  loop until status = Completed
+    App->>Wapu: GET /transactions/{id} (deposit poll)
+    Wapu-->>App: status
+  end
+  App->>App: Flip order to "paid"
   App-->>Buyer: Redirect → /receipt/[orderId]
-  App->>Buyer: (Optional) Nostr DM with receipt URL
+  App->>Wapu: Open withdrawal (settlement cron polls it)
   Wapu->>Bank: ARS payout to seller's CBU / alias
 ```
 
@@ -143,7 +147,6 @@ sequenceDiagram
   LNURL-->>App: { settled: true, preimage }
   App->>App: Flip order to "paid", store preimage
   App-->>Buyer: Redirect → /receipt/[orderId]
-  App->>Buyer: (Optional) Nostr DM with receipt URL
 ```
 
 Key points:
@@ -162,10 +165,9 @@ Key points:
   `/checkout/[orderId]` triggers the server to re-poll the
   verify URL; the server stamps `paid_at` only when verify
   returns `{ settled: true }`.
-- **The Wapu webhook is refused for this rail.** Any inbound
-  delivery to `/api/wapu/webhook` for an order whose `rail` is
-  not `wapu_ars` returns 404. A misconfigured Wapu account
-  cannot accidentally flip a Lightning-rail order to paid.
+- **This rail never touches Wapu.** Confirmation is the LUD-21
+  verify poll only; nothing on the Wapu side can flip a
+  Lightning-rail order to paid.
 
 ## Why the rails feel identical to the buyer
 
@@ -193,8 +195,9 @@ dispatch.
 
 - **Checkout-page polling is a UX nicety, not the trigger.** The
   page polls `/api/orders/[orderId]` to know when to advance; the
-  *source of truth* is either the Wapu webhook (rail = `wapu_ars`)
-  or the LUD-21 verify URL (rail = `direct_lightning`). If the
+  *source of truth* is either the Wapu deposit transaction (rail =
+  `wapu_ars`) or the LUD-21 verify URL (rail = `direct_lightning`).
+  If the
   buyer closes the tab mid-payment, the rail still confirms the
   order the next time the order is touched.
 - **Invoices expire.** Lightning invoices carry a finite
@@ -217,8 +220,9 @@ dispatch.
 | What | Where |
 |---|---|
 | Order creation | `app/api/checkout/route.ts` → `createOrder` in `lib/orders.ts` |
-| Order status poll (+ LUD-21 verify) | `app/api/orders/[orderId]/route.ts` |
-| Wapu webhook handler | `app/api/wapu/webhook/route.ts` |
+| Order status poll (Wapu deposit + LUD-21 verify) | `app/api/orders/[orderId]/route.ts` |
+| Settlement orchestration (poll deposit, open + poll withdrawal) | `lib/wapu-settlement.ts` |
+| Settlement cron + seller sync | `app/api/cron/wapu-settlements/route.ts`, `app/api/orders/sync/route.ts` |
 | Wapu API client | `lib/wapu.ts` |
 | Lightning invoice mint + LUD-21 verify | `lib/lightning.ts` (LNURL helper in `lib/nostr/lnurl.ts`) |
 | Rail dispatch + state machine | `lib/orders.ts` (reads `users.payout_method`, stamps `orders.rail`) |

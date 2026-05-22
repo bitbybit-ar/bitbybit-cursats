@@ -1,6 +1,15 @@
 import { z } from "zod";
 
-export const notificationKindSchema = z.enum(["order.paid", "sale.received"]);
+export const notificationKindSchema = z.enum([
+  "order.paid",
+  "sale.received",
+  // Seller-facing ARS payout leg (wapu_ars rail). `payout.pending`
+  // fires when the withdrawal is opened; `payout.released` when Wapu
+  // settles it to the bank; `payout.failed` when Wapu rejects it.
+  "payout.pending",
+  "payout.released",
+  "payout.failed",
+]);
 export type NotificationKind = z.infer<typeof notificationKindSchema>;
 
 export const notificationDtoSchema = z.object({

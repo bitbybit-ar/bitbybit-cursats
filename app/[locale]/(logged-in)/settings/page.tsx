@@ -95,6 +95,7 @@ export default async function SettingsPage({
               initialCbu={user.cbu ?? ""}
               initialAlias={user.alias ?? ""}
               initialPayoutMethod={user.payout_method}
+              initialTransferSpeed={user.transfer_speed}
               currentLightningAddress={initialLightningAddress}
             />
           ) : null}

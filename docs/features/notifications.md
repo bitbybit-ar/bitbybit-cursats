@@ -1,7 +1,7 @@
 # Notifications
 
 > **Status:** Active
-> **Last updated:** 2026-05-21
+> **Last updated:** 2026-05-22
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-22 | Surfaces, Event types, Pointers | Removed the Nostr-DM surface (the bell is now the only notification channel) and the Wapu-webhook code pointers. | The server Nostr-DM channel and the Wapu webhook were removed as dead code. |
 | 2026-05-21 | — | Initial version. | Hackathon documentation pass — describe the in-app notification bell, the event types, the read-state mechanics, and the relationship to outgoing Nostr DMs. |
 
 ---
@@ -34,18 +35,11 @@ state machine:
 - **The seller**, that a sale just landed in their `/orders`
   list.
 
-Both can be reached through two surfaces:
-
-1. **The in-app bell** in the navbar — polled, persistent until
-   marked read, available to any signed-in user.
-2. **An encrypted Nostr DM** — push, optional, depends on the
-   recipient having connected (or being signed in with) a
-   pubkey.
-
-The DM half is documented under
-[delivery-and-receipts](./delivery-and-receipts.md) for the
-buyer side and is a thin equivalent for the seller. This doc is
-about the **bell**.
+Both are surfaced through the **in-app bell** in the navbar —
+polled, persistent until marked read, available to any signed-in
+user. There is no Nostr DM or email channel; the bell (and, for
+buyers, the receipt page) is the whole notification surface. This
+doc is about the **bell**.
 
 ## The bell — in-app, polled
 
@@ -80,8 +74,9 @@ display name), and `read_at`.
 
 ## Event types
 
-The two MVP event types map one-to-one to a Wapu webhook
-delivery (or LUD-21 verify settle) flipping an order to `paid`:
+The two MVP event types map one-to-one to a confirmation poll
+(the Wapu deposit transaction, or the LUD-21 verify URL) flipping
+an order to `paid`:
 
 ### `order.paid` — to the buyer
 
@@ -161,5 +156,5 @@ do not:
 | Notification helpers (incl. `emitNotification`) | `lib/notifications.ts` |
 | API surface (GET / PATCH / POST) | `app/api/notifications/route.ts` |
 | Notification row schema | `lib/db/schema.ts` (the `notifications` table) |
-| Enqueue from Wapu webhook | `app/api/wapu/webhook/route.ts` |
-| Enqueue from LUD-21 verify | `app/api/orders/[orderId]/route.ts` (calls `emitNotification` after `markOrderPaid`) |
+| Enqueue on deposit/verify confirmation | `app/api/orders/[orderId]/route.ts` (calls `emitNotification` after `markOrderPaid`) |
+| Enqueue on payout settlement | `lib/wapu-settlement.ts` (via the settlement cron / seller sync) |

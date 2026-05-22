@@ -41,10 +41,10 @@ A Lightning checkout for educational creators
 | **LUD-21 enforcement** | LN-rail addresses must pass a 1-sat probe at save time. Broken providers cannot reach production. |
 | **Nostr identity** | NIP-07 / nsec / NIP-46 sign-in; lazy user-row materialisation; kind:0 seeding; re-sign required on payment-destination edits. |
 | **Two product primitives** | `code` (redeemable in person, drawn from a pre-minted pool) and `download` (served by a status-gated proxy); shared checkout, differentiated only at the receipt page. |
-| **Pricing currency picker** | Sellers price in sats or ARS; the storefront shows both, live-converted via Yadio. |
+| **Price currency follows the rail** | ARS-rail sellers price in ARS, sats-rail sellers in sats; the storefront shows both, live-converted via Wapu's `/exchange_rates`. |
 | **Blossom image storage** | Browser-direct, content-addressed; no image bytes ever go through Cursats. |
-| **Anonymous-first buyer surface** | Buy without signing in; opaque receipt URL is the only access key. Optional Nostr identifier enables encrypted DM push. |
-| **Notification bell + Nostr DMs** | In-app bell for signed-in users; NIP-44-encrypted DMs to buyers who connected a pubkey. |
+| **Anonymous-first buyer surface** | Buy without signing in; the opaque receipt URL is the only access key and the only delivery channel. |
+| **Notification bell** | In-app bell for signed-in users — `order.paid` / `sale.received` / payout events. |
 
 For the full breakdown, see
 [`docs/HACKATHON.md`](./docs/HACKATHON.md) and the feature docs
@@ -85,23 +85,20 @@ DATABASE_URL=postgresql://…                    # your Neon/Postgres URL
 
 AUTH_SECRET=<run: openssl rand -base64 32>     # JWT signing key
 
-NOSTR_NSEC=nsec1…                              # the deployment's signing key for outgoing DMs
+WAPU_API_KEY=<from be-stage.wapu.app>          # Wapu API key (staging is fine)
+WAPU_PAY_APU_HOST=https://be-stage.wapu.app    # Wapu API base URL
 
-WAPU_API_KEY=<from staging.wapu.app>           # Wapu API key (staging is fine)
-
-ADMIN_PUBKEYS=                                  # leave empty unless you want platform admin
+CRON_SECRET=<run: openssl rand -base64 32>     # secures the settlement cron
 ```
 
 Optional but useful:
 
 - `NEXT_PUBLIC_BLOSSOM_SERVERS` — has a public default that
   works; override only if you want to host images yourself.
-- `EXCHANGE_RATE_API_URL` — leave unset to use Yadio's live
-  Argentine rate; override only to point at a deterministic
-  stub.
-- `NWC_CONNECTION_URL` — leave empty in v1; the autorenewal
-  feature it gates is deferred (see ADR
-  [0020](./docs/architecture/decisions/0020-defer-autorenewal-from-mvp.md)).
+
+The sats↔ARS rate comes from Wapu's `/exchange_rates` (no separate
+env var). The settlement cron runs daily on Vercel Hobby; sellers can
+sync their own orders on demand from `/orders`.
 
 The `.env.example` itself documents every var; consult it if
 something here is unclear.
@@ -206,13 +203,12 @@ rail).
 3. Pay the invoice from any Lightning wallet you have around.
    With Wapu staging the amount is fake — keep it small (e.g.,
    100 sats).
-4. Watch the page advance. Wapu's webhook hits
-   `/api/wapu/webhook`, the server verifies the signature,
-   flips the order to `paid`, and redirects you to
-   `/receipt/[orderId]`.
+4. Watch the page advance. The checkout page polls
+   `/api/orders/[orderId]`, which polls the Wapu deposit
+   transaction; once it reads `Completed` the order flips to
+   `paid` and you're redirected to `/receipt/[orderId]`.
 5. Verify the receipt page renders the redemption code (or
-   download URL for a `download` offering). If you connected a
-   pubkey, check your Nostr client for the encrypted DM.
+   download URL for a `download` offering).
 6. Switch back to the seller account; the new sale appears
    under `/orders`, and the navbar bell shows an unread
    notification.
@@ -235,19 +231,18 @@ lightning_address` and a LUD-21 Lightning Address filled in
 4. Once verified, the page redirects to `/receipt/[orderId]`,
    identical to the Wapu-rail flow.
 
-The Wapu webhook is **refused** for this rail (the handler
-returns 404 if an inbound delivery's order has `rail !==
-'wapu_ars'`), so a misconfigured Wapu account cannot
-accidentally flip a Lightning-rail order to paid.
+This rail never touches Wapu — confirmation is the LUD-21 verify
+poll only, so nothing on the Wapu side can flip a Lightning-rail
+order to paid.
 
 ## Where to look in the code
 
 | What | File |
 |---|---|
 | Order creation | `app/api/checkout/route.ts` → `createOrder` in `lib/orders.ts` |
-| Order status poll (+ LUD-21 verify) | `app/api/orders/[orderId]/route.ts` |
+| Order status poll (Wapu deposit + LUD-21 verify) | `app/api/orders/[orderId]/route.ts` |
 | Claim a past order | `app/api/orders/[orderId]/claim/route.ts` |
-| Wapu webhook handler | `app/api/wapu/webhook/route.ts` |
+| Settlement (poll deposit, open + poll withdrawal) | `lib/wapu-settlement.ts`, `app/api/cron/wapu-settlements/route.ts`, `app/api/orders/sync/route.ts` |
 | Wapu API client | `lib/wapu.ts` |
 | Lightning mint + LUD-21 verify | `lib/lightning.ts` (LNURL helper in `lib/nostr/lnurl.ts`) |
 | Rail dispatch + state machine | `lib/orders.ts` |
@@ -281,14 +276,15 @@ accidentally flip a Lightning-rail order to paid.
   not installed, or you signed in with a paste-nsec session
   that the page lost. Sign in again before saving payment
   fields.
-- **Webhook never fires (Wapu rail)** — your local dev server is
-  not reachable from Wapu's webhook origin. For local testing,
-  use a tunnel (`ngrok`, `cloudflared`) and set
-  `NEXT_PUBLIC_BASE_URL` and your Wapu webhook URL to the public
-  tunnel URL.
-- **Exchange rate shows "—"** — Yadio is unreachable and the
-  cache is cold. The static fallback should kick in on the next
-  request; check the server logs for the chain.
+- **Order stuck on "Confirmando…" (Wapu rail)** — the deposit
+  hasn't confirmed yet. The checkout page polls
+  `/api/orders/[orderId]`, which polls the Wapu deposit
+  transaction; on staging this is usually quick. There are no
+  webhooks, so no tunnel is needed.
+- **Exchange rate shows "—"** — Wapu's `/exchange_rates` is
+  unreachable and the cache is cold. The static fallback should
+  kick in on the next request; check the server logs for the
+  chain.
 
 ## Full walkthrough
 

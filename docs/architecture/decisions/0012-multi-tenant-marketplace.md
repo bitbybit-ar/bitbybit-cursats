@@ -3,7 +3,7 @@
 - **Date**: 2026-05-08
 - **Status**: Superseded by [0014](0014-marketplace-open-to-all-logged-in-users.md)
 - **Deciders**: BitByBit team
-- **Last updated**: 2026-05-09
+- **Last updated**: 2026-05-22
 
 ---
 
@@ -11,6 +11,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-22 | — | Note: the `ADMIN_PUBKEYS` / `PLATFORM_ADMIN_PUBKEYS` references here were removed as dead code (this ADR is already superseded by ADR 0014). | The env vars and code no longer exist. |
 | 2026-05-09 | Status | Marked Superseded by ADR 0014. | The merchant-only access model has been replaced — any signed-in user is implicitly a creator now. The per-merchant ownership FK structure survives. |
 | 2026-05-08 | Status, Decision | Status flipped from Proposed to Accepted; AR alias validation rule (BCRA 6–20 chars, `[A-Za-z0-9.-]`) folded into the merchant signup contract; AFIP posture deferred to a follow-up review; webhook payload question deferred and flagged at the code site. | Wapu confirmation + the open-question answers from 2026-05-08 unblock the rewrite. |
 | 2026-05-08 | — | Initial draft. | Wapu's `direct-payment` API (PR wapu-app/wapu-cli#7) lets a single platform Wapu account route per-invoice payouts to arbitrary merchant aliases without ever custodying funds. That removes the only blocker we had against turning the project into a marketplace, so the architectural decision needs to be recorded before any code moves. |

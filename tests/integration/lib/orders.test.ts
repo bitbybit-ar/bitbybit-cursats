@@ -15,6 +15,14 @@ import {
   MockLightningClient,
   _setLightningClientForTests,
 } from "@/lib/lightning";
+import { getWapuClient, _resetWapuClientForTests } from "@/lib/wapu";
+
+// There is no Wapu mock: createOrder on the wapu_ars rail mints a real
+// Lightning deposit invoice against staging. The real-connection test
+// runs only when staging creds are present in .env.test.
+const HAS_WAPU = Boolean(
+  process.env.WAPU_API_KEY && process.env.WAPU_PAY_APU_HOST
+);
 
 beforeAll(async () => {
   const { rows } = await testDb.execute<{ exists: boolean }>(sql`
@@ -70,35 +78,70 @@ async function seedOffering(slug = "bono-4-clases") {
   return row;
 }
 
+// Insert a pending wapu_ars order row directly, bypassing createOrder's
+// Wapu funding network call. The lifecycle functions under test
+// (markOrderPaid, claimOrderForBuyer, drawAndAssignCode,
+// listOrdersByPubkey) operate on existing rows and don't care how the
+// row was funded — so seeding the row directly keeps them offline and
+// fast. There is no Wapu mock to fund through; createOrder's real
+// funding is proven by the gated real-staging test above.
+async function seedPendingOrder(
+  offering: { id: string; user_id: string; price_amount: number },
+  opts: { pubkey?: string | null; createdAt?: Date } = {}
+): Promise<{ order_id: string }> {
+  const values: typeof orders.$inferInsert = {
+    pubkey: opts.pubkey ?? null,
+    offering_id: offering.id,
+    user_id: offering.user_id,
+    amount_ars: offering.price_amount,
+    amount_sats: 0,
+    rail: "wapu_ars",
+  };
+  if (opts.createdAt) values.created_at = opts.createdAt;
+  const [row] = await testDb.insert(orders).values(values).returning();
+  return { order_id: row.id };
+}
+
 const HEX_PUBKEY = "a".repeat(64);
 
 describe("orders/createOrder", () => {
-  it("creates an anonymous order with null pubkey and a Wapu invoice", async () => {
-    const offering = await seedOffering();
-    const result = await createOrder({
-      offering_id: offering.id,
-      pubkey: null,
-    });
-    expect(result.funding.amount_ars).toBe(28000);
-    expect(result.funding.bolt11).toMatch(/^lnbc/);
+  // Real Wapu staging: createOrder must mint a genuine Lightning
+  // deposit invoice, and reading that transaction straight back from
+  // Wapu must report it Pending (nobody paid the invoice). This is the
+  // end-to-end proof that leg 1 talks to the live rail; it runs only
+  // when staging creds are present (skipped in credential-less CI).
+  it.skipIf(!HAS_WAPU)(
+    "creates an order against real Wapu staging and getTransaction reports it Pending",
+    async () => {
+      _resetWapuClientForTests(); // build the live client from env
+      const offering = await seedOffering();
+      const result = await createOrder({
+        offering_id: offering.id,
+        pubkey: HEX_PUBKEY,
+      });
+      expect(result.funding.amount_ars).toBe(28000);
+      expect(result.funding.bolt11).toMatch(/^lnbc/);
 
-    const row = await getOrder(result.order_id);
-    expect(row?.pubkey).toBeNull();
-    expect(row?.status).toBe("pending");
-    expect(row?.amount_ars).toBe(28000);
-    expect(row?.amount_sats).toBe(result.funding.amount_sats);
-    expect(row?.payment_hash).toBe(result.funding.payment_hash);
-  });
+      const row = await getOrder(result.order_id);
+      expect(row?.pubkey).toBe(HEX_PUBKEY);
+      expect(row?.status).toBe("pending");
+      expect(row?.rail).toBe("wapu_ars");
+      expect(row?.amount_ars).toBe(28000);
+      expect(row?.amount_sats).toBe(result.funding.amount_sats);
+      // Leg 1 stamps the deposit tx id; the withdrawal opens later.
+      expect(row?.wapu_deposit_tx_id).toBeTruthy();
+      expect(row?.wapu_withdrawal_tx_id).toBeNull();
+      expect(row?.payout_status).toBeNull();
 
-  it("attaches the buyer pubkey when provided", async () => {
-    const offering = await seedOffering();
-    const result = await createOrder({
-      offering_id: offering.id,
-      pubkey: HEX_PUBKEY,
-    });
-    const row = await getOrder(result.order_id);
-    expect(row?.pubkey).toBe(HEX_PUBKEY);
-  });
+      // Read the deposit back from Wapu staging by id — our integration
+      // worked if the live rail reports it Pending. Whether Wapu then
+      // settles it is Wapu's side and is not asserted.
+      const tx = await getWapuClient().getTransaction(row!.wapu_deposit_tx_id!);
+      expect(tx.transaction_id).toBe(row!.wapu_deposit_tx_id);
+      expect(tx.status).toBe("Pending");
+      expect(tx.bolt11).toMatch(/^lnbc/);
+    }
+  );
 
   it("rejects a checkout against a non-existent offering", async () => {
     await expect(
@@ -155,8 +198,8 @@ describe("orders/createOrder — direct_lightning rail", () => {
     expect(row?.payment_hash).toMatch(/^[0-9a-f]{64}$/);
     expect(row?.lnurl_verify_url).toMatch(/^https:\/\/mock\.lnurl\/verify\//);
     // Wapu fields stay null on this rail.
-    expect(row?.wapu_tentative_uuid).toBeNull();
-    expect(row?.wapu_settlement_ref).toBeNull();
+    expect(row?.wapu_deposit_tx_id).toBeNull();
+    expect(row?.wapu_withdrawal_tx_id).toBeNull();
   });
 
   it("rejects with seller_lightning_address_missing when sats rail is set but the address is null", async () => {
@@ -211,20 +254,16 @@ describe("orders/createOrder — direct_lightning rail", () => {
 });
 
 describe("orders/markOrderPaid", () => {
-  it("transitions pending → paid and stamps paid_at + settlement", async () => {
+  it("transitions pending → paid and stamps paid_at + USDT credited", async () => {
     const offering = await seedOffering();
-    const { order_id } = await createOrder({
-      offering_id: offering.id,
-      pubkey: null,
-    });
+    const { order_id } = await seedPendingOrder(offering);
     const before = await getOrder(order_id);
     expect(before?.status).toBe("pending");
 
     const paidAt = new Date();
     const result = await markOrderPaid({
       order_id,
-      payment_hash: before!.payment_hash!,
-      settlement_ref: "wapu_ref_xyz",
+      amount_usdt: 19.23,
       paid_at: paidAt,
     });
 
@@ -232,64 +271,44 @@ describe("orders/markOrderPaid", () => {
     const after = await getOrder(order_id);
     expect(after?.status).toBe("paid");
     expect(after?.paid_at?.getTime()).toBeCloseTo(paidAt.getTime(), -3);
-    expect(after?.wapu_settlement_ref).toBe("wapu_ref_xyz");
+    expect(Number(after?.amount_usdt)).toBeCloseTo(19.23, 2);
   });
 
   it("is idempotent — second call returns updated=false and does not overwrite paid_at", async () => {
     const offering = await seedOffering();
-    const { order_id } = await createOrder({
-      offering_id: offering.id,
-      pubkey: null,
-    });
-    const before = await getOrder(order_id);
+    const { order_id } = await seedPendingOrder(offering);
 
     const firstPaidAt = new Date(2026, 0, 1);
     await markOrderPaid({
       order_id,
-      payment_hash: before!.payment_hash!,
-      settlement_ref: "first",
+      amount_usdt: 10,
       paid_at: firstPaidAt,
     });
     const second = await markOrderPaid({
       order_id,
-      payment_hash: before!.payment_hash!,
-      settlement_ref: "second",
+      amount_usdt: 99,
       paid_at: new Date(2026, 5, 1),
     });
 
     expect(second.updated).toBe(false);
     const after = await getOrder(order_id);
-    expect(after?.wapu_settlement_ref).toBe("first");
+    expect(Number(after?.amount_usdt)).toBeCloseTo(10, 2);
     expect(after?.paid_at?.getTime()).toBe(firstPaidAt.getTime());
-  });
-
-  it("refuses to update when payment_hash mismatches the stored value", async () => {
-    const offering = await seedOffering();
-    const { order_id } = await createOrder({
-      offering_id: offering.id,
-      pubkey: null,
-    });
-    await expect(
-      markOrderPaid({
-        order_id,
-        payment_hash: "b".repeat(64),
-        settlement_ref: null,
-        paid_at: new Date(),
-      })
-    ).rejects.toThrow(/payment_hash mismatch/);
   });
 });
 
 describe("orders/listOrdersByPubkey", () => {
   it("returns the buyer's orders, newest first", async () => {
     const offering = await seedOffering();
-    const a = await createOrder({
-      offering_id: offering.id,
+    // Explicit timestamps so the created_at DESC ordering is
+    // deterministic regardless of how fast the inserts run.
+    const a = await seedPendingOrder(offering, {
       pubkey: HEX_PUBKEY,
+      createdAt: new Date(2026, 0, 1),
     });
-    const b = await createOrder({
-      offering_id: offering.id,
+    const b = await seedPendingOrder(offering, {
       pubkey: HEX_PUBKEY,
+      createdAt: new Date(2026, 0, 2),
     });
     const list = await listOrdersByPubkey(HEX_PUBKEY);
     expect(list.length).toBe(2);
@@ -298,8 +317,8 @@ describe("orders/listOrdersByPubkey", () => {
 
   it("does not return anonymous orders or other buyers' orders", async () => {
     const offering = await seedOffering();
-    await createOrder({ offering_id: offering.id, pubkey: null });
-    await createOrder({ offering_id: offering.id, pubkey: "b".repeat(64) });
+    await seedPendingOrder(offering, { pubkey: null });
+    await seedPendingOrder(offering, { pubkey: "b".repeat(64) });
     const list = await listOrdersByPubkey(HEX_PUBKEY);
     expect(list.length).toBe(0);
   });
@@ -310,10 +329,7 @@ describe("orders/claimOrderForBuyer", () => {
 
   it("attaches an anonymous order to the buyer pubkey", async () => {
     const offering = await seedOffering();
-    const { order_id } = await createOrder({
-      offering_id: offering.id,
-      pubkey: null,
-    });
+    const { order_id } = await seedPendingOrder(offering);
     const result = await claimOrderForBuyer({
       order_id,
       pubkey: HEX_PUBKEY,
@@ -328,8 +344,7 @@ describe("orders/claimOrderForBuyer", () => {
 
   it("is idempotent when the order already belongs to the same buyer", async () => {
     const offering = await seedOffering();
-    const { order_id } = await createOrder({
-      offering_id: offering.id,
+    const { order_id } = await seedPendingOrder(offering, {
       pubkey: HEX_PUBKEY,
     });
     const result = await claimOrderForBuyer({
@@ -341,8 +356,7 @@ describe("orders/claimOrderForBuyer", () => {
 
   it("refuses to overwrite an order that belongs to a different pubkey", async () => {
     const offering = await seedOffering();
-    const { order_id } = await createOrder({
-      offering_id: offering.id,
+    const { order_id } = await seedPendingOrder(offering, {
       pubkey: OTHER_PUBKEY,
     });
     const result = await claimOrderForBuyer({
@@ -410,10 +424,7 @@ describe("orders/drawAndAssignCode", () => {
       "CODE-B",
       "CODE-C",
     ]);
-    const { order_id } = await createOrder({
-      offering_id: offering.id,
-      pubkey: null,
-    });
+    const { order_id } = await seedPendingOrder(offering);
 
     const result = await drawAndAssignCode({ order_id });
 
@@ -434,10 +445,7 @@ describe("orders/drawAndAssignCode", () => {
 
   it("is idempotent on repeat delivery — does not consume a second code", async () => {
     const offering = await seedCodeOfferingWithPool(["ONE", "TWO"]);
-    const { order_id } = await createOrder({
-      offering_id: offering.id,
-      pubkey: null,
-    });
+    const { order_id } = await seedPendingOrder(offering);
 
     const first = await drawAndAssignCode({ order_id });
     expect(first.status).toBe("assigned");
@@ -464,10 +472,7 @@ describe("orders/drawAndAssignCode", () => {
     // we seed the offering WITH a code, create the order, then
     // drop the pool by hand before calling drawAndAssignCode.
     const offering = await seedCodeOfferingWithPool(["TRANSIENT"]);
-    const { order_id } = await createOrder({
-      offering_id: offering.id,
-      pubkey: null,
-    });
+    const { order_id } = await seedPendingOrder(offering);
     await testDb
       .update(offerings)
       .set({ code_pool: [] })
@@ -480,10 +485,7 @@ describe("orders/drawAndAssignCode", () => {
 
   it("returns not_a_code_offering for download offerings", async () => {
     const offering = await seedDownloadOffering();
-    const { order_id } = await createOrder({
-      offering_id: offering.id,
-      pubkey: null,
-    });
+    const { order_id } = await seedPendingOrder(offering);
     const result = await drawAndAssignCode({ order_id });
     expect(result.status).toBe("not_a_code_offering");
     const order = await getOrder(order_id);
@@ -495,14 +497,8 @@ describe("orders/drawAndAssignCode", () => {
     // draws against the same offering in parallel; both must land
     // on different codes and the pool must shrink by exactly two.
     const offering = await seedCodeOfferingWithPool(["X1", "X2", "X3"]);
-    const a = await createOrder({
-      offering_id: offering.id,
-      pubkey: null,
-    });
-    const b = await createOrder({
-      offering_id: offering.id,
-      pubkey: null,
-    });
+    const a = await seedPendingOrder(offering);
+    const b = await seedPendingOrder(offering);
 
     const [resA, resB] = await Promise.all([
       drawAndAssignCode({ order_id: a.order_id }),

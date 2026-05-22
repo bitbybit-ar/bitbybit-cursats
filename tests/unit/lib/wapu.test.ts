@@ -1,112 +1,68 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach } from "vitest";
 import {
-  MockWapuClient,
+  RealWapuClient,
   getWapuClient,
   _resetWapuClientForTests,
-  type WapuWebhookEvent,
+  isWapuTxComplete,
+  isWapuTxFailed,
+  depositUsdtCredited,
+  type WapuTransaction,
 } from "@/lib/wapu";
 
-describe("MockWapuClient/createDirectPayment + funding", () => {
-  it("creates a tentative and issues funding instructions", async () => {
-    const client = new MockWapuClient();
-    const tentative = await client.createDirectPayment({
-      amount_ars: 28000,
-      alias: "demo.test.alias",
-      receiver_name: "Demo Profe",
-      external_id: "order-123",
-    });
-    expect(tentative.uuid).toMatch(/^mock_dp_/);
-    expect(tentative.status).toBe("CREATED");
+// There is no mock client to unit-test anymore (the live rail is
+// exercised by the gated staging smoke tests). These cover the pure,
+// network-free seam: the status helpers, the USDT-credit reader, and
+// the factory's fail-loud env contract.
 
-    const funding = await client.issueDirectPaymentFunding(tentative.uuid);
-    expect(funding.amount_ars).toBe(28000);
-    expect(funding.amount_sats).toBeGreaterThan(0);
-    expect(funding.bolt11).toMatch(/^lnbc\d+n1mock/);
-    expect(funding.payment_hash).toMatch(/^[0-9a-f]{64}$/);
-    expect(funding.expires_at).toBeGreaterThan(Math.floor(Date.now() / 1000));
-  });
-
-  it("issues unique tentative uuids and payment hashes", async () => {
-    const client = new MockWapuClient();
-    const a = await client.createDirectPayment({
-      amount_ars: 1000,
-      alias: "demo.test.alias",
-      receiver_name: "Demo",
-      external_id: "1",
-    });
-    const b = await client.createDirectPayment({
-      amount_ars: 1000,
-      alias: "demo.test.alias",
-      receiver_name: "Demo",
-      external_id: "2",
-    });
-    expect(a.uuid).not.toBe(b.uuid);
-    const fundingA = await client.issueDirectPaymentFunding(a.uuid);
-    const fundingB = await client.issueDirectPaymentFunding(b.uuid);
-    expect(fundingA.payment_hash).not.toBe(fundingB.payment_hash);
-  });
-
-  it("rejects funding for an unknown tentative", async () => {
-    const client = new MockWapuClient();
-    await expect(
-      client.issueDirectPaymentFunding("does-not-exist")
-    ).rejects.toThrow(/mock_tentative_not_found/);
-  });
-});
-
-describe("MockWapuClient/getTentative", () => {
-  it("always reports pending so the test must drive payment via webhook", async () => {
-    const client = new MockWapuClient();
-    const state = await client.getTentative("anything");
-    expect(state.status).toBe("pending");
-    expect(state.paid_at).toBeNull();
-  });
-});
-
-describe("MockWapuClient webhook signing/verification", () => {
-  const event: WapuWebhookEvent = {
-    event_type: "direct_fiat.paid",
-    tentative_uuid: "mock_dp_abc",
-    payment_hash: "a".repeat(64),
-    occurred_at: 1_700_000_000,
-    amount_sats: 4_000,
-    amount_ars: 1_000,
-    external_id: "order-1",
-    settlement_ref: "wapu_settle_1",
+function tx(overrides: Partial<WapuTransaction> = {}): WapuTransaction {
+  return {
+    transaction_id: "tx_1",
+    status: "Pending",
+    type: "deposit",
+    payment_amount: 0,
+    payment_currency: "USDT",
+    currency_taken: "SAT",
+    total_amount_taken: 0,
+    fee_taken: 0,
+    current_rate: 0,
+    bolt11: null,
+    verify_url: null,
+    expires_at: null,
+    alias: null,
+    receiver_name: null,
+    ...overrides,
   };
+}
 
-  it("round-trips a signed payload", () => {
-    const client = new MockWapuClient("test-secret");
-    const { rawBody, signature } = client.signWebhookPayload(event);
-    expect(client.verifyWebhookSignature(rawBody, signature)).toBe(true);
+describe("wapu/status helpers", () => {
+  it("isWapuTxComplete is true only for Completed", () => {
+    expect(isWapuTxComplete("Completed")).toBe(true);
+    for (const s of ["Pending", "Taken", "Canceled", "UserPending", "Rejected"]) {
+      expect(isWapuTxComplete(s)).toBe(false);
+    }
   });
 
-  it("rejects a tampered body with the original signature", () => {
-    const client = new MockWapuClient("test-secret");
-    const { rawBody, signature } = client.signWebhookPayload(event);
-    const tampered = rawBody.replace(/order-1/, "order-2");
-    expect(client.verifyWebhookSignature(tampered, signature)).toBe(false);
+  it("isWapuTxFailed is true for Canceled and Rejected", () => {
+    expect(isWapuTxFailed("Canceled")).toBe(true);
+    expect(isWapuTxFailed("Rejected")).toBe(true);
+    for (const s of ["Pending", "Completed", "Taken", "UserPending"]) {
+      expect(isWapuTxFailed(s)).toBe(false);
+    }
+  });
+});
+
+describe("wapu/depositUsdtCredited", () => {
+  it("returns the USDT payment_amount on a USDT-denominated credit", () => {
+    expect(
+      depositUsdtCredited(tx({ payment_currency: "USDT", payment_amount: 19.23 }))
+    ).toBe(19.23);
   });
 
-  it("rejects a missing signature header", () => {
-    const client = new MockWapuClient("test-secret");
-    const { rawBody } = client.signWebhookPayload(event);
-    expect(client.verifyWebhookSignature(rawBody, null)).toBe(false);
-  });
-
-  it("rejects a signature signed with a different secret", () => {
-    const sender = new MockWapuClient("attacker-secret");
-    const receiver = new MockWapuClient("real-secret");
-    const { rawBody, signature } = sender.signWebhookPayload(event);
-    expect(receiver.verifyWebhookSignature(rawBody, signature)).toBe(false);
-  });
-
-  it("rejects junk in the signature header", () => {
-    const client = new MockWapuClient("test-secret");
-    const { rawBody } = client.signWebhookPayload(event);
-    expect(client.verifyWebhookSignature(rawBody, "not-base64!!")).toBe(false);
-    expect(client.verifyWebhookSignature(rawBody, "")).toBe(false);
+  it("returns null when the credit is not USDT-denominated", () => {
+    expect(
+      depositUsdtCredited(tx({ payment_currency: "ARS", payment_amount: 10_000 }))
+    ).toBeNull();
   });
 });
 
@@ -114,30 +70,23 @@ describe("getWapuClient factory", () => {
   beforeEach(() => {
     _resetWapuClientForTests();
     delete process.env.WAPU_API_KEY;
+    delete process.env.WAPU_PAY_APU_HOST;
   });
 
-  it("returns the mock when WAPU_API_KEY is unset", () => {
-    const client = getWapuClient();
-    expect(client).toBeInstanceOf(MockWapuClient);
+  it("throws when WAPU_API_KEY is unset — there is no mock fallback", () => {
+    expect(() => getWapuClient()).toThrow(/Wapu is not configured/);
   });
 
-  it("returns the same instance on repeated calls", () => {
-    const a = getWapuClient();
-    const b = getWapuClient();
-    expect(a).toBe(b);
-  });
-
-  it("returns the unimplemented real client when WAPU_API_KEY is set", async () => {
+  it("throws when WAPU_PAY_APU_HOST is unset", () => {
     process.env.WAPU_API_KEY = "real-key";
+    expect(() => getWapuClient()).toThrow(/WAPU_PAY_APU_HOST/);
+  });
+
+  it("returns the real client when both env vars are set, and caches it", () => {
+    process.env.WAPU_API_KEY = "real-key";
+    process.env.WAPU_PAY_APU_HOST = "https://be-stage.wapu.app";
     const client = getWapuClient();
-    expect(client).not.toBeInstanceOf(MockWapuClient);
-    await expect(
-      client.createDirectPayment({
-        amount_ars: 100,
-        alias: "demo.test.alias",
-        receiver_name: "Demo",
-        external_id: "y",
-      })
-    ).rejects.toThrow(/not implemented/);
+    expect(client).toBeInstanceOf(RealWapuClient);
+    expect(getWapuClient()).toBe(client);
   });
 });

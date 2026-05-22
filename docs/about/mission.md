@@ -1,7 +1,7 @@
 # Mission
 
 > **Status:** Active
-> **Last updated:** 2026-05-21
+> **Last updated:** 2026-05-22
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-22 | Body, What we value, What we don't do | Removed the Nostr-DM delivery mentions (the receipt page is now the only channel) and reworded the experimental-feature value bullet away from NWC. | The server Nostr-DM channel and `NWC_CONNECTION_URL` were removed as dead code. |
 | 2026-05-21 | Body | Rewrote the opening paragraph to anchor the mission in two concrete Argentine teacher archetypes — the piano teacher reaching international students (Bitcoin in, pesos out) and the tango professor charging digital nomads (Bitcoin in, Bitcoin out). Different phrasing from the README's "Where this came from" so the two read as complementary. | Hackathon documentation pass — the opening previously stated the dual-rail stance abstractly. Pairing it with two concrete characters makes the underserved audience legible at a glance and threads into the README story without duplicating it. |
 | 2026-05-12 | —, A note on the name | Rebranded references from "Cursá" to "Cursats" and rewrote "A note on the name" as the portmanteau etymology (*cursá* + *sats*). Updated example URLs to `cursats.bitbybit.com.ar`. | Brand rename per ADR 0018 — the wordmark now surfaces the sats positioning while preserving the voseo verb in body copy. |
 | 2026-05-12 | Body, What we value, What we don't do | Reframed the tagline from "buyers pay sats, merchants think in pesos" to the dual-rail story: buyers always pay sats; sellers pick pesos (Wapu) or sats (Lightning Address). Broadened the audience bullet from "Educators only" to "Educational creators — broadly". Replaced "merchant" with "seller" throughout. Updated the example flow to mention both rails. Updated the no-second-rail claim in "What we don't do" to the no-third-rail claim from ADR 0015. | The mission was three pivots behind: ADR 0014 opened the marketplace beyond a narrowly-defined educator set, ADR 0015 added the sats settlement rail, ADR 0016 collapsed `merchants` into `users`. The doc still framed Wapu as the only rail and educators as the only audience. |
@@ -52,9 +53,7 @@ project, no env wiring. Her store lives at
 she chose Wapu, the ARS lands in her CBU; if she chose Lightning
 Address, the sats land in her wallet. The platform never
 custodies funds either way. A permanent in-app receipt page
-delivers the redemption code or download URL; if the buyer
-connected a Nostr identity at checkout, the same content also
-arrives as an encrypted DM in their Nostr client.
+delivers the redemption code or download URL.
 
 Sovereignty is preserved as the *self-hosting* path: anyone who
 wants their own deployment can fork the repo and run a
@@ -76,8 +75,9 @@ how those sats come out.
   [0007](../architecture/decisions/0007-optional-nostr-buyer-login.md))
   because it adds a history surface without ever blocking a sale.
 - **Working in production over working in theory.** Ship what
-  works on real Lightning today (pre-paid). Treat what is still
-  experimental (NWC auto-renewal) as opt-in and honest.
+  works on real Lightning today (one-shot, pre-paid). Treat what is
+  still experimental (recurring auto-renewal) as deferred, and say
+  so plainly.
 - **Seller time over our cleverness.** Every config field that
   doesn't pull weight gets cut.
 - **The protocol's evolution as a roadmap.** When Lightning grows
@@ -103,15 +103,14 @@ how those sats come out.
   needs a superseding ADR. Decision in ADR
   [0015-sats-settlement-rail](../architecture/decisions/0015-sats-settlement-rail.md),
   superseding the rail-count clause of ADR 0002.
-- Email integration. The receipt page is the canonical delivery
-  channel; Nostr DMs are the optional push. Decision in ADR
+- Email integration, and there is no Nostr DM channel. The
+  receipt page is the only delivery channel. Decision in ADR
   [0006-nostr-and-inapp-delivery](../architecture/decisions/0006-nostr-and-inapp-delivery.md).
 - *Required* buyer accounts. Anonymous purchase is always
   available — the opaque receipt URL is enough to walk away with
   the redemption code. Optional Nostr login is offered for buyers
-  who want a persistent order history at `/[locale]/purchases`
-  and reliable DM push without re-pasting an identifier at every
-  checkout. Decision in ADR
+  who want a persistent order history at `/[locale]/purchases`.
+  Decision in ADR
   [0007-optional-nostr-buyer-login](../architecture/decisions/0007-optional-nostr-buyer-login.md).
 
 ## A note on the name

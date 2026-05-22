@@ -1,7 +1,7 @@
 # Settlement rails
 
 > **Status:** Active
-> **Last updated:** 2026-05-21
+> **Last updated:** 2026-05-22
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-22 | Wapu rail, Single dispatch point | Source-of-truth for "paid" is now the Wapu deposit poll (no webhook); the rail short-circuit references the deposit poller. | The Wapu rebuild (ADR 0025) made the rail poll-driven. |
 | 2026-05-21 | — | Initial version. | Hackathon documentation pass — explain *why* the dual-rail design exists, what each rail trades off, and where the design line is drawn (no third rail). |
 
 ---
@@ -58,8 +59,9 @@ rate (the same Argentine parallel/crypto rate Cursats quotes
 against, see "Exchange rate" below), then pushes ARS to the
 seller's CBU or alias the same business day.
 
-**Source of truth for "paid".** The Wapu webhook delivery at
-`/api/wapu/webhook`, signature-verified before any state change.
+**Source of truth for "paid".** Polling the Wapu deposit
+transaction (`GET /transactions/{id}`) from
+`/api/orders/[orderId]` until it reads `Completed` — no webhook.
 
 **Custody.** Cursats does not custody. Wapu's direct-payment
 endpoint puts the payout destination on the same call that mints
@@ -114,7 +116,7 @@ order creation reads `users.payout_method` (`cbu_alias` or
 `lightning_address`) and stamps `orders.rail` (`wapu_ars` or
 `direct_lightning`) accordingly. From that moment on:
 
-- The Wapu webhook handler short-circuits anything where
+- The Wapu deposit poller short-circuits anything where
   `rail !== 'wapu_ars'`.
 - The LN verify poller short-circuits anything where
   `rail !== 'direct_lightning'`.

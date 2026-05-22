@@ -16,8 +16,9 @@ export interface AdminOrderRow {
 
 export interface AdminOrderDetail extends AdminOrderRow {
   payment_hash: string | null;
-  wapu_tentative_uuid: string | null;
-  wapu_settlement_ref: string | null;
+  wapu_deposit_tx_id: string | null;
+  wapu_withdrawal_tx_id: string | null;
+  payout_status: typeof orders.$inferSelect.payout_status;
   redemption_code: string | null;
 }
 
@@ -62,8 +63,9 @@ export async function getAdminOrderDetail(
       paid_at: orders.paid_at,
       pubkey: orders.pubkey,
       payment_hash: orders.payment_hash,
-      wapu_tentative_uuid: orders.wapu_tentative_uuid,
-      wapu_settlement_ref: orders.wapu_settlement_ref,
+      wapu_deposit_tx_id: orders.wapu_deposit_tx_id,
+      wapu_withdrawal_tx_id: orders.wapu_withdrawal_tx_id,
+      payout_status: orders.payout_status,
       redemption_code: orders.redemption_code,
       offering_title: offerings.title,
       offering_slug: offerings.slug,

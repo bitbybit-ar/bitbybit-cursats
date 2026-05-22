@@ -50,8 +50,6 @@ export interface SessionUser {
    * gate the "manage your store" CTA.
    */
   user: SessionUserSummary | null;
-  /** Whether this pubkey is in PLATFORM_ADMIN_PUBKEYS. */
-  platform_admin: boolean;
 }
 
 /**

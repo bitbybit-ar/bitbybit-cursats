@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent, type KeyboardEvent } from "react";
+import { useState, useEffect, type FormEvent, type KeyboardEvent } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/routing";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
 } from "@/components/courses/payout-setup-modal";
 import { useSignerContext } from "@/lib/contexts/signer-context";
 import { MAX_TAGS_PER_OFFERING, type Offering } from "@/lib/admin/offerings";
+import { WAPU_MIN_NET_ARS } from "@/lib/wapu-limits";
 import styles from "./offering-form.module.scss";
 
 type PayoutMethod = "cbu_alias" | "lightning_address";
@@ -132,14 +133,76 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
   const [priceAmount, setPriceAmount] = useState(
     offering ? String(offering.price_amount) : ""
   );
-  const [priceCurrency, setPriceCurrency] = useState<"ars" | "sats">(
-    offering?.price_currency ?? "ars"
-  );
+  // Price currency follows the payout rail (ADR 0026): ARS for the
+  // cbu_alias rail, sats for lightning_address — there is no free
+  // picker. In edit mode the offering's stored currency is
+  // authoritative (the amount is denominated in it).
+  const railCurrency: "ars" | "sats" =
+    currentPayout?.payoutMethod === "lightning_address" ? "sats" : "ars";
+  const priceCurrency: "ars" | "sats" = isEdit
+    ? offering!.price_currency
+    : railCurrency;
+  // Live Wapu fee + net estimate for ARS (cbu_alias) sellers, who
+  // bear the fee (ADR 0026). Null until a valid price is entered.
+  const [payoutQuote, setPayoutQuote] = useState<{
+    fee_ars: number;
+    net_ars: number;
+  } | null>(null);
+  // On the ARS (wapu_ars) rail the seller bears the fee, so the
+  // withdrawal pays the net. Wapu rejects payouts below
+  // WAPU_MIN_NET_ARS, so a course whose net falls under it could never
+  // be paid out — block it (ADR 0026). Best-effort on the client (the
+  // quote may still be loading); /api/my-courses enforces it server-side.
+  const isBelowWapuMin =
+    priceCurrency === "ars" &&
+    payoutQuote !== null &&
+    payoutQuote.net_ars < WAPU_MIN_NET_ARS;
   const [imageUrl, setImageUrl] = useState(offering?.image_url ?? "");
   const [codeCount, setCodeCount] = useState("10");
   const [downloadUrl, setDownloadUrl] = useState(offering?.download_url ?? "");
   const [tags, setTags] = useState<string[]>(offering?.tags ?? []);
   const [tagDraft, setTagDraft] = useState("");
+
+  // Debounced Wapu fee/net estimate for ARS sellers. Sats sellers
+  // have no conversion and no fee, so the quote stays null for them.
+  useEffect(() => {
+    if (priceCurrency !== "ars") {
+      setPayoutQuote(null);
+      return;
+    }
+    const amount = Number(priceAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setPayoutQuote(null);
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch("/api/payout-quote", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ amount_ars: Math.round(amount) }),
+        });
+        if (!res.ok) {
+          if (!cancelled) setPayoutQuote(null);
+          return;
+        }
+        const json = (await res.json()) as {
+          fee_ars: number;
+          net_ars: number;
+        };
+        if (!cancelled) {
+          setPayoutQuote({ fee_ars: json.fee_ars, net_ars: json.net_ars });
+        }
+      } catch {
+        if (!cancelled) setPayoutQuote(null);
+      }
+    }, 400);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [priceAmount, priceCurrency]);
 
   function commitTagDraft(): void {
     const cleaned = normalizeTagInput(tagDraft);
@@ -198,6 +261,14 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
 
     if (imageUrl.trim() === "") {
       showToast(t("imageRequired"), "error");
+      return null;
+    }
+
+    if (isBelowWapuMin) {
+      showToast(
+        t("priceBelowWapuMin", { min: WAPU_MIN_NET_ARS.toLocaleString() }),
+        "error"
+      );
       return null;
     }
 
@@ -271,6 +342,11 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
         }
         if (data.error === "slug_taken") {
           showToast(t("slugTaken"), "error");
+        } else if (data.error === "price_below_wapu_minimum") {
+          showToast(
+            t("priceBelowWapuMin", { min: WAPU_MIN_NET_ARS.toLocaleString() }),
+            "error"
+          );
         } else {
           showToast(t("saveFailed"), "error");
         }
@@ -482,43 +558,11 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
             <p className={styles.sectionHint}>{t("sectionPricingHint")}</p>
           </header>
 
-          <fieldset className={styles.fieldset}>
-            <legend className={styles.legend}>{t("priceCurrency")}</legend>
-            <label
-              className={`${styles.radio} ${priceCurrency === "ars" ? styles.radioSelected : ""}`}
-            >
-              <input
-                type="radio"
-                name="priceCurrency"
-                value="ars"
-                checked={priceCurrency === "ars"}
-                onChange={() => setPriceCurrency("ars")}
-              />
-              <span>
-                <strong>{t("priceCurrencyArs")}</strong>
-                <span className={styles.radioHint}>
-                  {t("priceCurrencyArsHint")}
-                </span>
-              </span>
-            </label>
-            <label
-              className={`${styles.radio} ${priceCurrency === "sats" ? styles.radioSelected : ""}`}
-            >
-              <input
-                type="radio"
-                name="priceCurrency"
-                value="sats"
-                checked={priceCurrency === "sats"}
-                onChange={() => setPriceCurrency("sats")}
-              />
-              <span>
-                <strong>{t("priceCurrencySats")}</strong>
-                <span className={styles.radioHint}>
-                  {t("priceCurrencySatsHint")}
-                </span>
-              </span>
-            </label>
-          </fieldset>
+          <p className={styles.sectionHint}>
+            {priceCurrency === "ars"
+              ? t("priceCurrencyNoteArs")
+              : t("priceCurrencyNoteSats")}
+          </p>
 
           <div className={styles.field}>
             <label htmlFor="priceAmount" className={styles.label}>
@@ -539,6 +583,21 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
               onChange={(e) => setPriceAmount(e.target.value)}
               required
             />
+            {priceCurrency === "ars" && payoutQuote ? (
+              <p className={styles.payoutEstimate}>
+                {t("payoutEstimate", {
+                  fee: payoutQuote.fee_ars.toLocaleString(),
+                  net: payoutQuote.net_ars.toLocaleString(),
+                })}
+              </p>
+            ) : null}
+            {isBelowWapuMin ? (
+              <p className={styles.payoutWarning} role="alert">
+                {t("priceBelowWapuMin", {
+                  min: WAPU_MIN_NET_ARS.toLocaleString(),
+                })}
+              </p>
+            ) : null}
           </div>
         </section>
 
@@ -665,7 +724,11 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
         </section>
 
         <div className={styles.actions}>
-          <Button type="submit" variant="primary" disabled={isPending}>
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={isPending || isBelowWapuMin}
+          >
             {isPending ? t("saving") : isEdit ? t("saveEdit") : t("saveCreate")}
           </Button>
           {isEdit ? (

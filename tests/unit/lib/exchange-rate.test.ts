@@ -78,35 +78,46 @@ describe("exchange-rate/convertPrice", () => {
   });
 });
 
+// Wapu /exchange_rates body: ARS/BTC = (USDT/ARS buy) × (BTC/USD buy).
+function wapuRates(arsPerUsdt: number | string, usdPerBtc: number | string) {
+  return {
+    rates: [
+      { pair: "USDT/ARS", buy: arsPerUsdt, sell: arsPerUsdt },
+      { pair: "BTC/USD", buy: usdPerBtc, sell: usdPerBtc },
+    ],
+  };
+}
+
 describe("exchange-rate/live fetch + fallback chain", () => {
   beforeEach(() => {
     __resetExchangeRateCacheForTests();
     __enableLiveFetchForTests(true);
+    process.env.WAPU_PAY_APU_HOST = "https://be-stage.wapu.app";
+    process.env.WAPU_API_KEY = "test-key";
   });
   afterEach(() => {
     vi.restoreAllMocks();
     vi.useRealTimers();
     __resetExchangeRateCacheForTests();
+    delete process.env.WAPU_PAY_APU_HOST;
+    delete process.env.WAPU_API_KEY;
   });
 
-  it("converts a live ARS-per-BTC quote to sats-per-ARS and caches it", async () => {
-    const fetchSpy = mockFetchOk({ rate: 113_923_472 });
+  it("derives sats-per-ARS from the buy side of the Wapu pairs and caches it", async () => {
+    const arsPerBtc = 1439.45 * 76_815.64;
+    const fetchSpy = mockFetchOk(wapuRates(1439.45, 76_815.64));
     const first = await getSatsPerArs();
-    expect(first).toBeCloseTo(SATS_PER_BTC / 113_923_472, 8);
+    expect(first).toBeCloseTo(SATS_PER_BTC / arsPerBtc, 8);
     // Second call inside the 5-min window must not re-fetch.
     const second = await getSatsPerArs();
     expect(second).toBe(first);
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
-  it("accepts the `result` key when `rate` is absent", async () => {
-    mockFetchOk({ result: 100_000_000 });
-    expect(await getSatsPerArs()).toBeCloseTo(1, 8);
-  });
-
-  it("coerces a numeric string value", async () => {
-    mockFetchOk({ rate: "113923472" });
-    expect(await getSatsPerArs()).toBeCloseTo(SATS_PER_BTC / 113_923_472, 8);
+  it("coerces numeric string buy values", async () => {
+    const arsPerBtc = 1439.45 * 76_815.64;
+    mockFetchOk(wapuRates("1439.45", "76815.64"));
+    expect(await getSatsPerArs()).toBeCloseTo(SATS_PER_BTC / arsPerBtc, 8);
   });
 
   it("falls back to the static rate on a non-2xx response (no prior good)", async () => {
@@ -118,8 +129,13 @@ describe("exchange-rate/live fetch + fallback chain", () => {
     expect(await getSatsPerArs()).toBeCloseTo(STATIC_FALLBACK, 8);
   });
 
+  it("falls back to the static rate when a required pair is missing", async () => {
+    mockFetchOk({ rates: [{ pair: "USDT/ARS", buy: 1439.45, sell: 1510 }] });
+    expect(await getSatsPerArs()).toBeCloseTo(STATIC_FALLBACK, 8);
+  });
+
   it("rejects an out-of-bounds quote and uses the static fallback", async () => {
-    mockFetchOk({ rate: 0 });
+    mockFetchOk(wapuRates(1439.45, 0));
     expect(await getSatsPerArs()).toBeCloseTo(STATIC_FALLBACK, 8);
   });
 
@@ -132,9 +148,10 @@ describe("exchange-rate/live fetch + fallback chain", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
 
-    const fetchSpy = mockFetchOk({ rate: 113_923_472 });
+    const arsPerBtc = 1439.45 * 76_815.64;
+    const fetchSpy = mockFetchOk(wapuRates(1439.45, 76_815.64));
     const good = await getSatsPerArs();
-    expect(good).toBeCloseTo(SATS_PER_BTC / 113_923_472, 8);
+    expect(good).toBeCloseTo(SATS_PER_BTC / arsPerBtc, 8);
 
     // Past the 5-minute TTL so the next call must re-resolve.
     vi.setSystemTime(new Date("2026-01-01T00:06:00Z"));

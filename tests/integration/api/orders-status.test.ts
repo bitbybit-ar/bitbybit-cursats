@@ -102,8 +102,9 @@ describe("GET /api/orders/[orderId] — direct_lightning rail", () => {
     expect(after?.status).toBe("paid");
     expect(after?.paid_at).not.toBeNull();
     expect(after?.redemption_code).toBe("TEST-CODE-1");
-    // No Wapu settlement reference on the LN rail.
-    expect(after?.wapu_settlement_ref).toBeNull();
+    // No Wapu withdrawal on the LN rail.
+    expect(after?.wapu_withdrawal_tx_id).toBeNull();
+    expect(after?.payout_status).toBeNull();
   });
 
   it("subsequent calls after settle return the cached paid status", async () => {
@@ -135,3 +136,9 @@ describe("GET /api/orders/[orderId] — direct_lightning rail", () => {
     expect(res.status).toBe(404);
   });
 });
+
+// The wapu_ars deposit→paid→withdrawal transition can't be driven
+// against a live wallet (settling is Wapu's side), so it is not
+// asserted here. The create→invoice→Pending integration is covered by
+// the gated real-staging test in tests/integration/lib/orders.test.ts;
+// markOrderPaid's buyer-paid effects are covered in orders.test.ts.

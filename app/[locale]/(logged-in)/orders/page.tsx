@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { ArrowRightIcon } from "@/components/icons";
 import { listAdminOrders } from "@/lib/admin/orders";
 import { requirePanelUser } from "@/lib/admin/panel-context";
+import { SyncOrdersButton } from "@/components/orders/sync-orders-button";
 import styles from "./page.module.scss";
 
 export const dynamic = "force-dynamic";
@@ -45,7 +46,10 @@ export default async function PanelOrdersPage({
   return (
     <>
       <header className={styles.header}>
-        <h1 className={styles.title}>{t("title")}</h1>
+        <div className={styles.headerTop}>
+          <h1 className={styles.title}>{t("title")}</h1>
+          <SyncOrdersButton />
+        </div>
         <p className={styles.subtitle}>{t("subtitle")}</p>
       </header>
 
