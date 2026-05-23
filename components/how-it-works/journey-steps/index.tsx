@@ -314,8 +314,8 @@ function PinnedJourney({ variant, title, steps }: JourneyStepsProps) {
 
 /**
  * Fallback: the plain staggered row, view-revealed. Used for
- * `prefers-reduced-motion`, narrow viewports (the pinned 100vh stage
- * can't hold three stacked polaroids on a phone), and the
+ * `prefers-reduced-motion`, phones (below the mobile breakpoint the
+ * pinned 100vh stage can't hold the 2×2 polaroid row), and the
  * server/no-JS render so the content is always present.
  */
 function StaticJourney({ variant, title, steps }: JourneyStepsProps) {
@@ -379,7 +379,7 @@ function StaticJourney({ variant, title, steps }: JourneyStepsProps) {
  * Decides which experience to mount. Renders the static fallback on
  * the server and first client paint (so markup matches and the
  * content is always there for SEO / no-JS), then upgrades to the
- * pinned sequence on wide viewports once mounted.
+ * pinned sequence on tablet-and-up viewports (≥768px) once mounted.
  */
 export function JourneySteps(props: JourneyStepsProps) {
   const reduceMotion = useReducedMotion();
@@ -390,7 +390,12 @@ export function JourneySteps(props: JourneyStepsProps) {
       setPinned(false);
       return;
     }
-    const mq = window.matchMedia("(min-width: 1024px)");
+    // Above the mobile breakpoint ($breakpoint-mobile, 768px) the
+    // 2×2 polaroid row fits the pinned stage (2×320 + 80px gap = the
+    // stage's inner width at 768px), so tablets and small laptops get
+    // the full pinned sequence — only phones fall back to the static
+    // staggered row.
+    const mq = window.matchMedia("(min-width: 768px)");
     const apply = () => setPinned(mq.matches);
     apply();
     mq.addEventListener("change", apply);

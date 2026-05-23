@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import { Children, type ReactNode } from "react";
-import { useIsMobile } from "@/lib/hooks/useIsMobile";
+import { useIsMobileViewport } from "@/lib/hooks/useIsMobileViewport";
 
 type Props = {
   className?: string;
@@ -12,9 +12,11 @@ type Props = {
 export function RevealGrid({ className, children }: Props) {
   const reduceMotion = useReducedMotion();
   // The desktop horizontal slide-in (x: -90) clips and reads as cramped
-  // on a single-column phone layout, so mobile gets a gentle fade-up
-  // with a tighter stagger instead.
-  const isMobile = useIsMobile();
+  // on a single-column phone layout, so the narrow (phone) layout gets
+  // a gentle fade-up with a tighter stagger instead. Gated on viewport
+  // width — not pointer type — so tablets and small laptops get the
+  // same slide-in as desktop, matching the deck/journey animations.
+  const isMobile = useIsMobileViewport();
 
   const container: Variants = {
     hidden: {},

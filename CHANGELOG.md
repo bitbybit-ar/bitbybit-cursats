@@ -59,6 +59,17 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Rich landing animations now run on tablets and small laptops.**
+  The card-deck deal (Features) and the pinned scroll-journey
+  (How-it-works) were gated at a 1024px CSS-pixel viewport, so a
+  desktop-class laptop rendering below that width (OS display scaling,
+  browser zoom, or a non-maximized window) saw only the simplified
+  fade fallback. All landing animations now gate on a single axis —
+  the layout's mobile breakpoint (768px) — so every non-phone width
+  gets the same animation as desktop. The highlighted-courses grid
+  reveal also moved from pointer-type to viewport-width detection, so
+  a tablet or touchscreen laptop gets the desktop slide-in rather than
+  the phone fade-up.
 - **Settings: Notifications folded into Preferences.** The standalone
   Notifications tab is gone; its toggles now live under **Preferences**
   with a single Save. The informational "Theme" block was removed
