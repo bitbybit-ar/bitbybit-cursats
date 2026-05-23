@@ -55,7 +55,7 @@ and
 
 | Tier | Who | What they get | What they sign |
 |---|---|---|---|
-| **Anonymous** | A buyer who clicks Comprar | A redemption code on `/receipt/[orderId]`, accessible only via the opaque URL | Nothing |
+| **Anonymous** | A buyer who clicks Pay with sats | A redemption code on `/receipt/[orderId]`, accessible only via the opaque URL | Nothing |
 | **Signed-in via Nostr** | Any user who signs in on `/sign-in` | The receipt page + persistent order history at `/purchases` + automatic seller surfaces at `/my-courses`, `/create-course`, `/orders`, `/settings` | A NIP-07-style auth event on sign-in (and another on payment-destination field saves) |
 
 The platform never *requires* an upgrade between tiers. A buyer

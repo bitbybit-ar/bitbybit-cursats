@@ -1,7 +1,7 @@
 # Documentation
 
 > **Status:** Active
-> **Last updated:** 2026-05-21
+> **Last updated:** 2026-05-23
 
 ---
 
@@ -9,7 +9,8 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
-| 2026-05-21 | Structure, What to write in each doc | Added the `HACKATHON.md` judge front door, the ordered `testing-plan.md` walkthrough, and the new `features/` subfolder with the eight per-feature deep dives. Updated the "What to write in each doc" table accordingly. | Hackathon documentation pass — the docs tree gained a judge-facing surface and a feature-doc layer that did not previously exist; the structural index needed to reflect them so contributors can find the new files. |
+| 2026-05-23 | Structure | Pruned the structure tree: removed the retired judge front-door doc (deleted from the repo; its submission framing now lives in `SUBMISSION.md`). | The structure index must not list a doc that no longer exists. |
+| 2026-05-21 | Structure, What to write in each doc | Added the ordered `testing-plan.md` walkthrough and the new `features/` subfolder with the eight per-feature deep dives. Updated the "What to write in each doc" table accordingly. | Hackathon documentation pass — the docs tree gained a feature-doc layer that did not previously exist; the structural index needed to reflect it so contributors can find the new files. |
 | 2026-05-12 | What this folder is, Structure | Rebranded "BitByBit Cursá" to "BitByBit Cursats" throughout. | Brand rename per ADR 0018 — portmanteau of *cursá* (the voseo verb) and *sats*. |
 | 2026-05-05 | — | Initial version. | Bootstrap the docs tree using the canonical template from the `home` repo. |
 
@@ -17,11 +18,8 @@
 
 ## What this folder is
 
-Internal documentation for BitByBit Cursats — the project, its
-architecture, and the decisions behind it. The structure mirrors the
-canonical template defined in the `home` repo
-(`bitbybit-ar/home/docs/`); see that repo's `docs/README.md` for the
-authoritative explanation of every section.
+Internal documentation for Cursats — the project, its
+architecture, and the decisions behind it.
 
 ## Structure
 
@@ -29,7 +27,6 @@ authoritative explanation of every section.
 docs/
 ├── README.md                 ← you are here
 ├── _template.md              ← copy this for new docs
-├── HACKATHON.md              ← judge front door (hackathon submission framing)
 ├── testing-plan.md           ← ordered numbered judge walkthrough
 ├── about/
 │   └── mission.md            ← what Cursats is, who it's for, why
@@ -58,14 +55,6 @@ repo finds it without traversal.
 `CHANGELOG.md` (project release log) and `CONTRIBUTING.md`
 (contribution + vulnerability disclosure) live at the **repo root**,
 not here. Per-doc edits are recorded inside each doc.
-
-The following standard sub-folders from the canonical template are
-not yet populated; they will be added as needs arise:
-
-- `docs/guides/` — getting started, development, deployment.
-- `docs/runbooks/` — incident response procedures.
-- `docs/reference/` — glossary, FAQ, API surface.
-- `docs/architecture/diagrams/` — Mermaid sources.
 
 ## Doc standard
 
@@ -104,16 +93,12 @@ header fields but still carry an inline `## Change Log`.
 | Root `SUBMISSION.md` | Judge quickstart — clone → env → run → buy |
 | Root `CHANGELOG.md` | Every product-level change, grouped by release |
 | Root `CONTRIBUTING.md` | How to contribute + vulnerability disclosure |
-| `HACKATHON.md` | Judge front door — submission framing + doc map |
 | `testing-plan.md` | Ordered numbered walkthrough for evaluators |
 | `about/mission.md` | What the project is, who it's for, why it exists |
 | `architecture/overview.md` | System shape + key invariants |
 | `architecture/routing.md` | Full route map (buyer, account, creator, API) |
 | `architecture/decisions/NNNN-*.md` | One decision per file, frozen once accepted |
 | `features/*.md` | Per-feature deep dives — design, code pointers, mermaid sequence diagrams |
-| `guides/*.md` | Tutorials and how-tos for contributors |
-| `runbooks/*.md` | Step-by-step recovery procedures for incidents |
-| `reference/*.md` | Lookup material — glossary, FAQ, API surface |
 
 When in doubt, ask: "If I joined this project tomorrow, which file
 would hold this answer?" Put it there.

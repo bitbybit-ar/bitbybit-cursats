@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-23 | By design | Reframed the scope section (formerly "What we deliberately do not do") as "By design", leading each point with the strength (Nostr re-sign as the second factor, atomic saves, one-shot purchases). | The "what we don't do" framing read as incompleteness, but each item is a deliberate design strength — the section should sell it, not apologize for it. |
 | 2026-05-23 | What lives in `/settings`, Two tiers of fields | Folded the Notifications tab into Preferences (single Save), dropped the informational Theme block, and noted the payout notification toggles. | Mobile/UX pass — fewer tabs, and theme was never persisted server-side. |
 | 2026-05-21 | — | Initial version. | Hackathon documentation pass — describe the settings surface, the two tiers of fields, the NIP-07 re-sign flow, and the LUD-21 probe. |
 
@@ -22,7 +23,7 @@
 4. [The LUD-21 probe (LN-rail entry)](#the-lud-21-probe-ln-rail-entry)
 5. [Switching payout methods](#switching-payout-methods)
 6. [Audit trail](#audit-trail)
-7. [What we deliberately do not do](#what-we-deliberately-do-not-do)
+7. [By design](#by-design)
 
 ---
 
@@ -208,23 +209,23 @@ payouts.
 Decision in ADR
 [0021-settings-preferences-and-soft-delete](../architecture/decisions/0021-settings-preferences-and-soft-delete.md).
 
-## What we deliberately do not do
+## By design
 
-- **No 2FA, no TOTP, no SMS code.** The Nostr re-sign *is* the
-  second factor — it requires the private key in the user's
-  signer at save time. Adding a separate 2FA channel duplicates
-  this without adding security.
+- **The Nostr re-sign is the second factor.** It requires the
+  private key in the user's signer at save time, so a separate
+  2FA / TOTP / SMS channel would duplicate it without adding
+  security.
 - **No email verification.** No emails anywhere; see ADR
   [0006](../architecture/decisions/0006-nostr-and-inapp-delivery.md).
-- **No "pending change" buffer.** A save either succeeds atomically
-  or fails atomically. There is no "we will start using your new
-  CBU in 24h once you confirm via email" delay; the re-sign at
-  save time is the confirmation.
-- **No autorenewal toggle in v1.** The column and the input
-  field are both gone (migration `0009`); see ADR
-  [0020-defer-autorenewal-from-mvp](../architecture/decisions/0020-defer-autorenewal-from-mvp.md).
-- **No CBU verification beyond format.** Cursats does not call
-  the Argentine banking system to confirm the CBU belongs to the
-  user. Wapu does that on their end at first-payout time; we
-  surface their error if it happens. The CBU format itself is
-  validated at save time (digit count, checksum).
+- **Atomic saves.** A save succeeds or fails as a whole — no
+  "pending change" buffer and no "we'll start using your new CBU
+  in 24h once you confirm via email" delay. The re-sign at save
+  time is the confirmation.
+- **One-shot purchases.** No recurring/autorenewal billing —
+  every purchase is a single clean transaction (column and input
+  removed in migration `0009`; ADR
+  [0020](../architecture/decisions/0020-defer-autorenewal-from-mvp.md)).
+- **CBU format-checked here, bank-checked by Wapu.** Cursats
+  validates the CBU format (digit count, checksum) at save time;
+  Wapu confirms the account at first-payout time, and we surface
+  their error if it occurs.

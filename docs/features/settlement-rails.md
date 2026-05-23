@@ -1,7 +1,7 @@
 # Settlement rails
 
 > **Status:** Active
-> **Last updated:** 2026-05-22
+> **Last updated:** 2026-05-23
 
 ---
 
@@ -9,6 +9,8 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-23 | By design | Reframed the scope section (formerly "What we deliberately do not do") as "By design", leading each point with the strength (non-custodial, no platform spread, exactly two rails). | The "what we don't do" framing read as incompleteness, but each item is a deliberate design strength — the section should sell it, not apologize for it. |
+| 2026-05-23 | Single dispatch point | Fixed the dispatch diagram's `wapu_ars` leaf to read "Deposit poll is source of truth" instead of the leftover "Webhook is source of truth". | The diagram still showed the pre-ADR-0025 webhook model; the rail is poll-driven. |
 | 2026-05-22 | Wapu rail, Single dispatch point | Source-of-truth for "paid" is now the Wapu deposit poll (no webhook); the rail short-circuit references the deposit poller. | The Wapu rebuild (ADR 0025) made the rail poll-driven. |
 | 2026-05-21 | — | Initial version. | Hackathon documentation pass — explain *why* the dual-rail design exists, what each rail trades off, and where the design line is drawn (no third rail). |
 
@@ -22,7 +24,7 @@
 4. [The single dispatch point](#the-single-dispatch-point)
 5. [LUD-21 — the LN-rail entry requirement](#lud-21--the-ln-rail-entry-requirement)
 6. [Exchange rate (display only)](#exchange-rate-display-only)
-7. [What we deliberately do not do](#what-we-deliberately-do-not-do)
+7. [By design](#by-design)
 
 ---
 
@@ -136,7 +138,7 @@ order creation  │ users.payout_method  │  read once per order
      rail = wapu_ars            rail = direct_lightning
             │                             │
    Wapu invoice + payout              LNURL invoice
-   Webhook is source of truth         Verify URL is source of truth
+   Deposit poll is source of truth    Verify URL is source of truth
 ```
 
 Changing the seller's payout method later affects *future* orders
@@ -180,13 +182,14 @@ Wapu. But the storefront must *display* sats prices in pesos
 "15,000 ARS" sees a sensible sats equivalent, and a buyer pricing
 in pesos sees a sensible sats QR.
 
-The rate source is **Yadio**, the Argentine parallel/crypto rate
-Wapu itself settles against. It is:
+The rate source is **Wapu's `/exchange_rates`** — the very rates
+Wapu settles against (buy USDT/ARS × buy BTC/USD). It is:
 
-- **Live.** A keyless HTTPS endpoint, polled on the server.
+- **Live.** Read from the Wapu API on the server, reusing
+  `WAPU_PAY_APU_HOST` + `WAPU_API_KEY` (no separate service).
 - **Cached for 5 minutes.** Repeated reads inside the window hit
-  the cache, not Yadio.
-- **Backstopped by last-good.** A Yadio outage falls through to
+  the cache, not Wapu.
+- **Backstopped by last-good.** A Wapu blip falls through to
   the most recent successful read.
 - **Backstopped by a static fallback.** If the last-good cache is
   also missing (cold start during an outage), a hard-coded
@@ -194,27 +197,28 @@ Wapu itself settles against. It is:
   nonsense.
 
 The single seam is `lib/exchange-rate.ts:getSatsPerArs()`. No
-caller talks to Yadio directly. The base URL is overridable via
-`EXCHANGE_RATE_API_URL` for testing.
+caller talks to the rate API directly. Decision in ADR
+[0027](../architecture/decisions/0027-exchange-rate-from-wapu.md),
+superseding the Yadio source of ADR 0022.
 
 Decision in ADR
 [0022-live-exchange-rate-via-yadio](../architecture/decisions/0022-live-exchange-rate-via-yadio.md).
 
-## What we deliberately do not do
+## By design
 
-- **No third rail.** Stripe-style cards, USDT, MercadoPago — all
-  out of scope. Adding one needs a superseding ADR (see
+- **Exactly two rails.** Cards, USDT, and MercadoPago are out of
+  scope by choice; adding a rail takes a superseding ADR (see
   [0015](../architecture/decisions/0015-sats-settlement-rail.md)).
-- **No platform-side wallet.** Cursats never holds sats on behalf
-  of either party. The closest the platform comes to touching the
-  buyer's sats is *creating the invoice* — and even then the
-  invoice is minted by Wapu or by the seller's LNURL provider,
-  not by Cursats.
-- **No platform spread.** Cursats does not pad the sats↔ARS
-  conversion. Whatever Wapu pays at, that is what the seller
+- **Non-custodial.** Cursats never holds sats for either party.
+  The closest it comes to the buyer's sats is *creating the
+  invoice* — and even that is minted by Wapu or the seller's
+  LNURL provider, not by Cursats.
+- **Transparent conversion.** Cursats takes no spread on the
+  sats↔ARS conversion — whatever Wapu pays at is what the seller
   gets.
-- **No retroactive rail switching.** A seller who changes payout
-  method does so for future orders only. In-flight orders keep
-  their original rail.
-- **No "smart routing" between rails.** A seller has one rail at
-  a time. Switching is intentional, not algorithmic.
+- **Stable per-order rail.** Changing the payout method affects
+  *future* orders only; in-flight orders keep the rail they were
+  stamped with.
+- **One rail at a time.** A seller picks a rail explicitly;
+  switching is intentional, not algorithmic — there is no
+  cross-rail "smart routing."

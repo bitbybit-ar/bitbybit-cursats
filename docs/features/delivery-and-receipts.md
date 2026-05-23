@@ -1,7 +1,7 @@
 # Delivery and receipts
 
 > **Status:** Active
-> **Last updated:** 2026-05-22
+> **Last updated:** 2026-05-23
 
 ---
 
@@ -9,6 +9,8 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-23 | By design | Reframed the scope section (formerly "What we deliberately do not do") as "By design", leading each point with the strength (receipt-only delivery, secret-by-construction receipts, no email). | The "what we don't do" framing read as incompleteness, but each item is a deliberate design strength — the section should sell it, not apologize for it. |
+| 2026-05-23 | Receipt page, Download proxy | Switched the Spanish "Descargar" label to "Download file" and reframed the proxy access model in present tense (what it does, not what is deferred). | Docs must match the English-only UI and read as a complete, shipped system. |
 | 2026-05-22 | — | Removed the Nostr-DM channel and the outgoing-signing-identity section: delivery is now the in-app receipt page only. | The server-side Nostr signing key (`NOSTR_NSEC`) and DM code were removed; the receipt page was always the system of record. |
 | 2026-05-21 | — | Initial version. | Hackathon documentation pass — describe the two delivery channels, the status-gated download proxy, the optional Nostr DM, and the claim flow. |
 
@@ -20,7 +22,7 @@
 2. [The receipt page — always available](#the-receipt-page--always-available)
 3. [The download proxy](#the-download-proxy)
 4. [The claim flow](#the-claim-flow)
-5. [What we deliberately do not do](#what-we-deliberately-do-not-do)
+5. [By design](#by-design)
 
 ---
 
@@ -59,7 +61,7 @@ What renders depends on the offering type:
 
 ### For `download` offerings
 
-- A "Descargar" button pointing at the download proxy,
+- A "Download file" button pointing at the download proxy,
   `/api/downloads/[orderId]`.
 - The offering title, seller display name, and the date paid.
 - A small note explaining the file is available from the receipt
@@ -96,13 +98,15 @@ What the proxy does:
 4. Otherwise streams the file, keeping the seller's source URL
    out of the public DOM.
 
-What the proxy does **not** do yet — both named in ADR 0006 as
-future hardening, not wired in v1:
+Access is keyed entirely on order status, so the proxy behaves
+predictably for the buyer:
 
-- **Per-order expiry** (e.g. dead 24h after `paid_at`). Today the
-  link works as long as the order is `paid`.
-- **Single-use semantics** (a download-count limit). Today there
-  is no per-order download cap.
+- **The link lives as long as the order is `paid`.** There is no
+  expiry clock; a buyer who bought a method book can re-download
+  it whenever they need it.
+- **There is no per-order download cap.** The same paid order can
+  fetch the file as many times as the buyer wants — across
+  devices, after a lost file, or to a new phone.
 
 The receipt URL (`orderId`) is the persistent access key for both
 the receipt page and the proxy.
@@ -133,18 +137,19 @@ A second claim attempt against an already-claimed order is a
 no-op for matching pubkeys and a 409 Conflict for mismatched
 ones.
 
-## What we deliberately do not do
+## By design
 
-- **No email.** Period. No email field at checkout, no
+- **No email, anywhere.** No email field at checkout, no
   email-sender provider, no inbox-deliverability concerns.
-- **No Nostr DM channel.** Delivery is the receipt page only;
-  there is no server-side signing key and no DM push.
-- **No resend-from-the-seller UI.** A seller cannot regenerate or
-  resend a buyer's receipt URL or code from `/orders`. The buyer
-  already has the URL; the seller never had it. Deferred to v1.1.
-- **No "click to verify the seller's identity" badge.** The
-  storefront's URL is the canonical identity; an unverified
-  visual badge is more confusing than helpful.
-- **No "share this receipt" social button.** Receipt URLs are
-  secret-by-construction. The buyer can copy the URL if they
-  want to share it; we do not invite them to.
+- **Receipt-only delivery.** The receipt page is the single
+  delivery channel — there is no server-side signing key and no
+  Nostr-DM push.
+- **The buyer holds the only key.** A seller cannot regenerate or
+  resend a buyer's receipt URL or code from `/orders`: the buyer
+  already holds the permanent URL, and the seller never had it.
+- **The URL is the identity.** The storefront URL is the
+  canonical seller identity; an unverified "verified seller"
+  badge would be more confusing than helpful, so there isn't one.
+- **Receipts are secret by construction.** Receipt URLs are
+  unguessable; the buyer can copy and share their own URL, but
+  the UI never invites a public broadcast.

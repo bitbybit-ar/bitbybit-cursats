@@ -9,6 +9,7 @@ import {
   adminAuditLog,
   notifications,
 } from "@/lib/db/schema";
+import { resolveSeedPubkey } from "./seed-pubkey";
 
 // Same dotenv precedence as scripts/migrate.ts and seed-offerings.ts
 // so a single MIGRATE_ENV_FILE/.env.local/.env file drives all three.
@@ -17,15 +18,17 @@ if (envFile) config({ path: envFile });
 config({ path: ".env.local" });
 config({ path: ".env" });
 
-// Mirrors the seed script's well-known pubkey for the "Profe Demo"
-// row. Anything attached to this pubkey came from `scripts/seed-
-// offerings.ts` and is safe to remove.
-const SEED_USER_PUBKEY =
-  "0000000000000000000000000000000000000000000000000000000000000000";
-
 async function main() {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) throw new Error("DATABASE_URL is not set");
+
+  // Resolve the same owner pubkey the seed script used (SEED_PUBKEY,
+  // or the all-zeros demo user when unset) so unseed removes exactly
+  // what seed created. WARNING: if SEED_PUBKEY points at a real
+  // account you signed into, this deletes that user row and its
+  // orders too — only run it against a pubkey whose data you are
+  // willing to drop.
+  const SEED_USER_PUBKEY = resolveSeedPubkey();
 
   const sql = neon(databaseUrl);
   const db = drizzle(sql);
