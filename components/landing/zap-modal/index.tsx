@@ -12,7 +12,10 @@ import { cn } from "@/lib/utils";
 import styles from "./zap-modal.module.scss";
 
 const PRESET_AMOUNTS = [21, 100, 500, 1000, 5000];
-const LIGHTNING_ADDRESS =
+// Platform fallback — used when no explicit recipient is passed (the
+// landing "zap the devs" button). The seller profile passes the
+// seller's own Lightning address instead.
+const PLATFORM_LIGHTNING_ADDRESS =
   process.env.NEXT_PUBLIC_ZAP_LIGHTNING_ADDRESS ??
   process.env.NEXT_PUBLIC_LIGHTNING_ADDRESS ??
   "";
@@ -33,6 +36,12 @@ type ZapStatus = "idle" | "sending" | "success" | "error" | "no-webln";
 
 interface ZapModalProps {
   onClose: () => void;
+  /**
+   * Recipient Lightning address. Defaults to the platform address so
+   * the landing "support the devs" usage is unchanged; the seller
+   * profile passes the seller's address to zap them directly.
+   */
+  lightningAddress?: string;
 }
 
 // Deterministic confetti — seeded RNG so SSR and CSR markup match and
@@ -54,10 +63,12 @@ const CONFETTI_PARTICLES = Array.from({ length: CONFETTI_COUNT }, (_, i) => ({
   size: 4 + rng() * 6,
 }));
 
-export function ZapModal({ onClose }: ZapModalProps) {
+export function ZapModal({ onClose, lightningAddress }: ZapModalProps) {
   const t = useTranslations("landing.support.zapModal");
   const tc = useTranslations("common");
   const locale = useLocale();
+
+  const targetAddress = lightningAddress || PLATFORM_LIGHTNING_ADDRESS;
 
   const [amount, setAmount] = useState(100);
   const [customAmount, setCustomAmount] = useState("");
@@ -93,7 +104,7 @@ export function ZapModal({ onClose }: ZapModalProps) {
   async function handleZap() {
     if (!activeAmount || activeAmount <= 0) return;
 
-    if (!LIGHTNING_ADDRESS) {
+    if (!targetAddress) {
       setErrorKey("errorNoAddress");
       setStatus("error");
       return;
@@ -103,7 +114,7 @@ export function ZapModal({ onClose }: ZapModalProps) {
     setErrorKey(null);
 
     try {
-      const endpoint = await fetchLnurlPayEndpoint(LIGHTNING_ADDRESS);
+      const endpoint = await fetchLnurlPayEndpoint(targetAddress);
       const pr = await fetchInvoice(
         endpoint.callback,
         activeAmount,

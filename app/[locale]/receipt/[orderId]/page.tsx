@@ -34,7 +34,7 @@ export default async function ReceiptPage({ params }: Props) {
         {/* Auto-refresh while we wait for the webhook. */}
         <meta httpEquiv="refresh" content="5" />
         <Section>
-          <Container column>
+          <Container>
             <Card variant="default" className={styles.pendingCard}>
               <span className={styles.spinner} aria-hidden />
               <h1 className={styles.title}>{t("pending.title")}</h1>
@@ -52,7 +52,7 @@ export default async function ReceiptPage({ params }: Props) {
 
   return (
     <Section>
-      <Container column>
+      <Container>
         <article className={styles.layout}>
           <header className={styles.header}>
             <span className={styles.successBadge} aria-hidden>

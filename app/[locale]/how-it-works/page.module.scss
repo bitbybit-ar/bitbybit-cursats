@@ -30,6 +30,12 @@
 // those modules now. What stays here is the static closing:
 // glossary, custody, and CTA.
 
+// Container gutter for the glossary block (title + board) so it lines
+// up with the rest of the page and never touches the edge on mobile.
+.glossaryInner {
+  @include container;
+}
+
 // Glossary uses the shared <Polaroid> primitive — this rule is
 // just the wrapping board (centered, wraps to a column on mobile)
 // and the icon tint applied to each polaroid's frame.
@@ -87,6 +93,9 @@
 }
 
 .ctaBlock {
+  // Container gutter so the full-width mobile CTA buttons keep an edge
+  // margin.
+  @include container;
   text-align: center;
   display: flex;
   flex-direction: column;

@@ -18,6 +18,10 @@
 }
 
 .content {
+  // Container gutter + max-width so the full-width mobile buttons and
+  // text never touch the screen edge. The floating decorative blocks
+  // are siblings (outside .content) and keep bleeding.
+  @include container;
   text-align: center;
   position: relative;
   z-index: 1;

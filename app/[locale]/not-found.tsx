@@ -29,7 +29,7 @@ export default async function NotFound() {
   const excuse = excuses[Math.floor(Math.random() * excuses.length)];
 
   return (
-    <Container center column className={styles.page}>
+    <Container center className={styles.page}>
       <AttendancePolaroid
         title={t("title")}
         sheetTitle={t("sheetTitle")}

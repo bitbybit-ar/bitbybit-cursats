@@ -1,7 +1,7 @@
 # Settings and payouts
 
 > **Status:** Active
-> **Last updated:** 2026-05-21
+> **Last updated:** 2026-05-23
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-23 | What lives in `/settings`, Two tiers of fields | Folded the Notifications tab into Preferences (single Save), dropped the informational Theme block, and noted the payout notification toggles. | Mobile/UX pass — fewer tabs, and theme was never persisted server-side. |
 | 2026-05-21 | — | Initial version. | Hackathon documentation pass — describe the settings surface, the two tiers of fields, the NIP-07 re-sign flow, and the LUD-21 probe. |
 
 ---
@@ -34,8 +35,12 @@ The seller's single configuration surface at
 2. **Payout** — `payout_method` (the rail picker), plus the
    per-rail destination fields: `cbu`, `alias` (Wapu rail);
    `lightning_address` (LN rail).
-3. **Preferences** — locale default, theme default, soft-delete
-   toggle, notification preferences (when wired).
+3. **Preferences** — locale default plus the notification toggles
+   (buyer `order.paid`, seller `sale.received`, and the Wapu payout
+   states `payout.pending` / `payout.released` / `payout.failed`),
+   saved together with one Save. Theme is **not** here — it lives in
+   the navbar toggle and persists per-device. Account deletion lives in
+   its own **Danger zone** tab.
 
 The page renders both rails' destination fields all the time, so
 a seller can prepare the *other* rail's fields before flipping
@@ -48,7 +53,8 @@ Every editable field falls into one of two tiers:
 
 ### Tier 1 — free edits
 
-`slug`, `display_name`, `bio`, `avatar_url`, locale, theme.
+`slug`, `display_name`, `bio`, `avatar_url`, locale, notification
+preferences.
 
 These can be saved with just the session cookie. The
 session-cookie alone is sufficient because the worst-case

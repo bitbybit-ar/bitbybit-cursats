@@ -37,9 +37,48 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   is a mobile-first re-presentation of the existing remote-signer
   flow. Decision in ADR
   `docs/architecture/decisions/0025-mobile-login-via-nostrconnect-deep-link.md`.
+- **Redesigned seller profile header.** The storefront header
+  (`/[userSlug]`) now shows the avatar, name, NIP-05 with a verified
+  badge, bio, a **Send a zap** button (zaps the seller's Lightning
+  address via the existing zap modal), a **View on njump.me** link, and
+  a **QR button** opening a two-tab popup (npub identity / Lightning
+  address) with copy buttons. Content sits over the banner with a dark
+  overlay for legibility. NIP-05 and the Lightning fallback come from
+  the seller's kind:0 metadata; the settings Lightning address wins.
+- **Notifications in the mobile menu.** On phones the bell now opens a
+  notifications panel inside the slide-in drawer (with a back arrow),
+  instead of a dropdown that was clipped off-screen. Desktop keeps its
+  dropdown; both share one `useNotifications` hook + `NotificationList`.
+- **Payout notification toggles.** The Preferences tab now exposes
+  toggles for `payout.pending`, `payout.released`, and `payout.failed`
+  alongside the existing buyer/sale toggles, so ARS (Wapu) sellers can
+  manage the sale → transfer-released → failed pings.
+- **Per-course sales on My courses.** Each active course shows its paid
+  sales count and a "View sales" link to its orders
+  (`/orders?course=<slug>`); the Orders page filters by that course.
 
 ### Changed
 
+- **Settings: Notifications folded into Preferences.** The standalone
+  Notifications tab is gone; its toggles now live under **Preferences**
+  with a single Save. The informational "Theme" block was removed
+  (theme is device-only via the navbar toggle), the language selector
+  is full-width, and the Danger-zone description was reworded to make
+  clear it removes your CURSATS data only (Nostr identity and relay
+  events are out of our control).
+- **FAQ accordion is single-open.** Opening a question now collapses
+  the previously open one (all screen sizes).
+- **Mobile polish.** Highlighted-courses cards fade up on mobile
+  instead of sliding in from the left; landing sections, How-it-works,
+  and the FAQ get consistent left/right gutters (the FAQ page now uses
+  the `Container` component); the NIP-46 sign-in timeout was raised to
+  120s so slower mobile relays don't trip a premature error; the
+  desktop-only "Nostr WoT extension" hint is hidden on phones; the
+  empty My-purchases "Browse the catalog" button was removed (the
+  bottom "Explore more" CTA already covers it).
+- **Create-course pricing copy.** The pricing section and tooltip no
+  longer imply you pick a currency — they explain the price currency
+  follows your payout method and point to Settings to change it.
 - **Storefront exchange rate now comes from Wapu.** The sats↔ARS rate
   is derived from Wapu's `/exchange_rates` (buy USDT/ARS × buy
   BTC/USD) instead of Yadio, so the displayed estimate and the deposit

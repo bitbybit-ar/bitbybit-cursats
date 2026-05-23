@@ -110,6 +110,83 @@
   }
 }
 
+// Back arrow on the notifications panel — same hit-area as the close
+// button; `margin-inline-end: auto` pins it to the leading edge of the
+// (otherwise flex-end) header row.
+.backButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: $border-radius-sm;
+  background: transparent;
+  color: $color-text-primary;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-inline-end: auto;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
+
+  &:hover {
+    color: $color-primary;
+    background: alpha($color-primary, 10%);
+  }
+}
+
+// Bell trigger inside the user badge: opens the notifications panel.
+.bellButton {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-full;
+  background: transparent;
+  color: $color-text-secondary;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
+
+  &:hover {
+    color: $color-primary;
+    background: alpha($color-primary, 8%);
+    border-color: alpha($color-primary, 40%);
+  }
+}
+
+.bellBadge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: $border-radius-full;
+  background: $color-error;
+  color: $static-white;
+  font-family: $font-body;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  line-height: 18px;
+  text-align: center;
+  border: 2px solid $color-bg;
+}
+
+// Scroll region for the in-drawer notification list.
+.notificationsPanel {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 .nav {
   display: flex;
   flex-direction: column;

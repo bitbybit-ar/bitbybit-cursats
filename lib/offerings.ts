@@ -35,6 +35,25 @@ export interface OfferingWithSeller {
   };
 }
 
+/**
+ * Storefront-header view of a seller — the discovery `seller` fields
+ * plus the two the redesigned profile header needs: `pubkey` (for the
+ * npub QR + njump link + kind:0 lookup) and `lightning_address` (for
+ * the zap button + LN-address QR). Kept separate from
+ * `OfferingWithSeller["seller"]` so the many discovery consumers of
+ * that shape don't have to thread these through.
+ */
+export interface StorefrontSeller {
+  id: string;
+  slug: string;
+  display_name: string;
+  avatar_url: string | null;
+  banner_url: string | null;
+  bio: string | null;
+  pubkey: string;
+  lightning_address: string | null;
+}
+
 export function toOfferingWithSeller(row: {
   offering: Offering;
   seller: typeof users.$inferSelect;
@@ -214,7 +233,7 @@ export async function listHighlightedOfferings(
  * until they archive it.
  */
 export async function listOfferingsForUserSlug(userSlug: string): Promise<{
-  seller: OfferingWithSeller["seller"];
+  seller: StorefrontSeller;
   offerings: Offering[];
 } | null> {
   try {
@@ -242,6 +261,8 @@ export async function listOfferingsForUserSlug(userSlug: string): Promise<{
         avatar_url: seller.avatar_url,
         banner_url: seller.banner_url,
         bio: seller.bio,
+        pubkey: seller.pubkey,
+        lightning_address: seller.lightning_address,
       },
       offerings: rows,
     };

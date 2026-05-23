@@ -60,20 +60,6 @@
   line-height: $line-height-base;
 }
 
-.emptyHeroCta {
-  display: inline-flex;
-  align-items: center;
-  gap: $spacing-4;
-  margin-top: $spacing-8;
-  color: $color-primary;
-  font-weight: $font-weight-semibold;
-  text-decoration: none;
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
-
 // --- Controls row (status tabs + search) ---
 .controls {
   display: flex;

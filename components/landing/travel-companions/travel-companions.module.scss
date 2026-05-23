@@ -21,6 +21,13 @@
   margin-inline: auto;
   position: relative;
   z-index: 1;
+  // Container gutter for the heading. The polaroid carousel below
+  // keeps its intentional edge-to-edge bleed (negative margin).
+  padding-inline: $container-padding;
+
+  @include mobile {
+    padding-inline: $container-padding-mobile;
+  }
 }
 
 .title {

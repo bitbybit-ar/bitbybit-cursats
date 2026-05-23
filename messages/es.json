@@ -370,6 +370,8 @@
     "archivedHeading": "Archivados",
     "emptyActive": "Todavía no creaste ningún curso.",
     "archivedAt": "Archivado el {date}",
+    "salesCount": "{count, plural, =0 {sin ventas} one {# venta} other {# ventas}}",
+    "viewSales": "Ver ventas",
     "type": {
       "code": "Código de canje",
       "download": "Descarga"
@@ -395,7 +397,7 @@
       "sectionBasics": "Datos del curso",
       "sectionBasicsHint": "Cómo aparece el curso en tu storefront y en el explorador.",
       "sectionPricing": "Precio",
-      "sectionPricingHint": "Elegí en qué moneda querés cobrar. La otra se calcula al tipo de cambio de Wapu al momento de cada compra.",
+      "sectionPricingHint": "Tu precio se fija en la moneda de tu método de cobro: ARS si cobrás a un CBU/alias, sats si cobrás a una Lightning Address. La otra se calcula al tipo de cambio de Wapu al momento de cada compra.",
       "sectionContent": "Contenido y entrega",
       "sectionContentHint": "Elegí cómo entregás el curso al comprador.",
       "sectionCover": "Imagen de portada",
@@ -451,7 +453,7 @@
       "priceCurrencyNoteSats": "Cobrás en sats (Lightning Address), así que fijás el precio en sats. Los recibís directo en tu wallet.",
       "payoutEstimate": "Comisión estimada de Wapu: ~{fee} ARS · Recibís ≈ {net} ARS (estimado, varía con el tipo de cambio al momento de la venta).",
       "priceBelowWapuMin": "Tu neto debe ser de al menos {min} ARS: Wapu no procesa retiros por debajo de ese monto. Subí el precio.",
-      "priceAmountHint": "El monto se convierte a la otra moneda al momento de la compra.",
+      "priceAmountHint": "El monto se convierte a la otra moneda al momento de la compra. Para cobrar en otra moneda, cambiá tu método de cobro en Ajustes.",
       "typeLocked": "El tipo no se puede cambiar después de crear el curso.",
       "saveCreate": "Crear curso",
       "saveEdit": "Guardar cambios",
@@ -476,6 +478,8 @@
     "empty": "Todavía no hay ventas.",
     "anonymous": "Anónimo",
     "unknownOffering": "Oferta desconocida",
+    "filteredBy": "Mostrando pedidos de {course}.",
+    "clearFilter": "Ver todos los pedidos",
     "sync": "Sincronizar pedidos",
     "syncing": "Sincronizando…",
     "syncDone": "Pedidos sincronizados con Wapu.",
@@ -510,7 +514,6 @@
       "profile": "Perfil",
       "payout": "Cómo cobrás",
       "preferences": "Preferencias",
-      "notifications": "Notificaciones",
       "danger": "Zona de peligro"
     },
     "preferences": {
@@ -520,8 +523,6 @@
       "languageEs": "Español",
       "languageEn": "English",
       "languageHint": "Se aplica la próxima vez que inicies sesión. Podés cambiarlo temporalmente desde la barra superior cuando quieras.",
-      "themeLabel": "Tema",
-      "themeHint": "El cambio de tema vive en la barra superior y se guarda por dispositivo, no en tu cuenta.",
       "save": "Guardar preferencias",
       "saving": "Guardando…",
       "saved": "Preferencias guardadas.",
@@ -538,6 +539,18 @@
         "saleReceived": {
           "title": "Avisame cuando me compren un curso",
           "hint": "Cuando alguien compra uno de tus cursos, te avisamos para que veas el pago en \"Pedidos\"."
+        },
+        "payoutPending": {
+          "title": "Avisame cuando arranque mi transferencia",
+          "hint": "En los cursos que cobrás en pesos, la venta queda pendiente mientras Wapu prepara la transferencia a tu cuenta."
+        },
+        "payoutReleased": {
+          "title": "Avisame cuando llegue mi transferencia",
+          "hint": "Te avisamos cuando Wapu libera los pesos a tu CBU/alias."
+        },
+        "payoutFailed": {
+          "title": "Avisame si una transferencia falla",
+          "hint": "Si Wapu no puede completar la transferencia a tu cuenta, te avisamos para que revises tus datos de cobro."
         }
       },
       "save": "Guardar notificaciones",
@@ -549,7 +562,7 @@
       "title": "Zona de peligro",
       "hint": "Acciones permanentes sobre tu cuenta. Pensalo bien antes de continuar.",
       "deleteAccount": "Eliminar mi cuenta",
-      "deleteAccountHint": "Limpiamos tus datos de perfil y damos de baja tu cuenta. Tu historial de pedidos queda asociado a tu pubkey, pero ya no podés iniciar sesión con esta cuenta.",
+      "deleteAccountHint": "Elimina tus datos de CURSATS. Tu identidad Nostr y los eventos publicados en relays no se pueden borrar desde acá — no los controlamos.",
       "deleteAccountCta": "Eliminar cuenta",
       "modalTitle": "¿Eliminar tu cuenta?",
       "modalBody": "Esto es permanente. Al confirmar:",
@@ -644,7 +657,6 @@
     "title": "Mis compras",
     "subtitle": "Tus compras asociadas a esta identidad Nostr.",
     "empty": "Todavía no tenés compras en esta identidad.",
-    "browseCatalog": "Ver el catálogo",
     "unknownOffering": "Oferta desconocida",
     "emptyHero": {
       "title": "Todavía no compraste ningún curso",
@@ -768,6 +780,7 @@
   },
   "notifications": {
     "ariaLabel": "Notificaciones",
+    "back": "Volver al menú",
     "empty": "Todavía no tenés notificaciones.",
     "unreadCount": "{count, plural, =0 {Ninguna sin leer} one {# sin leer} other {# sin leer}}",
     "markAllRead": "Marcar todo como leído",
@@ -802,7 +815,19 @@
   },
   "storefront": {
     "offeringsHeading": "Mis cursos",
-    "empty": "Este profe todavía no publicó ofertas."
+    "empty": "Este profe todavía no publicó ofertas.",
+    "sendZap": "Enviar un zap",
+    "viewOnNjump": "Ver en njump.me",
+    "nip05Verified": "NIP-05 verificado",
+    "qr": {
+      "openLabel": "Mostrar códigos QR",
+      "title": "Compartir",
+      "identityTab": "Identidad",
+      "lightningTab": "Lightning address",
+      "copyNpub": "Copiar npub",
+      "copyAddress": "Copiar dirección",
+      "copied": "Copiado"
+    }
   },
   "onboarding": {
     "metadataTitle": "Crear tu tienda",

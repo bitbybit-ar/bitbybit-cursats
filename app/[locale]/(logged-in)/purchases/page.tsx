@@ -103,9 +103,6 @@ export default async function PurchasesPage({
         <Card variant="default" className={styles.emptyHero}>
           <h2 className={styles.emptyHeroTitle}>{t("emptyHero.title")}</h2>
           <p className={styles.emptyHeroBody}>{t("emptyHero.body")}</p>
-          <Link href="/explore" className={styles.emptyHeroCta}>
-            {t("browseCatalog")} <ArrowRightIcon size={16} />
-          </Link>
         </Card>
 
         <SuggestedForYou pubkey={session.pubkey} />

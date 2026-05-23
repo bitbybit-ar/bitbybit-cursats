@@ -31,6 +31,24 @@
   color: $color-text-secondary;
 }
 
+// Active "showing orders for <course>" filter line, with an inline
+// link back to the unfiltered list.
+.filterNote {
+  margin: $spacing-4 0 0;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.clearFilter {
+  color: $color-primary;
+  font-weight: $font-weight-semibold;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
 .empty {
   padding: $spacing-32;
   text-align: center;

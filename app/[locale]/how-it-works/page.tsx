@@ -103,16 +103,17 @@ export default async function HowItWorksPage({ params }: Props) {
         />
 
         <Section>
-          <Reveal>
-            <h2 className={styles.sectionTitle}>{t("glossary.title")}</h2>
-          </Reveal>
-          <RevealPolaroids
-            className={styles.glossary}
-            itemClassName={styles.glossaryItem}
-            ariaLabel={t("glossary.title")}
-            viewportMargin="-20% 0px"
-            delay={0.2}
-          >
+          <div className={styles.glossaryInner}>
+            <Reveal>
+              <h2 className={styles.sectionTitle}>{t("glossary.title")}</h2>
+            </Reveal>
+            <RevealPolaroids
+              className={styles.glossary}
+              itemClassName={styles.glossaryItem}
+              ariaLabel={t("glossary.title")}
+              viewportMargin="-20% 0px"
+              delay={0.2}
+            >
             {glossary.map((item) => (
               <Polaroid
                 key={item.title}
@@ -133,7 +134,8 @@ export default async function HowItWorksPage({ params }: Props) {
                 <p>{item.body}</p>
               </Polaroid>
             ))}
-          </RevealPolaroids>
+            </RevealPolaroids>
+          </div>
         </Section>
 
         <Section>

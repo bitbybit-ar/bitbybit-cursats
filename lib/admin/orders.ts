@@ -26,9 +26,13 @@ const DEFAULT_LIMIT = 50;
 
 export async function listAdminOrders(
   userId: string,
-  opts: { limit?: number } = {}
+  opts: { limit?: number; offeringSlug?: string } = {}
 ): Promise<AdminOrderRow[]> {
   const db = getDb();
+  const conditions = [eq(orders.user_id, userId)];
+  if (opts.offeringSlug) {
+    conditions.push(eq(offerings.slug, opts.offeringSlug));
+  }
   return db
     .select({
       id: orders.id,
@@ -43,9 +47,33 @@ export async function listAdminOrders(
     })
     .from(orders)
     .leftJoin(offerings, eq(orders.offering_id, offerings.id))
-    .where(eq(orders.user_id, userId))
+    .where(and(...conditions))
     .orderBy(desc(orders.created_at))
     .limit(opts.limit ?? DEFAULT_LIMIT);
+}
+
+/**
+ * Paid-order count per offering for a seller, keyed by offering id.
+ * Powers the "N sales" badge on the My courses list. Offerings with
+ * zero paid orders are simply absent from the map.
+ */
+export async function salesCountByOffering(
+  userId: string
+): Promise<Map<string, number>> {
+  const db = getDb();
+  const rows = await db
+    .select({
+      offering_id: orders.offering_id,
+      count: sql<number>`COUNT(*)::int`,
+    })
+    .from(orders)
+    .where(and(eq(orders.user_id, userId), eq(orders.status, "paid")))
+    .groupBy(orders.offering_id);
+  const map = new Map<string, number>();
+  for (const row of rows) {
+    map.set(row.offering_id, row.count);
+  }
+  return map;
 }
 
 export async function getAdminOrderDetail(

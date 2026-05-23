@@ -9,6 +9,7 @@ import { Avatar } from "@/components/common/avatar";
 import { LocaleThemeToggle } from "@/components/layout/locale-theme-toggle";
 import { MobileMenu } from "@/components/layout/mobile-menu";
 import { NotificationBell } from "@/components/layout/notification-bell";
+import { NotificationsProvider } from "@/lib/contexts/notifications-context";
 import { Button } from "@/components/ui/button";
 import {
   BookIcon,
@@ -76,7 +77,7 @@ export function Navbar() {
   const avatarLabel = profileName ?? t("accountMenu");
 
   return (
-    <>
+    <NotificationsProvider enabled={Boolean(session)}>
       <nav className={cn(styles.navbar, scrolled && styles.scrolled)}>
         <div className={styles.inner}>
           <Link href="/" className={styles.logo} aria-label="Cursats">
@@ -221,7 +222,7 @@ export function Navbar() {
       </nav>
 
       <MobileMenu open={mobileMenuOpen} onClose={closeMobileMenu} />
-    </>
+    </NotificationsProvider>
   );
 }
 
