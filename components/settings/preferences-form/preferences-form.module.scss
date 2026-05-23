@@ -59,7 +59,6 @@
 
 .select {
   width: 100%;
-  max-width: 320px;
   padding: $spacing-12;
   background: $color-bg;
   border: 1px solid $color-border;
@@ -82,24 +81,99 @@
   color: $color-text-secondary;
 }
 
-.themeNote {
-  padding: $spacing-12 $spacing-16;
+// Notification toggles (folded in from the old notifications-form so
+// the two now live under one Preferences tab with a single Save).
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-12;
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $spacing-16;
+  padding: $spacing-16;
   background: $color-bg;
   border: 1px solid $color-border;
   border-radius: $border-radius-md;
 
+  @include mobile {
+    gap: $spacing-12;
+    padding: $spacing-12;
+  }
+}
+
+.rowMain {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-2;
+  flex: 1;
+  min-width: 0;
+
   strong {
-    display: block;
-    margin-bottom: $spacing-4;
     font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
     color: $color-text-primary;
   }
+}
 
-  p {
-    margin: 0;
-    font-size: $font-size-xs;
-    color: $color-text-secondary;
-    line-height: 1.5;
+.rowHint {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  line-height: 1.5;
+}
+
+.toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+
+    &:focus-visible + .toggleVisual {
+      outline: 2px solid $focus-ring;
+      outline-offset: 2px;
+    }
+
+    &:checked + .toggleVisual {
+      background: $color-primary;
+
+      &::after {
+        transform: translateX(20px);
+      }
+    }
+  }
+}
+
+.toggleVisual {
+  width: 44px;
+  height: 24px;
+  background: $color-bg-3;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-full;
+  transition: background-color 0.2s ease;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    background: $color-bg;
+    border-radius: $border-radius-full;
+    transition: transform 0.2s ease;
   }
 }
 

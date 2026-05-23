@@ -1,0 +1,310 @@
+@use "@/styles/colors" as *;
+@use "@/styles/spacing" as *;
+@use "@/styles/typography" as *;
+@use "@/styles/media-mixins" as *;
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  border-radius: $border-radius-lg;
+  overflow: hidden;
+  padding: $spacing-32;
+  background-color: $color-bg-2;
+
+  // Fallback gradient when the seller has not set a banner.
+  &[data-has-banner="false"] {
+    background-image: linear-gradient(
+      135deg,
+      $color-primary-soft 0%,
+      $color-bg-2 60%,
+      $color-bg 100%
+    );
+  }
+
+  @include mobile {
+    padding: $spacing-24 $spacing-16;
+  }
+}
+
+.bannerImage {
+  object-fit: cover;
+  z-index: -2;
+}
+
+// Dark overlay so the avatar/name/bio stay legible over busy banners;
+// dropped when there is no banner (the fallback gradient is legible).
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.45) 0%,
+    rgba(0, 0, 0, 0.62) 100%
+  );
+
+  .hero[data-has-banner="false"] & {
+    background: transparent;
+  }
+}
+
+.qrButton {
+  position: absolute;
+  top: $spacing-16;
+  right: $spacing-16;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: $border-radius-full;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.35);
+  color: $static-white;
+  cursor: pointer;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.55);
+  }
+
+  .hero[data-has-banner="false"] & {
+    border-color: $color-border;
+    background: $color-bg;
+    color: $color-text-primary;
+
+    &:hover {
+      background: $color-bg-2;
+    }
+  }
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-20;
+
+  @include mobile {
+    gap: $spacing-16;
+  }
+}
+
+.avatar {
+  width: 88px;
+  height: 88px;
+  font-size: 2.25rem;
+  border: 3px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  flex-shrink: 0;
+
+  @include mobile {
+    width: 64px;
+    height: 64px;
+    font-size: 1.75rem;
+  }
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-8;
+  min-width: 0;
+  // Keep the text clear of the absolutely-positioned QR button.
+  padding-inline-end: $spacing-48;
+
+  @include mobile {
+    padding-inline-end: 0;
+  }
+}
+
+.name {
+  margin: 0;
+  font-family: $font-family-display;
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-extrabold;
+  color: $static-white;
+  line-height: $line-height-tight;
+  word-break: break-word;
+
+  .hero[data-has-banner="false"] & {
+    color: $color-text-primary;
+  }
+}
+
+.nip05 {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-4;
+  font-size: $font-size-sm;
+  color: rgba(255, 255, 255, 0.85);
+  word-break: break-all;
+
+  .hero[data-has-banner="false"] & {
+    color: $color-text-secondary;
+  }
+}
+
+.verified {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border-radius: $border-radius-full;
+  background: $color-success;
+  color: $static-white;
+}
+
+.bio {
+  margin: 0;
+  font-size: $font-size-md;
+  line-height: $line-height-base;
+  color: rgba(255, 255, 255, 0.88);
+  white-space: pre-line;
+
+  .hero[data-has-banner="false"] & {
+    color: $color-text-secondary;
+  }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-12;
+  margin-top: $spacing-4;
+}
+
+.zapButton {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-8;
+  padding: $spacing-8 $spacing-16;
+  border: none;
+  border-radius: $border-radius-md;
+  background: $color-secondary;
+  color: $static-white;
+  font-family: $font-family-base;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-bold;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.njumpButton {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-8;
+  padding: $spacing-8 $spacing-16;
+  border-radius: $border-radius-md;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.12);
+  color: $static-white;
+  font-family: $font-family-base;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  text-decoration: none;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.22);
+    text-decoration: none;
+  }
+
+  .hero[data-has-banner="false"] & {
+    border-color: $color-border;
+    background: $color-bg;
+    color: $color-text-primary;
+
+    &:hover {
+      background: $color-bg-2;
+    }
+  }
+}
+
+// ---- QR popup (rendered inside the shared Modal) ----
+
+.qrTabs {
+  display: flex;
+  gap: $spacing-8;
+  margin-bottom: $spacing-20;
+  border-bottom: 1px solid $color-border;
+}
+
+.qrTab {
+  padding: $spacing-8 $spacing-12;
+  border: none;
+  background: transparent;
+  color: $color-text-secondary;
+  font-family: $font-family-base;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+
+  &:hover {
+    color: $color-text-primary;
+  }
+}
+
+.qrTabActive {
+  color: $color-primary;
+  border-bottom-color: $color-primary;
+}
+
+.qrPanel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-16;
+}
+
+// White frame keeps the QR scannable in dark mode (matches the
+// checkout lightning-qr treatment).
+.qrFrame {
+  background: $static-white;
+  padding: $spacing-16;
+  border-radius: $border-radius-md;
+}
+
+.qrValue {
+  margin: 0;
+  max-width: 100%;
+  font-family: ui-monospace, "SF Mono", "Menlo", monospace;
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  text-align: center;
+  word-break: break-all;
+}
+
+.copyButton {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-8;
+  padding: $spacing-8 $spacing-16;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-md;
+  background: $color-bg;
+  color: $color-text-primary;
+  font-family: $font-family-base;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  cursor: pointer;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: $color-bg-2;
+  }
+}

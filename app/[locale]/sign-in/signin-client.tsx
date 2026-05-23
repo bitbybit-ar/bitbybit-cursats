@@ -229,7 +229,7 @@ export function SignInClient({ locale }: SignInClientProps) {
   };
 
   return (
-    <Container center column>
+    <Container center>
       <Card variant="default" className={styles.card}>
         <h1 className={styles.title}>{t("title")}</h1>
         <p className={styles.subtitle}>{t("subtitle")}</p>
@@ -272,18 +272,22 @@ export function SignInClient({ locale }: SignInClientProps) {
           </p>
         ) : null}
 
-        <p className={styles.wotHint}>
-          {t("wotHint")}{" "}
-          <a
-            href="https://nostr-wot.com/download"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.wotLink}
-          >
-            {t("wotExtensionLabel")}
-          </a>
-          ?
-        </p>
+        {/* The WoT browser extension can't be installed on phones,
+            so the hint only makes sense on desktop. */}
+        {!isMobile ? (
+          <p className={styles.wotHint}>
+            {t("wotHint")}{" "}
+            <a
+              href="https://nostr-wot.com/download"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.wotLink}
+            >
+              {t("wotExtensionLabel")}
+            </a>
+            ?
+          </p>
+        ) : null}
       </Card>
 
       <div className={styles.backLinkWrapper}>

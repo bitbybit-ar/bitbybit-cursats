@@ -76,6 +76,28 @@
 
 .item {
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-4;
+}
+
+// Secondary action under each course row — jumps to the orders list
+// pre-filtered to that course. Right-aligned and quiet so the edit row
+// stays the primary target.
+.salesLink {
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-4;
+  padding: 0 $spacing-4;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-primary;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .archivedItem {

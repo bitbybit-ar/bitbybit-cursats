@@ -11,6 +11,13 @@
   gap: $spacing-12;
   max-width: 640px;
   margin-inline: auto;
+  // Container gutter so the heading never touches the screen edge on
+  // viewports narrower than its max-width.
+  padding-inline: $container-padding;
+
+  @include mobile {
+    padding-inline: $container-padding-mobile;
+  }
 }
 
 .title {

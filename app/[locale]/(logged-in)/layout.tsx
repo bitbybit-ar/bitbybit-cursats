@@ -36,5 +36,5 @@ export default async function LoggedInLayout({
   const session = await getSession();
   if (!session) notFound();
 
-  return <Container column>{children}</Container>;
+  return <Container>{children}</Container>;
 }

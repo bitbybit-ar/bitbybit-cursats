@@ -8,7 +8,6 @@ export const SETTINGS_SECTIONS = [
   "profile",
   "payout",
   "preferences",
-  "notifications",
   "danger",
 ] as const;
 

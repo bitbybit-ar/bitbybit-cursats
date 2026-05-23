@@ -5,24 +5,11 @@ interface ContainerProps {
   children: React.ReactNode;
   className?: string;
   center?: boolean;
-  column?: boolean;
 }
 
-export function Container({
-  children,
-  className,
-  center,
-  column,
-}: ContainerProps) {
+export function Container({ children, className, center }: ContainerProps) {
   return (
-    <div
-      className={cn(
-        styles.container,
-        center && styles.center,
-        column && styles.column,
-        className
-      )}
-    >
+    <div className={cn(styles.container, center && styles.center, className)}>
       {children}
     </div>
   );

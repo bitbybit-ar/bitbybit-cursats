@@ -3,7 +3,6 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { PayoutForm } from "@/components/settings/payout-form";
 import { PreferencesForm } from "@/components/settings/preferences-form";
-import { NotificationsForm } from "@/components/settings/notifications-form";
 import { DangerZoneForm } from "@/components/settings/danger-zone-form";
 import { SettingsNav } from "@/components/settings/settings-nav";
 import { isSettingsSection } from "@/components/settings/settings-nav/sections";
@@ -102,10 +101,8 @@ export default async function SettingsPage({
           {section === "preferences" ? (
             <PreferencesForm
               initialLocale={user.locale === "en" ? "en" : "es"}
+              initialPrefs={user.notification_prefs ?? {}}
             />
-          ) : null}
-          {section === "notifications" ? (
-            <NotificationsForm initialPrefs={user.notification_prefs ?? {}} />
           ) : null}
           {section === "danger" ? <DangerZoneForm /> : null}
         </div>

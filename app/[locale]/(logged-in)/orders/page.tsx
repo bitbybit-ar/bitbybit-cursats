@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { z } from "zod";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/routing";
 import { Card } from "@/components/ui/card";
@@ -9,6 +10,16 @@ import { SyncOrdersButton } from "@/components/orders/sync-orders-button";
 import styles from "./page.module.scss";
 
 export const dynamic = "force-dynamic";
+
+// The `?course=` filter is a kebab-case offering slug (matches the
+// slug constraint in lib/admin/offerings). An invalid value is ignored
+// rather than 400'd — it's a display filter, not a mutation, mirroring
+// how the explore params coerce. The query is parameterized and scoped
+// to the seller's own rows regardless.
+const CourseFilterSchema = z
+  .string()
+  .max(80)
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 
 export async function generateMetadata({
   params,
@@ -25,14 +36,19 @@ export async function generateMetadata({
 
 export default async function PanelOrdersPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ course?: string }>;
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
 
+  const { course: rawCourse } = await searchParams;
+  const parsedCourse = CourseFilterSchema.safeParse(rawCourse);
+  const course = parsedCourse.success ? parsedCourse.data : undefined;
   const { user } = await requirePanelUser();
-  const orders = await listAdminOrders(user.id);
+  const orders = await listAdminOrders(user.id, { offeringSlug: course });
   const t = await getTranslations("orders");
   const tStatus = await getTranslations("orderStatus");
   const arsFormatter = new Intl.NumberFormat(
@@ -51,6 +67,16 @@ export default async function PanelOrdersPage({
           <SyncOrdersButton />
         </div>
         <p className={styles.subtitle}>{t("subtitle")}</p>
+        {course ? (
+          <p className={styles.filterNote}>
+            {t("filteredBy", {
+              course: orders[0]?.offering_title ?? course,
+            })}{" "}
+            <Link href="/orders" className={styles.clearFilter}>
+              {t("clearFilter")}
+            </Link>
+          </p>
+        ) : null}
       </header>
 
       {orders.length === 0 ? (

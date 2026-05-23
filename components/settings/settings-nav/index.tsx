@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import {
   UserIcon,
   BoltIcon,
-  BellIcon,
   SettingsIcon,
   CloseIcon,
 } from "@/components/icons";
@@ -21,16 +20,15 @@ import styles from "./settings-nav.module.scss";
  * matching panel. Default section is `profile`.
  *
  * The icons are picked for vibes-not-precision: a person for
- * Profile, a bolt for payouts, a gear for preferences, a bell for
- * notifications, and a close-icon (×) for the danger zone.
- * Replace with dedicated glyphs later if we add them.
+ * Profile, a bolt for payouts, a gear for preferences (which now also
+ * holds the notification toggles), and a close-icon (×) for the danger
+ * zone. Replace with dedicated glyphs later if we add them.
  */
 
 const ICONS: Record<SettingsSection, React.ComponentType<{ size?: number }>> = {
   profile: UserIcon,
   payout: BoltIcon,
   preferences: SettingsIcon,
-  notifications: BellIcon,
   danger: CloseIcon,
 };
 

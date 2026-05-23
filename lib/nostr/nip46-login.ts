@@ -22,7 +22,11 @@ import {
   createNostrConnectURI,
 } from "nostr-tools/nip46";
 
-export const NIP46_TIMEOUT_MS = 60_000;
+// Mobile signers (Amber over nostrconnect://) round-trip through
+// public relays that can take a while to connect on cellular links;
+// 60s was too tight and surfaced a spurious "couldn't connect" toast
+// before the approval came back. 120s gives slow relays room.
+export const NIP46_TIMEOUT_MS = 120_000;
 
 export type BunkerLoginErrorCode = "bunker_invalid_url";
 

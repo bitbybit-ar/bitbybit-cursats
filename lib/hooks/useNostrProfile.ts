@@ -8,6 +8,10 @@ export interface NostrProfile {
   picture?: string;
   name?: string;
   display_name?: string;
+  /** NIP-05 identifier (`name@domain`) advertised in kind:0. */
+  nip05?: string;
+  /** Lightning address (LUD-16) advertised in kind:0. */
+  lud16?: string;
 }
 
 interface CacheEnvelope {
@@ -62,6 +66,8 @@ function parseProfileContent(content: string): NostrProfile | null {
     if (typeof parsed.display_name === "string") {
       profile.display_name = parsed.display_name;
     }
+    if (typeof parsed.nip05 === "string") profile.nip05 = parsed.nip05;
+    if (typeof parsed.lud16 === "string") profile.lud16 = parsed.lud16;
     return profile;
   } catch {
     return null;

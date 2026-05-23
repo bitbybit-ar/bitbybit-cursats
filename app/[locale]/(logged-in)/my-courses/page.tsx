@@ -3,8 +3,9 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/routing";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowRightIcon, BadgeIcon } from "@/components/icons";
+import { ArrowRightIcon } from "@/components/icons";
 import { listAllOfferings, listArchivedOfferings } from "@/lib/admin/offerings";
+import { salesCountByOffering } from "@/lib/admin/orders";
 import { requirePanelUser } from "@/lib/admin/panel-context";
 import styles from "./page.module.scss";
 
@@ -32,9 +33,10 @@ export default async function PanelOfferingsPage({
   setRequestLocale(locale);
 
   const { user } = await requirePanelUser();
-  const [active, archived] = await Promise.all([
+  const [active, archived, salesByOffering] = await Promise.all([
     listAllOfferings(user.id),
     listArchivedOfferings(user.id),
+    salesCountByOffering(user.id),
   ]);
 
   const t = await getTranslations("myCourses");
@@ -51,7 +53,6 @@ export default async function PanelOfferingsPage({
           <p className={styles.subtitle}>{t("subtitle")}</p>
         </div>
         <Button href="/create-course" variant="primary">
-          <BadgeIcon size={16} />
           {t("createCta")}
         </Button>
       </header>
@@ -67,27 +68,39 @@ export default async function PanelOfferingsPage({
           </Card>
         ) : (
           <ul className={styles.list}>
-            {active.map((row) => (
-              <li key={row.id} className={styles.item}>
-                <Link
-                  href={`/my-courses/${row.slug}/edit`}
-                  className={styles.row}
-                >
-                  <div className={styles.rowMain}>
-                    <span className={styles.rowTitle}>{row.title}</span>
-                    <span className={styles.rowMeta}>
-                      <code className={styles.slug}>{row.slug}</code>
-                      <span className={styles.dot}>·</span>
-                      {t(`type.${row.type}`)}
-                      <span className={styles.dot}>·</span>
-                      {row.price_currency === "ars" ? "ARS" : "sats"}{" "}
-                      {arsFormatter.format(row.price_amount)}
-                    </span>
-                  </div>
-                  <ArrowRightIcon size={16} />
-                </Link>
-              </li>
-            ))}
+            {active.map((row) => {
+              const sales = salesByOffering.get(row.id) ?? 0;
+              return (
+                <li key={row.id} className={styles.item}>
+                  <Link
+                    href={`/my-courses/${row.slug}/edit`}
+                    className={styles.row}
+                  >
+                    <div className={styles.rowMain}>
+                      <span className={styles.rowTitle}>{row.title}</span>
+                      <span className={styles.rowMeta}>
+                        <code className={styles.slug}>{row.slug}</code>
+                        <span className={styles.dot}>·</span>
+                        {t(`type.${row.type}`)}
+                        <span className={styles.dot}>·</span>
+                        {row.price_currency === "ars" ? "ARS" : "sats"}{" "}
+                        {arsFormatter.format(row.price_amount)}
+                        <span className={styles.dot}>·</span>
+                        {t("salesCount", { count: sales })}
+                      </span>
+                    </div>
+                    <ArrowRightIcon size={16} />
+                  </Link>
+                  <Link
+                    href={`/orders?course=${row.slug}`}
+                    className={styles.salesLink}
+                  >
+                    {t("viewSales")}
+                    <ArrowRightIcon size={14} />
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>

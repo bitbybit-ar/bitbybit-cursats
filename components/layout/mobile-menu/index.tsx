@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter, usePathname } from "@/i18n/routing";
 import { Avatar } from "@/components/common/avatar";
 import { Button } from "@/components/ui/button";
 import {
+  ArrowLeftIcon,
+  BellIcon,
   BookIcon,
   CloseIcon,
   LogoutIcon,
@@ -13,10 +15,11 @@ import {
   ShoppingBagIcon,
 } from "@/components/icons";
 import { LocaleThemeToggle } from "@/components/layout/locale-theme-toggle";
-import { NotificationBell } from "@/components/layout/notification-bell";
+import { NotificationList } from "@/components/layout/notification-bell/notification-list";
 import { useSignerContext } from "@/lib/contexts/signer-context";
 import { useClickOutside } from "@/lib/hooks/useClickOutside";
 import { useNostrProfile } from "@/lib/hooks/useNostrProfile";
+import { useNotificationsContext } from "@/lib/contexts/notifications-context";
 import { cn } from "@/lib/utils";
 import styles from "./mobile-menu.module.scss";
 
@@ -36,11 +39,17 @@ const SECTIONS = [
 
 export function MobileMenu({ open, onClose }: MobileMenuProps) {
   const t = useTranslations("landing.nav");
+  const tNotif = useTranslations("notifications");
   const { session, signOut } = useSignerContext();
   const router = useRouter();
   const pathname = usePathname();
   const isSignInPage = pathname === "/sign-in";
   const { profile } = useNostrProfile(session?.pubkey);
+  const { notifications, unreadCount, markAsRead, markAllRead } =
+    useNotificationsContext();
+  // The drawer is either showing the menu or the notifications panel
+  // (reached from the bell, dismissed with the back arrow).
+  const [view, setView] = useState<"menu" | "notifications">("menu");
   const drawerRef = useRef<HTMLElement>(null);
 
   useClickOutside(drawerRef, onClose, open);
@@ -59,6 +68,11 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
       document.body.style.overflow = previousOverflow;
     };
   }, [open, onClose]);
+
+  // Always reopen on the menu, never stranded in the notifications panel.
+  useEffect(() => {
+    if (!open) setView("menu");
+  }, [open]);
 
   const handleSignOut = async () => {
     onClose();
@@ -82,6 +96,32 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
         aria-modal={open ? "true" : undefined}
         role="dialog"
       >
+        {view === "notifications" ? (
+          <>
+            {/* Notifications panel: a lone back arrow returns to the
+                menu (per spec — no title, no close here). */}
+            <header className={styles.header}>
+              <button
+                type="button"
+                className={styles.backButton}
+                onClick={() => setView("menu")}
+                aria-label={tNotif("back")}
+              >
+                <ArrowLeftIcon size={20} />
+              </button>
+            </header>
+            <div className={styles.notificationsPanel}>
+              <NotificationList
+                notifications={notifications}
+                unreadCount={unreadCount}
+                onMarkAsRead={markAsRead}
+                onMarkAllRead={markAllRead}
+                onActivate={onClose}
+              />
+            </div>
+          </>
+        ) : (
+          <>
         <header className={styles.header}>
           {session ? (
             <div className={styles.userBadge}>
@@ -94,7 +134,19 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
               <span className={styles.userName}>
                 {profileName ?? t("accountMenu")}
               </span>
-              <NotificationBell />
+              <button
+                type="button"
+                className={styles.bellButton}
+                onClick={() => setView("notifications")}
+                aria-label={tNotif("ariaLabel")}
+              >
+                <BellIcon size={18} />
+                {unreadCount > 0 && (
+                  <span className={styles.bellBadge} aria-hidden="true">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </button>
             </div>
           ) : null}
           <button
@@ -188,6 +240,8 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
         <div className={styles.preferences}>
           <LocaleThemeToggle />
         </div>
+          </>
+        )}
       </aside>
     </>
   );

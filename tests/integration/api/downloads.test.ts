@@ -4,7 +4,6 @@ import { NextRequest } from "next/server";
 import { sql, eq } from "drizzle-orm";
 import { testDb, cleanDb, seedUser } from "../setup";
 import { offerings, orders } from "@/lib/db/schema";
-import { createOrder } from "@/lib/orders";
 import { GET } from "@/app/api/downloads/[orderId]/route";
 
 const DOWNLOAD_BASE = "https://cursats.test/api/downloads";
@@ -69,6 +68,32 @@ async function seedCodeOffering() {
   return row;
 }
 
+// Seed an order row directly rather than going through createOrder.
+// createOrder funds through Wapu, and the real-only client throws
+// without WAPU_API_KEY/WAPU_PAY_APU_HOST (no mock fallback), which a
+// credential-less CI run can't satisfy. The download route only reads
+// the persisted row, not the funding leg, so we seed it offline —
+// mirroring seedPendingOrder in orders.test.ts. The real funding path
+// is covered by the gated real-staging test there.
+async function seedOrder(offering: {
+  id: string;
+  user_id: string;
+  price_amount: number;
+}): Promise<{ order_id: string }> {
+  const [row] = await testDb
+    .insert(orders)
+    .values({
+      pubkey: null,
+      offering_id: offering.id,
+      user_id: offering.user_id,
+      amount_ars: offering.price_amount,
+      amount_sats: 0,
+      rail: "wapu_ars",
+    })
+    .returning();
+  return { order_id: row.id };
+}
+
 async function markPaid(orderId: string) {
   await testDb
     .update(orders)
@@ -91,10 +116,7 @@ describe("GET /api/downloads/[orderId]", () => {
     const offering = await seedDownloadOffering(
       "https://example.com/asset.pdf"
     );
-    const { order_id } = await createOrder({
-      offering_id: offering.id,
-      pubkey: null,
-    });
+    const { order_id } = await seedOrder(offering);
     await markPaid(order_id);
 
     const { req, ctx } = buildRequest(order_id);
@@ -107,10 +129,7 @@ describe("GET /api/downloads/[orderId]", () => {
     const offering = await seedDownloadOffering(
       "https://example.com/asset.pdf"
     );
-    const { order_id } = await createOrder({
-      offering_id: offering.id,
-      pubkey: null,
-    });
+    const { order_id } = await seedOrder(offering);
     // Do NOT mark paid.
 
     const { req, ctx } = buildRequest(order_id);
@@ -134,10 +153,7 @@ describe("GET /api/downloads/[orderId]", () => {
 
   it("returns 404 for a paid order whose offering is type=code", async () => {
     const offering = await seedCodeOffering();
-    const { order_id } = await createOrder({
-      offering_id: offering.id,
-      pubkey: null,
-    });
+    const { order_id } = await seedOrder(offering);
     await markPaid(order_id);
 
     const { req, ctx } = buildRequest(order_id);
@@ -149,10 +165,7 @@ describe("GET /api/downloads/[orderId]", () => {
     const offering = await seedDownloadOffering(
       "https://example.com/asset.pdf"
     );
-    const { order_id } = await createOrder({
-      offering_id: offering.id,
-      pubkey: null,
-    });
+    const { order_id } = await seedOrder(offering);
     await markPaid(order_id);
 
     await testDb
@@ -167,10 +180,7 @@ describe("GET /api/downloads/[orderId]", () => {
 
   it("returns 404 when the offering has no download_url on file", async () => {
     const offering = await seedDownloadOffering(null);
-    const { order_id } = await createOrder({
-      offering_id: offering.id,
-      pubkey: null,
-    });
+    const { order_id } = await seedOrder(offering);
     await markPaid(order_id);
 
     const { req, ctx } = buildRequest(order_id);

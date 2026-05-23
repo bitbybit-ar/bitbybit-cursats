@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
 import { OfferingCard } from "@/components/catalog/offering-card";
-import { Avatar } from "@/components/common/avatar";
+import { ProfileHeader } from "@/components/storefront/profile-header";
 import { listOfferingsForUserSlug } from "@/lib/offerings";
 import { alternatesFor } from "@/lib/seo";
 import styles from "./page.module.scss";
@@ -38,33 +37,14 @@ export default async function SellerStorePage({ params }: Props) {
 
   return (
     <Container>
-      <div
-        className={styles.hero}
-        data-has-banner={seller.banner_url ? "true" : "false"}
-      >
-        {seller.banner_url ? (
-          <Image
-            src={seller.banner_url}
-            alt=""
-            fill
-            sizes="100vw"
-            className={styles.bannerImage}
-            priority
-          />
-        ) : null}
-        <div className={styles.heroOverlay} />
-        <div className={styles.heroContent}>
-          <Avatar
-            src={seller.avatar_url}
-            alt=""
-            name={seller.display_name}
-            size="lg"
-            className={styles.heroAvatar}
-          />
-          <h1 className={styles.title}>{seller.display_name}</h1>
-          {seller.bio ? <p className={styles.bio}>{seller.bio}</p> : null}
-        </div>
-      </div>
+      <ProfileHeader
+        pubkey={seller.pubkey}
+        displayName={seller.display_name}
+        avatarUrl={seller.avatar_url}
+        bannerUrl={seller.banner_url}
+        bio={seller.bio}
+        lightningAddress={seller.lightning_address}
+      />
 
       <Section className={styles.offeringsSection}>
         <h2 className={styles.listHeading}>{t("offeringsHeading")}</h2>

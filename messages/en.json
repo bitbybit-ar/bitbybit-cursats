@@ -370,6 +370,8 @@
     "archivedHeading": "Archived",
     "emptyActive": "You haven't created any courses yet.",
     "archivedAt": "Archived on {date}",
+    "salesCount": "{count, plural, =0 {no sales} one {# sale} other {# sales}}",
+    "viewSales": "View sales",
     "type": {
       "code": "Redemption code",
       "download": "Download"
@@ -395,7 +397,7 @@
       "sectionBasics": "Course basics",
       "sectionBasicsHint": "How the course shows up on your storefront and in the explorer.",
       "sectionPricing": "Pricing",
-      "sectionPricingHint": "Pick the currency you want to be paid in. The other one is computed at Wapu's exchange rate at each purchase.",
+      "sectionPricingHint": "Your price is set in the currency tied to your payout method — ARS if you get paid to a CBU/alias, sats if you get paid to a Lightning Address. The other one is computed at Wapu's exchange rate at each purchase.",
       "sectionContent": "Content & delivery",
       "sectionContentHint": "Pick how you deliver the course to the buyer.",
       "sectionCover": "Cover image",
@@ -451,7 +453,7 @@
       "priceCurrencyNoteSats": "You get paid in sats (Lightning Address), so you set the price in sats. They land directly in your wallet.",
       "payoutEstimate": "Estimated Wapu fee: ~{fee} ARS · You receive ≈ {net} ARS (estimate; varies with the exchange rate at sale time).",
       "priceBelowWapuMin": "Your net payout must be at least {min} ARS — Wapu won't process withdrawals below that. Raise the price.",
-      "priceAmountHint": "The amount converts to the other currency at purchase time.",
+      "priceAmountHint": "The amount converts to the other currency at purchase time. To charge in a different currency, change your payout method in Settings.",
       "typeLocked": "Type cannot be changed after the course is created.",
       "saveCreate": "Create course",
       "saveEdit": "Save changes",
@@ -476,6 +478,8 @@
     "empty": "No orders yet.",
     "anonymous": "Anonymous",
     "unknownOffering": "Unknown offering",
+    "filteredBy": "Showing orders for {course}.",
+    "clearFilter": "Show all orders",
     "sync": "Sync orders",
     "syncing": "Syncing…",
     "syncDone": "Orders synced with Wapu.",
@@ -510,18 +514,15 @@
       "profile": "Profile",
       "payout": "How you get paid",
       "preferences": "Preferences",
-      "notifications": "Notifications",
       "danger": "Danger zone"
     },
     "preferences": {
       "title": "Preferences",
-      "hint": "Pick your default language. Theme (light / dark) is saved in your browser via the navbar toggle.",
+      "hint": "Pick your default language. The theme (light / dark) is saved in your browser via the navbar toggle.",
       "language": "Default language",
       "languageEs": "Español",
       "languageEn": "English",
       "languageHint": "Applied the next time you sign in. You can still switch temporarily from the navbar whenever you want.",
-      "themeLabel": "Theme",
-      "themeHint": "Theme switching lives in the navbar and is saved per device, not per account.",
       "save": "Save preferences",
       "saving": "Saving…",
       "saved": "Preferences saved.",
@@ -538,6 +539,18 @@
         "saleReceived": {
           "title": "Tell me when someone buys my course",
           "hint": "When a buyer pays for one of your courses, we ping you so you can see the sale in \"Orders\"."
+        },
+        "payoutPending": {
+          "title": "Tell me when my payout starts",
+          "hint": "For courses paid in pesos, the sale lands pending while Wapu prepares the transfer to your account."
+        },
+        "payoutReleased": {
+          "title": "Tell me when my payout lands",
+          "hint": "We ping you once Wapu releases the pesos to your CBU/alias."
+        },
+        "payoutFailed": {
+          "title": "Tell me if a payout fails",
+          "hint": "If Wapu can't complete the transfer to your account, we let you know so you can check your payout details."
         }
       },
       "save": "Save notifications",
@@ -549,7 +562,7 @@
       "title": "Danger zone",
       "hint": "Permanent actions on your account. Think twice before continuing.",
       "deleteAccount": "Delete my account",
-      "deleteAccountHint": "We scrub your profile data and disable the account. Your purchase history stays tied to your pubkey, but you can no longer sign in with this account.",
+      "deleteAccountHint": "Removes your data from CURSATS. Your Nostr identity and any events published to relays cannot be deleted from here — we don't control those.",
       "deleteAccountCta": "Delete account",
       "modalTitle": "Delete your account?",
       "modalBody": "This is permanent. On confirm:",
@@ -644,7 +657,6 @@
     "title": "My purchases",
     "subtitle": "Purchases associated with this Nostr identity.",
     "empty": "No purchases on this identity yet.",
-    "browseCatalog": "Browse the catalog",
     "unknownOffering": "Unknown offering",
     "emptyHero": {
       "title": "You haven't bought any courses yet",
@@ -768,6 +780,7 @@
   },
   "notifications": {
     "ariaLabel": "Notifications",
+    "back": "Back to menu",
     "empty": "No notifications yet.",
     "unreadCount": "{count, plural, =0 {No unread} one {# unread} other {# unread}}",
     "markAllRead": "Mark all as read",
@@ -802,7 +815,19 @@
   },
   "storefront": {
     "offeringsHeading": "My courses",
-    "empty": "This professor hasn't published any offerings yet."
+    "empty": "This professor hasn't published any offerings yet.",
+    "sendZap": "Send a zap",
+    "viewOnNjump": "View on njump.me",
+    "nip05Verified": "NIP-05 verified",
+    "qr": {
+      "openLabel": "Show QR codes",
+      "title": "Share",
+      "identityTab": "Identity",
+      "lightningTab": "Lightning address",
+      "copyNpub": "Copy npub",
+      "copyAddress": "Copy address",
+      "copied": "Copied"
+    }
   },
   "onboarding": {
     "metadataTitle": "Create your store",

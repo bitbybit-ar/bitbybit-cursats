@@ -72,7 +72,7 @@ export default async function ClaimPage({
   if (order.pubkey !== null) {
     return (
       <Section>
-        <Container column>
+        <Container>
           <Card variant="default" className={styles.card}>
             <h1 className={styles.title}>{t("alreadyClaimed.title")}</h1>
             <p className={styles.subtitle}>{t("alreadyClaimed.body")}</p>
@@ -84,7 +84,7 @@ export default async function ClaimPage({
 
   return (
     <Section>
-      <Container column>
+      <Container>
         <Card variant="default" className={styles.card}>
           <h1 className={styles.title}>{t("title")}</h1>
           <p className={styles.subtitle}>{t("subtitle")}</p>

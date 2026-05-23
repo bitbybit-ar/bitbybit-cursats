@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Section } from "@/components/ui/section";
+import { Container } from "@/components/ui/container";
+import { FaqList } from "@/components/faq/faq-list";
 import { alternatesFor } from "@/lib/seo";
 import styles from "./page.module.scss";
 
@@ -11,19 +12,6 @@ type Props = {
 };
 
 export const dynamic = "force-static";
-
-const QUESTION_KEYS = [
-  "lightning",
-  "wallet",
-  "wapu",
-  "argentina",
-  "anonymous",
-  "delivery",
-  "lostReceipt",
-  "creatorPayout",
-  "nostrSignIn",
-  "fees",
-] as const;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
@@ -41,7 +29,7 @@ export default async function FaqPage({ params }: Props) {
   const t = await getTranslations("faq");
 
   return (
-    <Section>
+    <Container>
       <header className={styles.hero}>
         <h1 className={styles.heroTitle}>
           {t.rich("hero.title", {
@@ -67,23 +55,7 @@ export default async function FaqPage({ params }: Props) {
         </p>
       </header>
 
-      <ul className={styles.list}>
-        {QUESTION_KEYS.map((key) => (
-          <li key={key} className={styles.item}>
-            <details className={styles.details}>
-              <summary className={styles.summary}>
-                <span className={styles.question}>
-                  {t(`questions.${key}Q`)}
-                </span>
-                <span className={styles.chevron} aria-hidden="true">
-                  +
-                </span>
-              </summary>
-              <p className={styles.answer}>{t(`questions.${key}A`)}</p>
-            </details>
-          </li>
-        ))}
-      </ul>
-    </Section>
+      <FaqList />
+    </Container>
   );
 }

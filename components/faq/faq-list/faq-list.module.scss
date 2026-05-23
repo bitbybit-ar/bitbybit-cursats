@@ -1,0 +1,122 @@
+@use "@/styles/colors" as *;
+@use "@/styles/spacing" as *;
+@use "@/styles/typography" as *;
+
+// Accordion list. `<details>` is still used for accessible, crawlable
+// markup, but `open` is now driven by React state so opening one
+// question collapses any other (single-open behaviour). The summary
+// click is intercepted (`preventDefault`) so the native toggle does
+// not fight the controlled state.
+//
+// `interpolate-size: allow-keywords` is what unlocks transitioning
+// between `0` and `auto` block-size — without it the
+// `::details-content` height swap below would snap. Scoped to the list
+// so it never bleeds out into other elements.
+.list {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-12;
+  interpolate-size: allow-keywords;
+}
+
+.item {
+  background: $color-bg;
+  border: 1px solid $color-border;
+  border-radius: $border-radius-lg;
+  box-shadow: 0 1px 2px $card-shadow;
+  overflow: hidden;
+}
+
+.details {
+  width: 100%;
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-16;
+  padding: $spacing-20 $spacing-24;
+  cursor: pointer;
+  list-style: none;
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $focus-ring;
+    outline-offset: -2px;
+  }
+}
+
+.question {
+  font-family: $font-family-display;
+  font-size: $font-size-md;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  line-height: $line-height-heading;
+}
+
+.chevron {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: $font-family-display;
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-primary;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.details[open] .chevron {
+  transform: rotate(135deg);
+}
+
+.answer {
+  margin: 0;
+  padding: 0 $spacing-24 $spacing-20;
+  font-size: $font-size-body;
+  line-height: $line-height-base;
+  color: $color-text-secondary;
+}
+
+// `::details-content` is the implicit wrapper around everything in
+// `<details>` except the `<summary>`. Animating its block-size from
+// 0 → auto (paired with `interpolate-size: allow-keywords` on the
+// list) gives a smooth open AND close, while `transition-behavior:
+// allow-discrete` on `content-visibility` keeps the content rendered
+// through the closing animation instead of snapping out. Browsers
+// that don't support `::details-content` (Firefox at the moment) fall
+// back to the snap behaviour — accessible either way.
+.details::details-content {
+  block-size: 0;
+  overflow: clip;
+  opacity: 0;
+  transition:
+    block-size 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.25s ease,
+    content-visibility 0.3s allow-discrete;
+}
+
+.details[open]::details-content {
+  block-size: auto;
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
+
+  .details::details-content {
+    transition: none;
+  }
+}

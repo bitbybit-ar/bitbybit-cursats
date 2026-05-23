@@ -48,7 +48,7 @@ export default async function CheckoutPage({ params }: Props) {
   if (!bolt11) {
     return (
       <Section>
-        <Container column>
+        <Container>
           <Card variant="default" className={styles.errorCard}>
             <h1 className={styles.title}>{tErrors("checkoutFailed")}</h1>
             <Button href="/" variant="outline">
@@ -62,7 +62,7 @@ export default async function CheckoutPage({ params }: Props) {
 
   return (
     <Section>
-      <Container column>
+      <Container>
         <article className={styles.layout}>
           <header className={styles.header}>
             <h1 className={styles.title}>{t("title")}</h1>

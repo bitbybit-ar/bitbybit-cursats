@@ -1,7 +1,7 @@
 # Notifications
 
 > **Status:** Active
-> **Last updated:** 2026-05-22
+> **Last updated:** 2026-05-23
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-23 | The bell, Event types | Documented the mobile drawer presentation, the Preferences toggles, and the three `payout.*` seller events. | Mobile/UX pass — the bell dropdown was clipped on phones; payout toggles are now user-facing. |
 | 2026-05-22 | Surfaces, Event types, Pointers | Removed the Nostr-DM surface (the bell is now the only notification channel) and the Wapu-webhook code pointers. | The server Nostr-DM channel and the Wapu webhook were removed as dead code. |
 | 2026-05-21 | — | Initial version. | Hackathon documentation pass — describe the in-app notification bell, the event types, the read-state mechanics, and the relationship to outgoing Nostr DMs. |
 
@@ -59,12 +60,20 @@ Polling, not WebSockets. Reasons:
   acceptable for "your order is ready" — the receipt page is
   already there to be visited directly.
 
-Opening the bell dropdown renders the most recent N notifications
-with their titles, bodies, and timestamps; clicking a row marks
-it read (via `PATCH /api/notifications`) and routes to the
-relevant page. A "Mark all as read" button flips every unread
-row for the caller in a single query
-(`POST /api/notifications`).
+Opening the bell renders the most recent N notifications with their
+titles, bodies, and timestamps; clicking a row marks it read (via
+`PATCH /api/notifications`) and routes to the relevant page. A "Mark
+all as read" button flips every unread row for the caller in a single
+query (`POST /api/notifications`). On desktop the bell opens a
+dropdown; on phones it opens the same list **inside the slide-in menu
+drawer** (reached from the drawer's bell, dismissed with a back arrow),
+since an absolutely-positioned dropdown was clipped off-screen there.
+Both presentations share one `useNotifications` hook and the
+`NotificationList` component.
+
+Which events ring the bell is per-user: the **Preferences** tab in
+`/settings` toggles each event type on or off (missing or non-`false`
+means enabled).
 
 The notification row stores everything in Postgres:
 recipient pubkey, type, title (i18n-resolved at render time on
@@ -74,9 +83,9 @@ display name), and `read_at`.
 
 ## Event types
 
-The two MVP event types map one-to-one to a confirmation poll
-(the Wapu deposit transaction, or the LUD-21 verify URL) flipping
-an order to `paid`:
+Two events fire off the buyer-paid confirmation poll (the Wapu deposit
+transaction, or the LUD-21 verify URL flipping an order to `paid`);
+three more track the ARS seller-payout leg:
 
 ### `order.paid` — to the buyer
 
@@ -106,8 +115,16 @@ confirms. Carries:
 Always enqueued — the seller is always identifiable, because by
 definition the offering belongs to a user row.
 
-Future event types (refund initiated, code redeemed, payout
-sent) are out of scope for v1.
+### `payout.pending` / `payout.released` / `payout.failed` — to the seller
+
+Only on the ARS (Wapu) rail, tracking the seller payout leg: the
+withdrawal opening (`payout.pending`), the pesos settling to the
+seller's CBU/alias (`payout.released`), and a failed transfer
+(`payout.failed`). Direct-Lightning sales have no payout leg and emit
+none of these. All three are toggleable in Preferences.
+
+Future event types (refund initiated, code redeemed) are out of scope
+for v1.
 
 ## Read-state mechanics
 
