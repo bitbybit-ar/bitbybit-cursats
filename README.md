@@ -120,7 +120,6 @@ settlement rails.
 
 Start here if you're evaluating the project:
 
-- [Hackathon index](./docs/HACKATHON.md) — judge front door
 - [Submission walkthrough](./SUBMISSION.md) — 5-minute
   clone-to-running
 - [Testing plan](./docs/testing-plan.md) — ordered numbered
