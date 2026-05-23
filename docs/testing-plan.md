@@ -1,16 +1,7 @@
 # Judge walkthrough
 
 > **Status:** Active
-> **Last updated:** 2026-05-22
-
----
-
-## Change Log
-
-| Date | Section | Change | Reason |
-|---|---|---|---|
-| 2026-05-22 | Steps 5–7, What you've covered | Removed the paste-npub / Nostr-DM steps and the webhook/tunnel instructions; the Wapu rail now confirms by polling the deposit transaction. Updated the exchange-rate source to Wapu. | The server Nostr-DM channel and Wapu webhooks were removed; the rate now comes from Wapu (ADR 0027). |
-| 2026-05-21 | — | Initial version. | Hackathon documentation pass — ordered numbered walkthrough of every major surface, naming visible buttons and underlying flows. |
+> **Last updated:** 2026-05-23
 
 ---
 
@@ -31,10 +22,10 @@ feature docs and the code.
 
 ## Step 1 — Sign in
 
-1. Go to `/sign-in` (or click **Iniciar sesión** from the navbar
+1. Go to `/sign-in` (or click **Sign in** from the navbar
    on `/`).
-2. Pick one of the three signer tabs: **Extensión**, **Pegar
-   nsec**, **Bunker (NIP-46)**.
+2. Pick a sign-in method: **Browser Extension**, **Secret key**
+   (paste nsec), or **Bunker URL** (NIP-46).
 3. Sign the auth event. The server validates the signature, the
    `created_at` freshness, and the pubkey, then materialises (or
    finds) the corresponding `users` row and mints a session JWT
@@ -54,12 +45,14 @@ is held in memory only for the lifetime of the tab.
 1. Open `/settings`.
 2. Confirm your display name and avatar match your Nostr
    profile (if your kind:0 had them). Otherwise fill them in.
-3. Pick a `slug` you want — your storefront will live at
-   `cursats.bitbybit.com.ar/<slug>` (or `localhost:3000/<slug>`
-   locally). Reserved tokens (`c`, `m`, `explore`, `settings`,
-   etc.) are blocked at save time.
-4. Save. Slug / display name / bio are **Tier 1** fields — the
-   session cookie alone is enough; no re-sign prompt should
+3. Note your storefront slug, shown on this page. It is
+   generated automatically at sign-in from your Nostr display
+   name (or a `user-<first-8>` fallback) and your storefront
+   lives at `cursats.bitbybit.com.ar/<slug>` (or
+   `localhost:3000/<slug>` locally) — it is assigned for you,
+   not chosen here.
+4. Save. Display name, bio, and avatar are **Tier 1** fields —
+   the session cookie alone is enough; no re-sign prompt should
    appear.
 
 This exercises the identity section described in
@@ -74,7 +67,7 @@ test both; pick one to start.
 ### 3a. Wapu rail
 
 1. Still on `/settings`, scroll to **Payout method** and pick
-   **Wapu (pesos a CBU/alias)**.
+   **Get paid in pesos (CBU/alias)**.
 2. Fill in either a 22-digit CBU or an alias.
 3. Save. The page prompts you to **re-sign**: confirm via your
    signer (extension popup / bunker push / paste-nsec
@@ -85,7 +78,7 @@ test both; pick one to start.
 
 ### 3b. Lightning Address rail
 
-1. Pick **Lightning Address (sats directo)**.
+1. Pick **Get paid in sats (Lightning Address)**.
 2. Paste a Lightning Address you control (e.g.,
    `you@getalby.com`).
 3. Save. The server probes the address with a **1-sat LUD-21
@@ -100,10 +93,10 @@ a one-click operation. See
 
 ## Step 4 — Create your first offering
 
-1. Click **Crear curso** in the navbar (or visit
+1. Click **New course** on `/my-courses` (or visit
    `/create-course`).
-2. Pick a primitive: **Código canjeable** (`code`) or **Descarga
-   digital** (`download`).
+2. Pick a primitive: **Redemption code** (`code`) or **Download**
+   (`download`).
 3. Fill in title, description, an image, a price, and a few
    tags.
    - For `code`: configure the redemption instructions block
@@ -111,12 +104,17 @@ a one-click operation. See
    - For `download`: upload the file. Images go through Blossom
      (browser-direct, content-addressed); the private download
      file is served later through `/api/downloads/[orderId]`.
-4. Pick the price currency (**sats** or **ARS**). The other
-   currency renders live via the Yadio rate.
+4. The price currency follows your payout rail automatically —
+   ARS for the Wapu rail, sats for the Lightning Address rail
+   (you don't pick it per course). The other currency renders
+   live via the Wapu exchange rate. **On the Wapu rail, price
+   above ARS 10,000:** that is Wapu's minimum withdrawal, so the
+   form rejects a course whose net payout (price − Wapu fee)
+   would fall under it (`price_below_wapu_minimum`).
 5. Save. The offering goes live immediately — there is no
    separate publish step.
-6. For a `code` offering, click **Mint codes** in the editor to
-   add a batch of redemption codes. The pool must be non-empty or
+6. For a `code` offering, click **Mint more codes** in the editor
+   to add a batch of redemption codes. The pool must be non-empty or
    checkout is refused as sold out (`download` offerings need no
    minting).
 
@@ -129,20 +127,21 @@ checkout-time guard, not a publish gate.
 
 Pre-req: §3a completed (or §3b — both work, but the buyer
 experience is intentionally identical, so this step uses Wapu;
-§6 uses Lightning).
+§6 uses Lightning). Your test course must be priced above Wapu's
+ARS 10,000 withdrawal minimum (see Step 4).
 
 Open a second browser profile (or an incognito window) so the
 buyer session is separate from the seller session.
 
 1. As the buyer, navigate to `/<your-slug>` and click into the
    offering.
-2. Click **Comprar**.
+2. Click **Pay with sats**.
 3. On the checkout page (`/checkout/[orderId]`), the QR shows a
    Wapu-minted BOLT11 invoice. Note the sats amount and the
    conversion line ("≈ <ARS> ARS").
 4. Pay the invoice with any Lightning wallet you have around —
    Wapu staging accepts fake money, so keep the amount small
-   (the seeder's defaults use 21 or 100 sats).
+   (e.g., ~100 sats).
 5. Watch the page advance: the checkout page polls
    `/api/orders/[orderId]`, which polls the Wapu deposit
    transaction until it reads `Completed`; the order then flips
@@ -159,11 +158,11 @@ take the new one. See
 [settlement-rails — single dispatch point](./features/settlement-rails.md#the-single-dispatch-point).
 
 1. As the buyer (same separate session as §5), reload the
-   offering page and click **Comprar**.
+   offering page and click **Pay with sats**.
 2. The QR now shows a BOLT11 invoice minted by your LNURL
    provider, not Wapu. The buyer experience is otherwise
    identical: same QR layout, same conversion line, same
-   "Confirmando…" spinner.
+   "Waiting for your payment…" spinner.
 3. Pay the invoice. The sats land directly in your LN wallet —
    no converter, no Wapu in the middle.
 4. The client polls `/api/orders/[orderId]`, which server-side
@@ -179,16 +178,15 @@ LUD-21 verify poll succeeds.
 1. On `/receipt/[orderId]`, confirm the page renders:
    - For a `code` offering: the redemption code, the seller's
      instructions, and a Copy button.
-   - For a `download` offering: a Descargar button pointing at
-     the download proxy `/api/downloads/[orderId]`.
+   - For a `download` offering: a **Download file** button
+     pointing at the download proxy `/api/downloads/[orderId]`.
 2. Bookmark or copy the URL. This is the **only** delivery
    channel — it works forever, regardless of the buyer's
    identity.
-3. (Optional) For a `download` offering, click **Descargar** and
-   confirm the file streams through `/api/downloads/[orderId]`.
-   The proxy gates on the order's `paid` status (it 403s an
-   unpaid order); per-order expiry and single-use are named in
-   ADR 0006 as future hardening, not yet wired. See
+3. (Optional) For a `download` offering, click **Download file**
+   and confirm the file streams through `/api/downloads/[orderId]`.
+   The proxy gates on the order's `paid` status — it 403s an
+   unpaid order. See
    [delivery-and-receipts](./features/delivery-and-receipts.md#the-download-proxy).
 
 ## Step 8 — Notifications
@@ -197,13 +195,13 @@ Switch back to the seller session.
 
 1. The navbar bell now shows an unread count. Open it.
 2. The most recent row is a `sale.received` for the order you
-   just paid. The body names the offering, the rail, and the
-   amount in sats and ARS.
+   just paid. The body names the offering.
 3. Click the row. The bell flips it `read` server-side
-   (`PATCH /api/notifications`) and routes you to
-   `/orders/[orderId]`.
+   (`PATCH /api/notifications`). A `sale.received` row marks
+   read in place (no navigation); a buyer's `order.paid` row
+   links to its `/receipt/[orderId]`.
 4. From a second pretend account, generate another sale, then
-   come back and click **Marcar todo como leído**. Confirm the
+   come back and click **Mark all as read**. Confirm the
    unread count clears via a single
    `POST /api/notifications` call.
 
@@ -250,16 +248,17 @@ Quick i18n + theme pass.
    uses comma for decimals and dot for thousands; English the
    opposite.
 
-## Step 11 — Discovery and tags
+## Step 11 — Discovery
 
 1. Visit `/explore`. Confirm the grid renders every active
    offering across every seller you've created (you and any
    seeded test sellers).
-2. Click a **tag chip**. The grid filters; the URL updates to
-   `/explore?tag=<tag>`.
-3. Open a storefront via a card. Confirm the seller's tags
-   appear and link out to `/explore?tag=<tag>` for cross-seller
-   discovery.
+2. Use the **search** box, the **type** filter (code /
+   download), and the **sort** control. The grid updates and the
+   active filters are reflected in the URL query (`?q=`,
+   `?type=`, `?sort=`).
+3. Open a storefront via a card. Confirm the seller's offerings
+   and profile render at `/<userSlug>`.
 4. If you are signed in, the order of offerings on `/explore`
    reflects a personalised scoring. Sign out and reload to see
    the anonymous (recency-weighted) order.
@@ -274,7 +273,7 @@ the LUD-21 1-sat probe, both product primitives (`code` and
 `download`) including the status-gated download proxy, the receipt
 page as the only delivery channel, the claim flow for anonymous
 purchases, the notification bell with mark-read and
-mark-all-read, the explore filter chips, the storefront
+mark-all-read, the explore search/type/sort controls, the storefront
 flat-URL convention (`/<userSlug>` and `/<userSlug>/c/<offeringSlug>`),
 the live Wapu exchange-rate display, the locale toggle, and the
 dark/light theme.

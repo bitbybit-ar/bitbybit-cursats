@@ -1,4 +1,4 @@
-# BitByBit Cursats
+# Cursats
 
 Lightning checkout for teachers and educational creators. Buyers
 always pay in sats; sellers pick how to get paid — pesos to a CBU
@@ -43,8 +43,7 @@ product primitives to learners:
    through a status-gated proxy).
 
 Buyers always pay over Lightning. Sellers pick one of two payout
-rails in Settings (ADR
-[0015](./docs/architecture/decisions/0015-sats-settlement-rail.md)):
+rails in Settings:
 
 - **Wapu (pesos to CBU/alias)** — the inclusive on-ramp. Wapu
   converts the sats to ARS and pushes pesos to the seller's
@@ -54,18 +53,11 @@ rails in Settings (ADR
   via LNURL-pay (LUD-21). For sellers who already live in sats and
   want no converter in the middle.
 
-No email integration — see ADR
-[0006](./docs/architecture/decisions/0006-nostr-and-inapp-delivery.md).
-
-Every purchase is a one-shot in v1. Auto-renewal was deferred from
-MVP — see ADR
-[0020](./docs/architecture/decisions/0020-defer-autorenewal-from-mvp.md).
-
 ## Core flow
 
 ```text
 1. Browse storefront or /explore        → public catalog, no login required
-2. Open offering, click "Comprar"       → Lightning invoice + QR
+2. Open offering, click "Pay with sats" → Lightning invoice + QR
 3. Pay over Lightning                   → poll Wapu deposit OR LUD-21 verify
 4. Land on /receipt/[orderId]           → redemption code OR download link
 5. Sats settle to seller's chosen rail  → ARS to CBU (Wapu) OR sats to wallet (LN)
@@ -90,12 +82,9 @@ way — same QR, same wait, same receipt page.
   CBU/alias
 - **Payments rail B**: LNURL-pay with LUD-21 verify — direct sats to
   the seller's Lightning Address
-- **Exchange rate**: Yadio — live sats↔ARS, 5-minute cache, last-good
-  fallback chain (`lib/exchange-rate.ts`)
+- **Exchange rate**: Wapu
 - **Auth**: Nostr only — NIP-07 / nsec / NIP-46, session JWT signed
   with `jose` and held in an httpOnly cookie
-- **DMs**: Server-side `nostr-tools` + `@noble/secp256k1`,
-  NIP-44-encrypted to buyer pubkey
 - **Hosting**: Vercel
 
 ## Quick start and judge walkthrough
@@ -115,10 +104,7 @@ in `/create-course`.
 
 If you'd rather skip the create-form clicks, `npm run db:seed`
 drops a small set of demo offerings keyed to a pubkey you control
-— see [`SUBMISSION.md`](./SUBMISSION.md) for the full setup
-(env vars Wapu and Yadio need, the staging Wapu account that
-lets you exercise the rail without real money, and seed-data
-notes).
+— see [`SUBMISSION.md`](./SUBMISSION.md) for the full setup.
 
 For evaluators, the ordered walkthrough is in
 [`docs/testing-plan.md`](./docs/testing-plan.md) — numbered steps
@@ -128,8 +114,7 @@ the notification bell.
 
 The project is the BitByBit team's entry to **La Crypta Hackathon
 #3 — Commerce**, with **Wapu** as the sponsor and one of the two
-settlement rails. The submission framing lives in
-[`docs/HACKATHON.md`](./docs/HACKATHON.md).
+settlement rails.
 
 ## Documentation
 
@@ -163,7 +148,7 @@ Architecture and history:
 Repo-root references:
 
 - [Changelog](./CHANGELOG.md) — product release log
-- [Contributing + vulnerability disclosure](./CONTRIBUTING.md)
+- [Contributing](./CONTRIBUTING.md)
 - [Agent instructions and doc standard](./CLAUDE.md)
 
 ## Sister projects

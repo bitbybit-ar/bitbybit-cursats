@@ -184,9 +184,10 @@ repo's copy is intentionally identical and should stay in sync.
   `/[locale]/orders`. The user row is auto-created at sign-in
   (`ensureUserForPubkey` from `/api/auth/nostr`) seeded from
   the user's Nostr kind:0 metadata (display_name → slug + display
-  name, picture → avatar, about → bio); the user can rename their
-  slug from `/settings` later. There is no slug-claim gate, no
-  separate `/onboarding` step. Mutations to orders/payments/buyers
+  name, picture → avatar, about → bio). The slug is assigned at
+  sign-in and is not user-editable in v1 (`UpdateUserProfileSchema`
+  has no `slug` field; `/settings` only displays it). There is no
+  slug-claim gate, no separate `/onboarding` step. Mutations to orders/payments/buyers
   are out of v1 scope (read-only); offerings get full CRUD;
   settings updates that touch payment-destination fields (CBU,
   alias, Lightning Address, payout_method) require a NIP-07
@@ -203,10 +204,14 @@ repo's copy is intentionally identical and should stay in sync.
   `/[userSlug]` (storefront) and `/[userSlug]/c/[offeringSlug]`
   (offering detail) — ADR 0017 dropped the previous `/m/` prefix
   before launch. `/checkout/[orderId]` keeps its existing name.
-  Legacy paths (pre-ADR-0014 `/panel/*` and the ADR-0014-era
-  Spanish slugs) 308-redirect to the new URLs via `proxy.ts`.
-  Reserved-slug list in `lib/admin/ar-bank-id.ts` blocks users from
-  claiming any top-level route name (including `c` and `m`).
+  Legacy paths are **not** redirected: old URLs (pre-ADR-0014
+  `/panel/*` and the ADR-0014-era Spanish slugs like `/mis-cursos`,
+  `/configuracion`, `/explorar`) 404. ADR 0028 removed the
+  `proxy.ts` redirect layer pre-launch; `proxy.ts` now only gates
+  creator routes and runs the next-intl locale rewrite. The
+  reserved-slug list in `lib/admin/ar-bank-id.ts` still blocks users
+  from claiming any top-level route name (including `c` and `m`) and
+  those legacy names.
 - **Notifications are a Postgres table polled by the navbar
   bell.** When a deposit confirms, `order.paid` goes to the buyer
   (when signed in) and `sale.received` to the seller. The wapu_ars

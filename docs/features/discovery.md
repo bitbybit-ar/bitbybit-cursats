@@ -36,7 +36,7 @@ surfaces — all of them work without signing in:
 2. **`/<userSlug>`** — a seller's storefront. Lists every active
    offering by that seller.
 3. **`/<userSlug>/c/<offeringSlug>`** — a single offering's
-   detail page, the surface where the buyer clicks Comprar.
+   detail page, the surface where the buyer clicks Pay with sats.
 
 All three are server-rendered for the public posture (no
 client-side login required to load them) and carry per-locale
@@ -99,7 +99,7 @@ The page a buyer lands on when they click a card. Renders:
   badge — see below).
 - The seller's display name and avatar, linked through to their
   storefront.
-- A clear Comprar button — the only mutation a buyer takes from
+- A clear Pay with sats button — the only mutation a buyer takes from
   this surface. The button is enabled for everyone (no sign-in
   required); a signed-in buyer's pubkey is attached to the order
   automatically, an anonymous buyer can optionally connect one
@@ -119,7 +119,7 @@ the public surfaces, tags become filter chips:
   filtered view is shareable and back/forward navigation works
   the same as any browser navigation.
 
-The tag set is intentionally not a curated taxonomy — sellers
+The tag set is freeform rather than a curated taxonomy — sellers
 write their own. Discovery improves with usage, not with an
 ontology committee.
 
@@ -129,7 +129,7 @@ Decision in ADR
 ## Exchange-rate display
 
 Every price-bearing surface shows both **sats** and **ARS** side
-by side. The conversion uses the live Yadio rate (see
+by side. The conversion uses the live Wapu exchange rate (see
 [settlement-rails — exchange rate](./settlement-rails.md#exchange-rate-display-only)
 for the rate plumbing).
 
@@ -140,7 +140,7 @@ line of text per card; the value is that nobody has to do mental
 arithmetic.
 
 The rate is cached for 5 minutes server-side, so a flurry of
-page loads does not stampede Yadio. On a Yadio outage, the
+page loads does not stampede Wapu. On a Wapu outage, the
 storefront falls back to the last-good cached rate, then to a
 conservative static fallback — the page never displays "—" for
 the converted price.
@@ -148,7 +148,7 @@ the converted price.
 ## Anonymous-by-default browsing
 
 None of the discovery surfaces require a session. A buyer can
-land on `/explore`, click into an offering, click Comprar, pay,
+land on `/explore`, click into an offering, click Pay with sats, pay,
 and walk away with their code — all without ever seeing a
 sign-in prompt. The session prompt is reserved for surfaces that
 genuinely need an identity: `/my-courses`, `/create-course`,

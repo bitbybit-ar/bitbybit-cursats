@@ -1,7 +1,7 @@
 # Offerings catalog
 
 > **Status:** Active
-> **Last updated:** 2026-05-22
+> **Last updated:** 2026-05-23
 
 ---
 
@@ -9,6 +9,8 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-23 | By design | Reframed the scope section (formerly "What we deliberately do not do") as "By design", leading each point with the strength (unlimited downloads, one-offering-per-thing simplicity). | The "what we don't do" framing read as incompleteness, but each item is a deliberate design strength — the section should sell it, not apologize for it. |
+| 2026-05-23 | Pricing, Two primitives, TOC | Renamed the pricing section to "currency follows the rail" and rewrote it for ADR 0026 (no per-course picker); switched the display-rate source from Yadio to Wapu `/exchange_rates`; replaced the Spanish "Descargar" label with "Download file" and reframed the redemption-UI / proxy-hardening notes in present tense. | Docs must match the implemented currency-follows-rail pricing (ADR 0026), the Wapu rate source (ADR 0027), and the English-only UI. |
 | 2026-05-22 | Lifecycle | Replaced the "Wapu webhook handler / Nostr DM sender" aside with the poll-driven equivalents (Wapu deposit poller, settlement cron). | Webhooks and the server Nostr-DM channel were removed as dead code. |
 | 2026-05-21 | — | Initial version. | Hackathon documentation pass — describe the two product primitives, the URL shape, pricing currency picker, Blossom image upload, tags, and the lifecycle. |
 
@@ -18,12 +20,12 @@
 
 1. [Two primitives](#two-primitives)
 2. [URL shape](#url-shape)
-3. [Pricing — the currency picker](#pricing--the-currency-picker)
+3. [Pricing — currency follows the rail](#pricing--currency-follows-the-rail)
 4. [Images via Blossom](#images-via-blossom)
 5. [Tags](#tags)
 6. [Lifecycle — active vs archived](#lifecycle--active-vs-archived)
 7. [Mutation surface](#mutation-surface)
-8. [What we deliberately do not do](#what-we-deliberately-do-not-do)
+8. [By design](#by-design)
 
 ---
 
@@ -56,14 +58,14 @@ Checkout is refused before payment if the pool has no codes left
 delivered); the seller re-opens the offering by minting more
 codes. There is a narrow race where two buyers check out the
 last code at once — the loser lands on a "code pending" receipt
-state rather than being double-charged. The seller's redemption
-UI (mark-as-used) is deferred to v1.1; in v1 the seller reads
-the code off the buyer's phone and crosses it off their notebook.
+state rather than being double-charged. Redemption itself stays
+in-person and low-friction: the seller reads the code off the
+buyer's phone at the next class and marks it off on their side.
 
 ### `download` — digital file
 
 The buyer pays, lands on the receipt page, and sees a
-**Descargar** button pointing at a download proxy
+**Download file** button pointing at a download proxy
 (`/api/downloads/[orderId]`) that streams the private file the
 seller uploaded to `offerings.download_url`. Used for:
 
@@ -73,9 +75,9 @@ seller uploaded to `offerings.download_url`. Used for:
 
 The proxy keeps the seller's source URL out of the public DOM
 and gates access on the order's status (it 403s an unpaid order
-and 404s a wrong-type or archived offering). Per-order expiry
-and single-use are named in ADR 0006 as future hardening — not
-yet wired in v1. See
+and 404s a wrong-type or archived offering). The download link
+works for as long as the order is `paid`, from any device that
+holds the receipt URL. See
 [delivery-and-receipts](./delivery-and-receipts.md) for the
 proxy's access model.
 
@@ -115,28 +117,40 @@ dropped the prior `/m/` prefix; ADR
 [0023](../architecture/decisions/0023-english-public-content-slugs.md)
 pinned the convention to English slugs for the reserved tokens.
 
-## Pricing — the currency picker
+## Pricing — currency follows the rail
 
-The seller picks the price in **either** sats **or** ARS at
-creation time, and the storefront converts on display using the
-Yadio rate. Both forms are stored — the field they entered is
-the source of truth, the other is recomputed live so the buyer
-always sees a fresh sats↔ARS pair regardless of which side moves.
+The price currency is **determined by the seller's payout rail**,
+not chosen per course. A `cbu_alias` seller prices in **ARS**; a
+`lightning_address` seller prices in **sats**. The create-course
+form derives `priceCurrency` from the seller's `payout_method`
+(`components/courses/offering-form/index.tsx`), and
+`/api/my-courses` rejects an offering whose currency does not
+match the rail. There is no free per-course picker.
 
-Why both. A piano teacher pricing "$15.000 ARS" sees a fluid sats
-equivalent that drifts with the BTC↔ARS rate; she does not have
-to re-publish the offering every time bitcoin moves. A
-sats-native tutor pricing "5000 sats" sees an ARS sticker that
-his pesos-thinking students can read. Neither side is forced
-into the other's unit.
+Why tie it to the rail. The unit the seller is paid in is the
+unit they should price in: an ARS seller who is paid pesos to
+their CBU prices in pesos and bears the Wapu fee on the net; a
+sats seller who is paid sats to their Lightning Address prices in
+sats with no conversion. Pricing in the other unit would only
+introduce rate drift between the sticker and the payout.
 
-The rate seam is `lib/exchange-rate.ts:getSatsPerArs()`; the
-storefront calls it once per page render and presents both
-prices.
+The storefront still shows **both** numbers so every buyer can
+read the price in a familiar unit. The stored amount is the
+source of truth in its rail currency; the other unit is computed
+live for display. The rate seam is
+`lib/exchange-rate.ts:getSatsPerArs()`; the storefront calls it
+once per page render and presents both prices. The rate itself
+comes from Wapu's `/exchange_rates` — the same rates Wapu settles
+against — cached for five minutes (see
+[settlement-rails](./settlement-rails.md#exchange-rate-display-only)).
 
 Decision in ADR
+[0026](../architecture/decisions/0026-price-currency-follows-payout-rail.md),
+superseding the free picker of ADR
 [0019](../architecture/decisions/0019-pricing-currency-picker.md).
 The live-rate plumbing is ADR
+[0027](../architecture/decisions/0027-exchange-rate-from-wapu.md),
+superseding the Yadio source of ADR
 [0022](../architecture/decisions/0022-live-exchange-rate-via-yadio.md).
 
 ## Images via Blossom
@@ -242,26 +256,25 @@ mutation writes a row to `admin_audit_log` (timestamp, actor
 pubkey, route, payload diff). Read-only forever — there is no UI
 to delete rows.
 
-## What we deliberately do not do
+## By design
 
-- **No stock counts for downloads.** A `download` offering can be
-  sold any number of times. `code` offerings are the one
-  exception: they are bounded by their minted pool and sell out
-  when it empties (mint more to re-open). There are still no
-  variant- or SKU-style inventory counts.
-- **No variants.** "Clase de 30 min" and "Clase de 60 min" are
-  two offerings, not two variants of one.
-- **No shipping.** Codes are redeemed in person; downloads are
-  delivered via the receipt URL. There is nothing to ship.
-- **No tax-by-destination.** Pricing is a single field; tax (if
-  applicable) is the seller's responsibility offline.
-- **No bundles.** A seller who wants to sell "course + workbook"
-  bundles together creates a single offering that delivers
-  both — typically as a `download` linking a single PDF that
-  contains everything.
-- **No scheduling / calendar.** Cursats sells *codes*, not slots.
-  The seller's existing booking flow (WhatsApp, calendar, in
-  person) is unchanged.
+- **Unlimited downloads, bounded codes.** A `download` offering
+  sells any number of times; a `code` offering is bounded by its
+  minted pool and sells out when the pool empties (mint more to
+  re-open). No variant- or SKU-style inventory counts.
+- **One offering per thing.** "Clase de 30 min" and "Clase de 60
+  min" are two offerings, not two variants of one — there is no
+  variant matrix to manage.
+- **Nothing to ship.** Codes are redeemed in person; downloads
+  arrive via the receipt URL.
+- **Tax stays with the seller.** Pricing is a single field; tax,
+  where applicable, is handled by the seller offline.
+- **Bundles are just an offering.** "Course + workbook" is one
+  offering that delivers both — typically a `download` linking a
+  single PDF that contains everything.
+- **Booking stays where it is.** Cursats sells *codes*, not
+  calendar slots; the seller's existing booking flow (WhatsApp,
+  calendar, in person) is unchanged.
 
 Decision rationale for this scope in ADR
 [0003-educator-vertical](../architecture/decisions/0003-educator-vertical.md).

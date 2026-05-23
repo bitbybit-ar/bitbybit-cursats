@@ -1,7 +1,7 @@
 # Routing
 
 > **Status:** Active
-> **Last updated:** 2026-05-22
+> **Last updated:** 2026-05-23
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-23 | Conventions, Special files, Legacy redirects (removed), What is intentionally not routed | Removed the legacy URL redirects entirely (ADR 0028): deleted the three redirect tables (`/panel/*`, ADR-0014-era Spanish slugs, public Spanish→English) and the `proxy.ts` redirect code. The body now documents only the implemented route map; old paths 404. The reserved-slug list still blocks those names. Also reconciled the Table of Contents with the body: removed the stale "Subscriber (auto-renewal)" entry (no such section; autorenewal deferred per ADR 0020). Removed the "What is intentionally not routed" section and its TOC entry, and corrected the storefront slug note (auto-assigned at sign-in, not renamed in `/settings`). | Pre-launch with no external links to old slugs — the 308 layer guarded bookmarks that do not exist. Per the docs standard, the historical mappings stay here in the Change Log, not the body; the TOC also still linked a subscriber section that no longer exists. |
 | 2026-05-22 | Subscriber, API | Removed the reserved NWC routes (`/api/nwc/*`, `/subscription` "manage NWC connection") from the deferred-subscriber tables; the recurring-charge mechanism is now left undecided for a future ADR. Noted that `/api/cron/wapu-settlements` is the shipped payout cron. | `NWC_CONNECTION_URL` and the NWC code were removed; the doc still reserved NWC-named routes. |
 | 2026-05-21 | Buyer flow, Account, Subscriber, API | Scrubbed `features_autorenewal` references; checkout, settings, and subscriber sections now state autorenewal is deferred per ADR 0020 and point at migration `0009_drop_features_autorenewal.sql`. | The column and its plumbing were removed; the doc was still describing the dormant-but-deployed posture the original ADR 0020 walked back. |
 | 2026-05-19 | Static content | `/how-it-works` restyled: a fixed ambient bubble backdrop plus the two journeys as titled rows of reused `<Polaroid>` step cards (view-triggered stagger; no toggle, no scroll-scrub, no query param). Same single route, same i18n keys/content; no routing or data change. Components under `components/how-it-works/*`. | Presentational only; logged so contributors know it is one static page (not parameterised) before the visual layer churned. |
@@ -30,12 +31,9 @@
 2. [Buyer flow](#buyer-flow)
 3. [Account](#account)
 4. [Creator (signed-in)](#creator-signed-in)
-5. [Subscriber (auto-renewal)](#subscriber-auto-renewal)
-6. [Static content](#static-content)
-7. [API routes](#api-routes)
-8. [Special files](#special-files)
-9. [Legacy redirects](#legacy-redirects)
-10. [What is intentionally not routed](#what-is-intentionally-not-routed)
+5. [Static content](#static-content)
+6. [API routes](#api-routes)
+7. [Special files](#special-files)
 
 ---
 
@@ -59,8 +57,10 @@
   [0023](decisions/0023-english-public-content-slugs.md)
   completed the rename. The platform is pre-launch (no external
   links to those slugs yet), so this was a clean rename with no
-  back-compat redirect — unlike the buyer-route renames, which
-  predate that decision and keep their 308s. Decision pinned in
+  back-compat redirect. ADR
+  [0028](decisions/0028-remove-legacy-url-redirects.md) later dropped
+  the buyer-route 308s too, so no rename keeps a redirect now.
+  Decision pinned in
   ADRs
   [0014](decisions/0014-marketplace-open-to-all-logged-in-users.md)
   and [0023](decisions/0023-english-public-content-slugs.md);
@@ -99,7 +99,7 @@ clicks, pays, and walks away with a redemption code or download.
 | `/en` | Landing + catalog (English) | Secondary locale, prefixed. |
 | `/[locale]` | Filesystem segment | Source-of-truth shape under `app/[locale]/...`; resolves to the unprefixed URL for `es` and to `/en/...` for `en`. |
 | `/[locale]/explore` | Global catalog | Aggregated view across every active seller's offerings. |
-| `/[locale]/[userSlug]` | Seller storefront | A single seller's listings. Slug auto-generated at sign-in (`user-<first-8>`); the seller can rename it from `/settings`. |
+| `/[locale]/[userSlug]` | Seller storefront | A single seller's listings. Slug auto-generated at sign-in from the user's Nostr display name (or a `user-<first-8>` fallback). |
 | `/[locale]/[userSlug]/c/[offeringSlug]` | Offering detail | Hero (image + title + price + CTA), rail/delivery badges, long description, instructor block with the seller's bio and a link to their storefront. `c/` keeps the offering slug namespaced under the seller so two sellers can both ship `intro-bitcoin`. |
 | `/[locale]/checkout/[orderId]` | Lightning invoice | QR + copy-to-clipboard, status polling against `/api/orders/[orderId]`. Survives reload. Single one-shot pay CTA (autorenewal is deferred per ADR [0020](decisions/0020-defer-autorenewal-from-mvp.md)). |
 | `/[locale]/receipt/[orderId]` | Permanent receipt | Redemption code (`type=code`) or short-lived signed download URL (`type=download`). Inline "Conectá tu Nostr para guardar este pedido" prompt. Decision pinned in ADR [0006](decisions/0006-nostr-and-inapp-delivery.md). |
@@ -141,17 +141,6 @@ the `(logged-in)` route group in `app/[locale]/(logged-in)/...`.
 | `/[locale]/orders/[orderId]` | Sale detail | Buyer pubkey if any, payment hash, rail (`wapu_ars` or `lightning`), Wapu settlement reference (Wapu rail) or LNURL verify URL (Lightning rail), redemption state. |
 | `/[locale]/settings` | Settings | Slug, display name, bio, payout method (`wapu_ars` ⇒ CBU/alias; `lightning` ⇒ Lightning Address). Mutations to payment-destination fields require a NIP-07 re-sign at save time; a new Lightning Address must pass a 1-sat LUD-21 probe before being accepted (ADR [0015](decisions/0015-sats-settlement-rail.md)). |
 
-## Subscriber (auto-renewal — deferred)
-
-No subscriber routes ship in v1. Autorenewal is deferred per ADR
-[0020](decisions/0020-defer-autorenewal-from-mvp.md); the
-`users.features_autorenewal` column was dropped in migration
-`0009_drop_features_autorenewal.sql` and no code branches on it
-anywhere. A future ADR that re-introduces the feature will define
-the subscriber surface (a page to manage the recurring-charge grant
-— renewal date, spend cap, revoke) and its underlying mechanism;
-v1 reserves no specific routes for it.
-
 ## Static content
 
 | Route | Purpose | Notes |
@@ -178,7 +167,7 @@ appropriate session (buyer Nostr session for
 | `/api/downloads/[orderId]` | GET | Issues a short-lived signed URL for a download-type offering. Validates the `orderId` and the order's paid state. |
 | `/api/zap/status` | GET | Backs the "Zap the devs" modal on the support section. |
 
-### Auth (ported from bitbybit-arena)
+### Auth
 
 | Route | Method | Purpose |
 |---|---|---|
@@ -208,15 +197,6 @@ servers (`NEXT_PUBLIC_BLOSSOM_SERVERS`), authenticated by a
 kind:24242 signed event produced via `signWithPrompt`. The
 returned hash-addressed URL lands in `offerings.image_url`.
 
-### Subscriber (deferred — not built in v1)
-
-Autorenewal is deferred per ADR
-[0020](decisions/0020-defer-autorenewal-from-mvp.md); no subscriber
-or recurring-charge routes ship in v1. A future ADR that
-re-introduces the feature will define its own routes and mechanism.
-(Note: `/api/cron/wapu-settlements` is a separate, shipped cron for
-the Wapu payout leg — not a renewal job.)
-
 ## Special files
 
 | File | Purpose |
@@ -227,70 +207,4 @@ the Wapu payout leg — not a renewal job.)
 | `app/[locale]/error.tsx` | Error boundary. |
 | `app/[locale]/opengraph-image.tsx` | Dynamic OG image per locale. |
 | `app/sitemap.ts`, `app/robots.ts`, `app/manifest.ts` | SEO surface. |
-| `proxy.ts` | Edge middleware: legacy 308 redirects + creator-route session gate + next-intl locale handling. |
-
-## Legacy redirects
-
-`proxy.ts` 308-redirects three generations of legacy paths to the
-current canonical English routes. Order matters in
-`rewriteLegacyPath`: longer prefixes are matched first.
-
-### Pre-ADR-0014 (`/panel/*`)
-
-| Legacy | Now |
-|---|---|
-| `/panel/configuracion` | `/settings` |
-| `/panel/ofertas/nueva` | `/create-course` |
-| `/panel/ofertas/[slug]/editar` | `/my-courses/[slug]/edit` |
-| `/panel/ofertas` (any other) | `/my-courses` |
-| `/panel/pedidos` (any) | `/orders` |
-| `/panel/estudiantes` (any) | `/orders` |
-| `/panel` (any other) | `/my-courses` |
-
-### ADR-0014 era (Spanish top-level)
-
-| Legacy | Now |
-|---|---|
-| `/mis-cursos/nueva` | `/create-course` |
-| `/mis-cursos/[slug]/editar` | `/my-courses/[slug]/edit` |
-| `/mis-cursos` (any other) | `/my-courses` |
-| `/mis-ventas` (any) | `/orders` |
-| `/mis-estudiantes` (any) | `/orders` |
-| `/configuracion` (any) | `/settings` |
-| `/onboarding` (any) | `/sign-in` |
-
-### Public-route Spanish → English
-
-| Legacy | Now |
-|---|---|
-| `/explorar` | `/explore` |
-| `/iniciar-sesion` | `/sign-in` |
-| `/gracias/[orderId]` | `/receipt/[orderId]` |
-| `/reclamar/[orderId]` | `/claim/[orderId]` |
-
-The locale prefix is preserved across the redirect (`/en/mis-cursos`
-→ `/en/my-courses`).
-
-## What is intentionally not routed
-
-- **No password-reset, email-verification, or account-deletion
-  flows.** Identity is Nostr; recovery is whoever holds the nsec.
-- **No buyer-side wallet detection page.** Decision pinned in
-  ADR [0005](decisions/0005-prepaid-default-autorenewal-optin.md).
-- **No `/panel/*` namespace.** Removed in ADR
-  [0014](decisions/0014-marketplace-open-to-all-logged-in-users.md);
-  legacy paths 308-redirect via `proxy.ts`.
-- **No forced `/onboarding` step.** Sign in with Nostr and you
-  have a user row immediately. The legacy `/onboarding` URL
-  308s to `/sign-in`.
-- **No `/api/admin/*` namespace.** The "admin" prefix was
-  retired with the panel; creator-scoped routes are
-  `/api/my-courses` and `/api/settings` directly.
-- **No `/api` versioning prefix in v1.** If we break a public
-  contract (only `/api/orders/[orderId]` qualifies) we will add
-  `/api/v2/...` at that time.
-- **No refund, resend, or DM-from-the-UI routes in v1.** Those
-  are write actions over orders/buyers, deferred to v1.1.
-- **No legal pages routed yet** (`/[locale]/terminos`,
-  `/[locale]/privacidad`). The slugs are reserved for when copy
-  lands.
+| `proxy.ts` | Edge middleware: creator-route session gate + next-intl locale handling. |

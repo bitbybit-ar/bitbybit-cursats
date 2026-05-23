@@ -1,7 +1,7 @@
 # Checkout flow
 
 > **Status:** Active
-> **Last updated:** 2026-05-22
+> **Last updated:** 2026-05-23
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-23 | Wapu rail, Why the rails feel identical, Polling, prose/diagrams | Rewrote the residual webhook language for the wapu_ars rail to the poll-driven model (deposit poll is the source of truth); switched Spanish UI labels in prose, code blocks, and diagrams to the English `messages/en.json` strings. | Docs must match the implemented poll-driven rail (ADR 0025) and the English-only UI judges test against. |
 | 2026-05-22 | Sequence diagrams, Confirmation table, Polling, Pointers | Switched the wapu_ars flow to poll-driven (no webhook): deposit-poll sequence + confirmation source, settlement cron/sync pointers; removed the optional-Nostr-DM step. | The Wapu rebuild (ADR 0025) made the rail poll-driven and the server Nostr-DM channel was removed as dead code. |
 | 2026-05-21 | — | Initial version. | Hackathon documentation pass — feature-level deep dive on the buyer flow, with sequence diagrams for both payout rails. |
 
@@ -29,8 +30,8 @@
 
 ## What this covers
 
-The buyer flow from "click Comprar" to "see the redemption code" —
-end-to-end, both payout rails. For the seller-side configuration
+The buyer flow from "click Pay with sats" to "see the redemption
+code" — end-to-end, both payout rails. For the seller-side configuration
 that determines which rail an order takes, see
 [settings-and-payouts](./settings-and-payouts.md). For the
 delivery channel that follows payment, see
@@ -41,7 +42,7 @@ rail-design rationale, see [settlement-rails](./settlement-rails.md).
 
 ```text
 1. Open offering at /<userSlug>/c/<offeringSlug>
-2. Click "Comprar"                 → /checkout/[orderId]
+2. Click "Pay with sats"           → /checkout/[orderId]
 3. See QR + sats amount            → pay with any Lightning wallet
 4. Land on /receipt/[orderId]      → redemption code OR download link
 ```
@@ -87,19 +88,22 @@ sequenceDiagram
   participant Wapu
   participant Bank as Seller bank
 
-  Buyer->>App: Click "Comprar"
+  Buyer->>App: Click "Pay with sats"
   App->>Wapu: POST /wallet/deposit_lightning
-  Wapu-->>App: BOLT11 invoice + tx id
+  Wapu-->>App: BOLT11 invoice + deposit tx id
   App-->>Buyer: QR + sats amount
   Buyer->>Wapu: Pay invoice (Lightning)
-  loop until status = Completed
+  loop Checkout page polls until Completed
     App->>Wapu: GET /transactions/{id} (deposit poll)
-    Wapu-->>App: status
+    Wapu-->>App: deposit status
   end
-  App->>App: Flip order to "paid"
+  App->>App: Flip order to "paid", draw code, notify
+  App->>Wapu: Open ARS withdrawal (leg 2)
   App-->>Buyer: Redirect → /receipt/[orderId]
-  App->>Wapu: Open withdrawal (settlement cron polls it)
-  Wapu->>Bank: ARS payout to seller's CBU / alias
+  loop Settlement cron polls until released
+    App->>Wapu: GET /transactions/{id} (withdrawal poll)
+    Wapu->>Bank: ARS payout to seller's CBU / alias
+  end
 ```
 
 Key points:
@@ -108,16 +112,23 @@ Key points:
   buyer's sats; Wapu's deposit endpoint mints the BOLT11 directly
   against the platform-account flow with the seller's payout
   destination attached on the same call.
-- **Webhook signature is verified before any state change.** A
-  forged or replayed delivery is refused with 401; only after
-  verification does the order flip to `paid`.
-- **The webhook only flips `wapu_ars` orders.** A delivery for an
-  order whose `rail !== 'wapu_ars'` is refused with 404 and no
-  body. This is the symmetric counterpart to the LN rail's
-  verify-poll discipline.
-- **ARS payout is Wapu's responsibility.** Cursats never sees ARS;
-  the conversion + bank push happen inside Wapu and the seller
-  receives pesos in their CBU/alias the same business day.
+- **The deposit poll is the source of truth.** There is no
+  webhook. The checkout page polls `GET /api/orders/[orderId]`,
+  which runs `pollWapuDeposit` (`lib/wapu-settlement.ts`) against
+  the Wapu deposit transaction. The order flips to `paid` only when
+  Wapu reports the deposit `Completed`; a transient upstream
+  failure leaves the order `pending` so the next poll retries.
+- **Polling only advances `wapu_ars` orders.** `pollWapuDeposit`
+  is reached only for an order whose `rail === 'wapu_ars'`; a
+  `direct_lightning` order takes the LUD-21 verify path instead.
+  The two rails never cross-confirm each other.
+- **The seller payout is a separate, poll-driven leg.** Once the
+  deposit confirms, the same request opens the ARS withdrawal
+  (leg 2); the cron `/api/cron/wapu-settlements` (and the on-demand
+  `/api/orders/sync`) polls that withdrawal to completion. Cursats
+  never sees ARS — the conversion and bank push happen inside Wapu,
+  and the seller receives pesos in their CBU/alias the same
+  business day.
 
 Wapu API contract is documented in
 [`wapu-cli`](https://github.com/wapu-app/wapu-cli) until Wapu
@@ -134,7 +145,7 @@ sequenceDiagram
   participant LNURL as Seller's LNURL provider
   participant Wallet as Seller's wallet
 
-  Buyer->>App: Click "Comprar"
+  Buyer->>App: Click "Pay with sats"
   App->>LNURL: GET LNURL-pay callback (amount, comment)
   LNURL-->>App: BOLT11 invoice + LUD-21 verify URL
   App-->>Buyer: QR + sats amount
@@ -175,16 +186,16 @@ Both rails share the same buyer surface:
 
 | Step | Buyer sees |
 |---|---|
-| Click Comprar | Spinner → checkout page |
+| Click Pay with sats | Spinner → checkout page |
 | Checkout page | QR + sats amount + countdown |
-| After paying | "Confirming…" → redirect to receipt |
+| After paying | "Waiting for your payment…" → redirect to receipt |
 | Receipt page | Redemption code or download URL, plus order summary |
 
 Differences live entirely below the UI: the invoice provider
-(Wapu vs LNURL), the confirmation trigger (webhook vs verify
-poll), and where the sats end up (Wapu's converter vs the
-seller's wallet). The buyer does not need to know — and is never
-asked.
+(Wapu vs LNURL), which transaction the server polls to confirm
+(the Wapu deposit vs the LUD-21 verify URL), and where the sats
+end up (Wapu's converter vs the seller's wallet). The buyer does
+not need to know — and is never asked.
 
 This is intentional. The cost of teaching every buyer "this is a
 Wapu invoice but the next seller you buy from will be a Lightning
@@ -206,10 +217,10 @@ dispatch.
   the offering page.
 - **The same order cannot be paid twice.** Order status is
   one-way into a terminal state (`paid`, `failed`, or `refunded` —
-  there is no `expired` status). Once `paid`, the webhook handler
-  and the verify poller both short-circuit; no second payment can
-  flip state again, and no second redemption code is drawn from
-  the pool.
+  there is no `expired` status). Once `paid`, `markOrderPaid`
+  short-circuits on both rails (the Wapu deposit poller and the
+  LUD-21 verify poller); no second payment can flip state again,
+  and no second redemption code is drawn from the pool.
 - **Receipt URLs are opaque.** The `orderId` in the URL is a
   ≥128-bit unguessable identifier (see
   [delivery-and-receipts](./delivery-and-receipts.md)). Knowing

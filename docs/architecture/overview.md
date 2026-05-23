@@ -1,7 +1,7 @@
 # Architecture overview
 
 > **Status:** Active
-> **Last updated:** 2026-05-22
+> **Last updated:** 2026-05-23
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-23 | Stack, Table of Contents, Payment flow | Corrected the exchange-rate source from Yadio to Wapu's `/exchange_rates` (ADR 0027 superseded 0022); fixed the staging API base to `be-stage.wapu.app` (`staging.wapu.app` is the web environment, not the API host); dropped the stale "server-side signing for outgoing DMs" from the Nostr line (no server signing key ships; in-app delivery per ADR 0006). Reconciled the Table of Contents with the body: removed the stale "Auto-renewal flow (optional)", "Notifications & delivery", "Configuration model", and "What is intentionally not here" entries (none exist as sections — notifications now lives as an H3 under Payment flow) and repointed the in-body delivery link to `#in-app-notifications`. | The Stack section still named Yadio, mislabeled the staging API base, and described a server-side DM signer that was removed; the TOC linked four sections that no longer exist as headings, and an in-body link pointed at the dead anchor. |
 | 2026-05-22 | Identity model, Payment flow, Notifications & delivery, Configuration model, Security, Stack, Routing | Removed the Nostr-DM delivery channel and the paste-your-npub buyer tier (no server signing key ships); made both rails poll-driven (no Wapu webhooks) with a daily settlement cron + on-demand `/api/orders/sync`; dropped `NOSTR_NSEC`, `PLATFORM_ADMIN_PUBKEYS`, and NWC from the config table, security list, and identity model. | The server Nostr-DM, platform-admin moderation, and NWC/auto-renewal env vars were removed as dead code, and the Wapu rebuild (ADR 0025) made the rail poll-driven; the overview still described webhooks, DMs, and those env vars. |
 | 2026-05-22 | SEO surface | Rewrote the OG image description: it is now brand-led (block mark + `CURSATS` wordmark + giant wordmark hero + one `ogValueLine`) instead of a burned-in headline/tagline, and `og.png` is a baked twin of the route. Swapped the `ogHeadline`/`ogTagline` key reference for `ogValueLine`. | The social card duplicated its own headline/tagline in the link title and description, and its logo read "BitByBit Cursats" with horizontal off-brand blocks; the redesign fixes the mark and removes the repetition. |
 | 2026-05-21 | Auto-renewal flow, Ownership of state | Replaced the full autorenewal flow description and diagram with a deferred-from-MVP pointer to ADR 0020; removed the "Autorenewal toggle" row from the ownership table. | ADR 0020 was revised to drop the column outright (migration 0009). The overview was still describing the dormant-but-deployed posture the original ADR walked back. |
@@ -34,11 +35,7 @@
 7. [Theming](#theming)
 8. [Product primitives](#product-primitives)
 9. [Payment flow](#payment-flow)
-10. [Auto-renewal flow (optional)](#auto-renewal-flow-optional)
-11. [Notifications & delivery](#notifications--delivery)
-12. [Configuration model](#configuration-model)
-13. [Security](#security)
-14. [What is intentionally not here](#what-is-intentionally-not-here)
+10. [Security](#security)
 
 ---
 
@@ -103,29 +100,34 @@ also trigger it on demand from `/orders`.
   configured in `NEXT_PUBLIC_BLOSSOM_SERVERS`. Decision pinned in
   ADR [0011](decisions/0011-image-storage-via-blossom.md).
 - **Wapu API** — Lightning invoice creation, ARS withdrawal,
-  payment status. Production base
-  `https://be-prod.wapu.app`; staging base
-  `https://staging.wapu.app` (fake-money testing). Auth header is
+  payment status. Production API base
+  `https://be-prod.wapu.app`; staging API base
+  `https://be-stage.wapu.app` (the `staging.wapu.app` environment
+  uses fake money). Auth header is
   `X-API-Key`. The public source of the API contract is
   <https://github.com/wapu-app/wapu-cli> until Wapu publishes
   formal docs; the relevant endpoints are `POST
   /wallet/deposit_lightning` (Lightning invoice), `GET
   /transactions/{id}` (status), and `POST /transactions/create`
   (ARS withdrawal as a `fiat_transfer`).
-- **Yadio** — live sats↔ARS exchange rate for the storefront
-  (`https://api.yadio.io/convert/1/BTC/ARS`, the Argentine
-  parallel/crypto rate Wapu settles against). Free, keyless,
-  overridable via `EXCHANGE_RATE_API_URL`. Read through the single
-  `lib/exchange-rate.ts:getSatsPerArs()` seam with a 5-minute cache
-  → last-good → static fallback chain. Decision in ADR
+- **Wapu `/exchange_rates`** — the live sats↔ARS rate shown across
+  the storefront is derived from Wapu's `/exchange_rates`
+  (buy USDT/ARS × buy BTC/USD), so it reuses `WAPU_PAY_APU_HOST` +
+  `WAPU_API_KEY` with no separate service or env var. Read through
+  the single `lib/exchange-rate.ts:getSatsPerArs()` seam with a
+  5-minute cache → last-good → static fallback chain. Decision in
+  ADR [0027](decisions/0027-exchange-rate-from-wapu.md), superseding
+  the Yadio source of ADR
   [0022](decisions/0022-live-exchange-rate-via-yadio.md).
-- **Nostr** — server-side signing for outgoing DMs (`nostr-tools`
-  + `@noble/secp256k1`); NIP-07 / nsec / NIP-46 client-side for
-  buyer identity at checkout, buyer/seller login (ADRs
+- **Nostr** — client-side only (`nostr-tools` + `@noble/secp256k1`):
+  NIP-07 / nsec / NIP-46 for buyer/seller login (ADRs
   [0007](decisions/0007-optional-nostr-buyer-login.md) /
   [0014](decisions/0014-marketplace-open-to-all-logged-in-users.md)),
-  and per-mutation re-sign at save time on payment-destination
-  fields (CBU / alias / Lightning Address) in `/settings`.
+  an optional buyer identity pasted at checkout, and a per-mutation
+  re-sign at save time on payment-destination fields (CBU / alias /
+  Lightning Address) in `/settings`. No server signing key ships and
+  there is no Nostr-DM channel — delivery is the in-app receipt (ADR
+  [0006](decisions/0006-nostr-and-inapp-delivery.md)).
 - **`jose`** — signs the session JWT held in an httpOnly cookie.
 - **Vercel** — Hobby plan; a daily Vercel Cron
   (`/api/cron/wapu-settlements`) settles the Wapu ARS payout leg.
@@ -204,13 +206,14 @@ created lazily on first hit (`requirePanelUser` in
   anonymous visitors bounce to `/sign-in?next=...`. Server-side,
   each page's `requirePanelUser` materialises the user row on
   first hit.
-- **Write in v1**: offerings (full CRUD), settings (CBU, alias,
+- **Write**: offerings (full CRUD), settings (CBU, alias,
   Lightning Address, payout method).
   Mutations to payment-destination fields (CBU, alias, Lightning
   Address) require a NIP-07 re-sign at save time, so a stolen
   session cookie cannot quietly redirect future settlement.
-- **Read-only in v1**: orders, payments, buyers. Refunds,
-  resends, and DM-from-the-UI are deferred to v1.1.
+- **Read-only**: orders, payments, and buyers are views — a
+  completed sale is an immutable record, with no edit, refund, or
+  resend action over it.
 - **Audit log.** Every mutation writes a row to
   `admin_audit_log` (column `user_id` since ADR 0016).
 
@@ -289,7 +292,7 @@ Every offering in a seller's catalog is one of two types:
 Both share: catalog → invoice (Wapu or LNURL-pay) → confirmation
 (poll the Wapu deposit or the LUD-21 verify URL) → receipt page.
 The receipt content is the only difference.
-See [Notifications & delivery](#notifications--delivery) for the
+See [In-app notifications](#in-app-notifications) for the
 delivery model in detail.
 
 ## Payment flow
@@ -303,7 +306,7 @@ take from there depends on which rail the seller picked in
 ```text
 Buyer              Cursats app             Wapu              Seller bank
   │                    │                   │                     │
-  │── click "Comprar" ▶│                   │                     │
+  │── click Pay ──────▶│                   │                     │
   │                    │── deposit_lightning ▶                   │
   │                    │◀── BOLT11 + tx id ─│                     │
   │◀── show QR + amt ──│                   │                     │
@@ -327,7 +330,7 @@ no webhooks. Decision in ADR
 ```text
 Buyer              Cursats app          Seller's LNURL provider
   │                    │                       │
-  │── click "Comprar" ▶│                       │
+  │── click Pay ──────▶│                       │
   │                    │── LNURL-pay callback ▶│
   │                    │◀── invoice + verify ──│
   │◀── show QR + amt ──│                       │
@@ -342,29 +345,6 @@ truth on this rail; `/api/orders/[orderId]` polls it.
 
 Once confirmed, the buyer is redirected to their permanent receipt
 page at `/[locale]/receipt/[orderId]` — the only delivery channel.
-
-## Auto-renewal flow (deferred from MVP)
-
-Deferred per ADR
-[0020](decisions/0020-defer-autorenewal-from-mvp.md). The settings
-toggle, the `users.features_autorenewal` column, and the input
-field on `UpdateUserProfileSchema` are all gone (migration
-`0009_drop_features_autorenewal.sql`). Every purchase in v1 is a
-one-shot; the section is left here as a pointer for the
-re-introduction ADR so it has something to supersede.
-
-No subscription / auto-charge client or encrypted-secrets storage
-ships in v1; a future ADR that re-enables autorenewal will need a
-fresh schema (the original single-boolean column was not going to
-survive a real implementation anyway) and will rebuild the
-checkout's "Autorenovar" CTA from scratch.
-
-## Notifications & delivery
-
-Cursats does not integrate with email, and there is no Nostr DM
-channel. Delivery is the **in-app receipt page** — the single,
-always-available channel. Decision pinned in ADR
-[0006-nostr-and-inapp-delivery](decisions/0006-nostr-and-inapp-delivery.md).
 
 ### In-app receipt page
 
@@ -386,34 +366,6 @@ table polled by `/api/notifications`: `order.paid` /
 `sale.received` when a deposit confirms, and `payout.pending` /
 `payout.released` / `payout.failed` as the seller's ARS withdrawal
 settles. These reach signed-in users only.
-
-## Configuration model
-
-There is no YAML configuration file. Each piece of state has
-exactly one editor and exactly one editing surface. Decision in
-ADR [0010](decisions/0010-no-yaml-config.md), with the storage
-shape in ADR [0009](decisions/0009-offerings-and-settings-in-database.md).
-
-| Layer | Edited by | Lives in |
-|---|---|---|
-| Branding tokens | the developer | `styles/_theme.scss` |
-| Page copy, FAQ, terms | the developer | `messages/{es,en}.json` |
-| Site identity, social links | the developer | `lib/site.ts` |
-| Secrets (Wapu key + host, cron secret, auth secret, DB URL) | the deployer | env vars |
-| Slug, display name, bio | the seller | Postgres `users`, `/[locale]/settings` |
-| Payout method + destination (CBU/alias OR Lightning Address) | the seller | Postgres `users`, `/[locale]/settings` |
-| Offerings (catalog) | the seller | Postgres `offerings`, `/[locale]/my-courses` |
-| Orders, sessions, notifications | nobody | Postgres, system-managed |
-
-First-run experience: a new visitor signs in with Nostr →
-`ensureUserForPubkey` materialises a placeholder user row keyed
-by pubkey (slug auto-generated as `user-<first-8>`, profile
-seeded from kind:0 metadata) → the user lands on `/my-courses`,
-renames their slug if they want, picks a payout method in
-`/settings`, and creates their first offering. The seller's
-storefront cannot accept buyers until at least one offering is
-published and the payout fields for the chosen rail are filled
-in.
 
 ## Security
 
@@ -453,34 +405,3 @@ in.
   from `fonts.gstatic.com` and styles from `fonts.googleapis.com`
   are allowed for `next/font/google`. The Wapu invoice QR is
   generated client-side; no third-party QR service is loaded.
-
-## What is intentionally not here
-
-- No email integration. No email-sender provider, no email field
-  at checkout, no inbox-deliverability concerns.
-- No *required* buyer accounts. Anonymous purchase is always
-  available; the opaque receipt URL is enough to walk away with
-  the redemption code. Optional Nostr login adds history and
-  reliable DM push (ADR
-  [0007](decisions/0007-optional-nostr-buyer-login.md)).
-- No forced onboarding flow. Sign in with Nostr and you have a
-  user row immediately (placeholder slug, profile seeded from
-  kind:0 metadata); rename, fill in payout, and publish at your
-  own pace. Decision pinned in ADR
-  [0014](decisions/0014-marketplace-open-to-all-logged-in-users.md).
-- No CMS for landing content, page titles, branding, or copy.
-  Those are code (SCSS, next-intl JSON, TS modules) — the
-  creator surfaces only own offerings and per-user settings.
-- No scheduling/calendar. Codes are redeemed in person; the
-  seller's existing booking process is unchanged.
-- No stock counts. Codes and downloads are infinite.
-- No refunds, resends, or DM-from-the-UI in v1. Read-only over
-  orders/buyers. Deferred to v1.1.
-- No buyer-side wallet detection.
-- No third payout rail. The two rails (Wapu ARS and direct sats
-  to a Lightning Address) are pinned in ADR
-  [0015](decisions/0015-sats-settlement-rail.md). Adding a third
-  needs a superseding ADR.
-
-If you find yourself reaching for any of the above, check the
-ADRs first — the omission is probably deliberate.

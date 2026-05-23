@@ -1,10 +1,9 @@
-# BitByBit Cursats — Judge Quickstart
+# Cursats — Judge Quickstart
 
 Five minutes from cloning to exercising the end-to-end Lightning
 checkout flow. If you want depth, jump to
 [`docs/testing-plan.md`](./docs/testing-plan.md) once the basics
-work, and [`docs/HACKATHON.md`](./docs/HACKATHON.md) for the full
-submission framing.
+work.
 
 ## TL;DR for judges and testers
 
@@ -12,23 +11,23 @@ submission framing.
 sign in with Nostr, create an offering from `/create-course`,
 configure either of the two payout rails, take a sats payment,
 and land on the receipt page — all without ever touching a
-script. The deployed site is `cursats.bitbybit.com.ar`; you can
-also run it locally with the steps in §2–§4.
+script. The deployed site is `cursats.bitbybit.com.ar`.
 
-**You can test both rails with fake money.** The Wapu rail
-points at Wapu's staging environment by default
-(`https://staging.wapu.app`) so a judge does not need real ARS.
+**You can also run it locally** with the steps in §2–§4 and test
+both rails with fake money. The Wapu rail points at Wapu's staging
+environment by default (`https://staging.wapu.app`) so a judge does
+not need real ARS.
 The Lightning Address rail accepts any LNURL-pay provider that
 supports LUD-21 — including any Alby, Strike, Blink, or LNbits
 account you control, with whatever small-sats balance you have
 on hand.
 
 **The seeder is optional, not required.** `npm run db:seed`
-inserts a small set of demo offerings keyed to a pubkey you
-control — useful if you'd rather skip the create-form clicks
-and jump into the buy flow. If you'd rather create offerings
-yourself from `/create-course` to evaluate that surface
-directly, skip §3.
+inserts a small set of demo offerings under an owner pubkey you set
+via `SEED_PUBKEY` (or a built-in demo account if you skip it) —
+useful if you'd rather skip the create-form clicks and jump into
+the buy flow. If you'd rather create offerings yourself from
+`/create-course` to evaluate that surface directly, skip §3.
 
 ## What you're evaluating
 
@@ -46,8 +45,7 @@ A Lightning checkout for educational creators
 | **Anonymous-first buyer surface** | Buy without signing in; the opaque receipt URL is the only access key and the only delivery channel. |
 | **Notification bell** | In-app bell for signed-in users — `order.paid` / `sale.received` / payout events. |
 
-For the full breakdown, see
-[`docs/HACKATHON.md`](./docs/HACKATHON.md) and the feature docs
+For the full breakdown, see the feature docs
 in [`docs/features/`](./docs/features/).
 
 ## 1. Prereqs
@@ -117,20 +115,21 @@ you'd prefer to start with pre-seeded data.
 
 ### Optional: seed pre-built offerings
 
-`scripts/seed-offerings.ts` drops a small set of demo offerings
-keyed to a pubkey you control. Edit the script if you want to
-change the offerings — title, description, type, price, payout
-rail, tags. The seeder picks up your owner pubkey from env (see
-the script header for the exact variable); set it to your own
-hex pubkey before running.
+`scripts/seed-offerings.ts` drops a small set of demo offerings.
+Edit the script if you want to change the offerings — title,
+description, type, price, payout rail, tags. Set `SEED_PUBKEY` in
+your env (npub or 64-char hex) to your own key to own the seeded
+offerings — sign in with the matching key and they appear under
+`/my-courses`. Leave it unset and they attach to a built-in
+all-zeros demo account that nobody can sign in as.
 
 ```bash
 npm run db:seed
 ```
 
-The seeder is idempotent — it wipes any prior `mock-` rows
-before inserting, so you can re-run after edits without
-collisions.
+The seeder is idempotent — it skips any offering whose
+`(owner, slug)` pair is already present, so you can re-run it
+without creating duplicates.
 
 To undo, run `npm run db:unseed`.
 
@@ -140,13 +139,13 @@ To undo, run `npm run db:unseed`.
 npm run dev
 ```
 
-Visit `http://localhost:3000`, click **Iniciar sesión**, and pick
-your sign-in method (extension / paste nsec / NIP-46 bunker).
-If you ran the seeder, sign in with the pubkey you set as the
-seed owner so the demo offerings show up under `/my-courses`. If
-you didn't seed, click **Crear curso** (or
-`/[locale]/create-course`) and build an offering from the UI —
-that's the primary path the project is built around.
+Visit `http://localhost:3000/en` for the English UI (Spanish is the
+default at `/`; see the note below), click **Sign in**, and pick your
+sign-in method (extension / paste nsec / NIP-46 bunker). If you ran the
+seeder, sign in with the key you set as `SEED_PUBKEY` so the demo
+offerings show up under `/my-courses`. If you didn't seed, click
+**Create course** (or go to `/create-course`) and build an offering
+from the UI — that's the primary path the project is built around.
 
 Spanish is the default locale. Switch to English with the toggle
 in the navbar or by navigating to `/en/...` directly.
@@ -163,22 +162,27 @@ by [`docs/testing-plan.md`](./docs/testing-plan.md).
    pre-fill (see
    [nostr-identity](./docs/features/nostr-identity.md) for the
    seeding model).
-2. Open `/settings`. Pick a slug, pick a payout method (Wapu or
-   Lightning Address), and fill in the destination field for
-   that rail. Saving a payment-destination field triggers a
-   re-sign prompt — sign with the same signer you used to log
-   in.
+2. Open `/settings`. Pick a payout method (Wapu or Lightning
+   Address) and fill in the destination field for that rail.
+   (Your storefront slug is assigned automatically at sign-in
+   from your Nostr profile — there is nothing to pick.) Saving a
+   payment-destination field triggers a re-sign prompt — sign
+   with the same signer you used to log in.
 3. For the LN rail: pasting a Lightning Address triggers a 1-sat
    LUD-21 probe. Providers without LUD-21 are rejected here, at
    save time. (See
    [settings-and-payouts](./docs/features/settings-and-payouts.md)
    for the probe mechanics.)
 4. Open `/create-course`. Pick a primitive (`code` or
-   `download`), set a title, description, price (in sats or
-   ARS), tags, and an image. Save — the offering goes live
-   immediately (there is no separate publish step).
+   `download`), set a title, description, price, tags, and an
+   image. **On the Wapu (ARS) rail, price comfortably above
+   ARS 10,000:** Wapu's minimum withdrawal is ARS 10,000, so the
+   form rejects a course whose net payout (price − Wapu fee)
+   would fall under that floor (`price_below_wapu_minimum`). Save
+   — the offering goes live immediately (there is no separate
+   publish step).
 5. For a `code` offering, mint a batch of redemption codes with
-   **Mint codes** in the offering editor. A `code` offering with
+   **Mint more codes** in the offering editor. A `code` offering with
    an empty pool is treated as sold out, so checkout is refused
    until the pool is non-empty. (`download` offerings need no
    minting.)
@@ -186,20 +190,22 @@ by [`docs/testing-plan.md`](./docs/testing-plan.md).
 Your storefront is live at `/<your-slug>` and the offering is at
 `/<your-slug>/c/<offering-slug>`. Note that buyers cannot check
 out until your payout rail's destination fields are filled in
-(§3).
+(§5.1, step 2).
 
 ### 5.2 Wapu-rail buy (sats → ARS to CBU)
 
 Pre-req: you completed §5.1 with `payout_method = cbu_alias` and
 a CBU/alias filled in (this stamps `wapu_ars` on the order's
-rail).
+rail), and your test course is priced above Wapu's ARS 10,000
+withdrawal minimum (see §5.1, step 4).
 
 1. From a second browser profile (or an incognito window),
    navigate to your storefront and click into your offering.
-2. Click **Comprar**. The checkout page renders a QR with a
-   Wapu-minted BOLT11 invoice. Optionally connect a Nostr
-   identifier (`npub1…` or a NIP-05) to enable the encrypted
-   DM push.
+2. Click **Pay with sats**. The checkout page renders a QR with
+   a Wapu-minted BOLT11 invoice. Optionally attach a Nostr
+   identifier (`npub1…`) to tie the order to your identity — it
+   then shows under `/purchases` and powers the `order.paid`
+   notification. (There is no DM; delivery is the receipt page.)
 3. Pay the invoice from any Lightning wallet you have around.
    With Wapu staging the amount is fake — keep it small (e.g.,
    100 sats).
@@ -220,14 +226,14 @@ lightning_address` and a LUD-21 Lightning Address filled in
 (this stamps `direct_lightning` on the order's rail).
 
 1. From a second browser profile, open the offering page and
-   click Comprar. The checkout renders a QR with a BOLT11
-   invoice minted by the seller's LNURL provider.
+   click **Pay with sats**. The checkout renders a QR with a
+   BOLT11 invoice minted by the seller's LNURL provider.
 2. Pay the invoice from any Lightning wallet. The sats land
    directly in the seller's wallet.
 3. The client polls `/api/orders/[orderId]`, which probes the
    seller's LUD-21 `verify` URL until it returns
    `{ settled: true }`. Polling is server-side; the buyer sees
-   it as a "Confirmando…" spinner.
+   it as a "Waiting for your payment…" spinner.
 4. Once verified, the page redirects to `/receipt/[orderId]`,
    identical to the Wapu-rail flow.
 
@@ -276,7 +282,7 @@ order to paid.
   not installed, or you signed in with a paste-nsec session
   that the page lost. Sign in again before saving payment
   fields.
-- **Order stuck on "Confirmando…" (Wapu rail)** — the deposit
+- **Order stuck on "Waiting for your payment…" (Wapu rail)** — the deposit
   hasn't confirmed yet. The checkout page polls
   `/api/orders/[orderId]`, which polls the Wapu deposit
   transaction; on staging this is usually quick. There are no
