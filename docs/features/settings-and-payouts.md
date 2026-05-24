@@ -1,7 +1,7 @@
 # Settings and payouts
 
 > **Status:** Active
-> **Last updated:** 2026-05-23
+> **Last updated:** 2026-05-24
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | What lives in `/settings`, Two tiers of fields, The LUD-21 probe | Split the public Nostr Lightning Address (`nostr_lightning_address`, a free Identity-tier field) from the payout `lightning_address`; the LUD-21 probe now runs only on the payout one. | ADR 0030 — the shared column made the LUD-21 probe block profile saves (issue #30). |
 | 2026-05-23 | By design | Reframed the scope section (formerly "What we deliberately do not do") as "By design", leading each point with the strength (Nostr re-sign as the second factor, atomic saves, one-shot purchases). | The "what we don't do" framing read as incompleteness, but each item is a deliberate design strength — the section should sell it, not apologize for it. |
 | 2026-05-23 | What lives in `/settings`, Two tiers of fields | Folded the Notifications tab into Preferences (single Save), dropped the informational Theme block, and noted the payout notification toggles. | Mobile/UX pass — fewer tabs, and theme was never persisted server-side. |
 | 2026-05-21 | — | Initial version. | Hackathon documentation pass — describe the settings surface, the two tiers of fields, the NIP-07 re-sign flow, and the LUD-21 probe. |
@@ -32,7 +33,10 @@
 The seller's single configuration surface at
 `/[locale]/settings`. Grouped into three sections:
 
-1. **Identity** — `slug`, `display_name`, `bio`, `avatar_url`.
+1. **Identity** — `slug`, `display_name`, `bio`, `avatar_url`,
+   `banner_url`, and `nostr_lightning_address` (the public Nostr
+   `lud16`, shown on the storefront zap button; ADR 0030 — accepts
+   any address, no LUD-21 check, no re-sign).
 2. **Payout** — `payout_method` (the rail picker), plus the
    per-rail destination fields: `cbu`, `alias` (Wapu rail);
    `lightning_address` (LN rail).
@@ -54,8 +58,8 @@ Every editable field falls into one of two tiers:
 
 ### Tier 1 — free edits
 
-`slug`, `display_name`, `bio`, `avatar_url`, locale, notification
-preferences.
+`slug`, `display_name`, `bio`, `avatar_url`, `banner_url`,
+`nostr_lightning_address`, locale, notification preferences.
 
 These can be saved with just the session cookie. The
 session-cookie alone is sufficient because the worst-case
@@ -122,11 +126,14 @@ nsec again" affordance.
 
 ## The LUD-21 probe (LN-rail entry)
 
-When the field being saved is `lightning_address`, the server
-performs a one-time **live probe** of the address before
-accepting it. The probe is what keeps a broken or
+When the field being saved is the **payout** `lightning_address`,
+the server performs a one-time **live probe** of the address
+before accepting it. The probe is what keeps a broken or
 non-compliant LN provider from ever ending up on a published
-offering.
+offering. It does **not** run on the public
+`nostr_lightning_address` (the Profile-tab lud16), which accepts
+any address — payouts there go through NWC instead (ADRs 0029,
+0030).
 
 The probe sequence:
 

@@ -147,7 +147,23 @@ repo's copy is intentionally identical and should stay in sync.
   `make_invoice`/`lookup_invoice`; we only use receive/lookup, so the
   UI tells the seller to issue a connection **without** `pay_invoice`.
   ADR 0029 supersedes the absolute "LN settlement requires LUD-21"
-  posture of ADR 0015.
+  posture of ADR 0015. The LUD-21 probe applies **only** to the payout
+  `lightning_address`; the public Nostr address is a separate field
+  (see next bullet).
+- **Two Lightning Addresses, two columns.** `users.lightning_address`
+  is the LUD-21-validated **payout** destination, edited only on the
+  "How you get paid" tab. `users.nostr_lightning_address` is the
+  **public** Nostr `lud16`, edited on the Profile tab, synced
+  from/published to kind:0, and the only LN value shown on the
+  storefront (zap button + QR). The public one accepts any address —
+  **no LUD-21 probe, no NIP-98 re-sign** (it is identity, not a
+  payout). Do not run the payout probe on profile saves. Decision in
+  ADR `docs/architecture/decisions/0030-split-public-nostr-ln-address-from-payout.md`
+  (amending ADR 0015). At sign-in, `refreshUserFromKind0`
+  (`lib/creator/users.ts`) fills placeholder/empty row fields from
+  kind:0 without clobbering edits — this is what fixes the
+  placeholder-display-name bug (issue #30); the `slug` is never
+  auto-changed.
 - **Both rails are verified by polling, never a webhook.** On
   `/api/orders/[orderId]`: a `wapu_ars` order polls its Wapu deposit
   transaction (`pollWapuDeposit`); a `direct_lightning` order polls

@@ -97,6 +97,10 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
   // if we only probed when the sats rail was already selected, that
   // later flip would activate an unverified address and break
   // settlement confirmation at checkout time.
+  // Note: `nostr_lightning_address` (the public Nostr lud16, ADR 0030)
+  // is deliberately NOT probed here and is absent from `requiresReSign`
+  // above — it is public identity, not a payout destination, so any
+  // LUD-16 address is accepted and editing it needs no NIP-98 re-sign.
   const nextLightningAddress =
     parsed.data.lightning_address ?? auth.user.lightning_address;
   if (lightningAddressChanged && nextLightningAddress) {
@@ -183,6 +187,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
       cbu: updated.cbu,
       alias: updated.alias,
       lightning_address: updated.lightning_address,
+      nostr_lightning_address: updated.nostr_lightning_address,
       // Never return the NWC URI — it's an encrypted wallet
       // credential. The client only needs to know one is connected.
       nwc_connected: Boolean(updated.nwc_uri),

@@ -89,9 +89,11 @@ interface PayoutFormProps {
   initialPayoutMethod: PayoutMethod;
   initialTransferSpeed: TransferSpeed;
   /**
-   * The saved Lightning Address, used to seed the editable field on
-   * the sats rail. The same value is also editable on the Profile tab
-   * (as the Nostr lud16); both write the one `users.lightning_address`.
+   * The saved payout Lightning Address (`users.lightning_address`),
+   * used to seed the editable field on the sats rail. This is the
+   * LUD-21-validated settlement destination — distinct from the public
+   * Nostr lud16 (`users.nostr_lightning_address`) on the Profile tab
+   * (ADR 0030).
    */
   currentLightningAddress: string;
   /**
@@ -171,9 +173,9 @@ export function PayoutForm({
   // cleared as the user edits the field.
   const [cbuError, setCbuError] = useState<string | null>(null);
   const [aliasError, setAliasError] = useState<string | null>(null);
-  // The LN address is the sats payout destination, editable here (and
-  // also on the Profile tab as the Nostr lud16 — both write the same
-  // field). Seeded from the saved value.
+  // The LN address is the sats payout destination (LUD-21-validated),
+  // edited only here — distinct from the public Nostr lud16 on the
+  // Profile tab (ADR 0030). Seeded from the saved value.
   const [lightningAddress, setLightningAddress] = useState(
     currentLightningAddress
   );
@@ -559,11 +561,11 @@ export function PayoutForm({
             </fieldset>
 
             {payoutMethod === "lightning_address" ? (
-              // The LN address is the sats payout destination, so it's
-              // editable right here — in Settings and in the modal. It
-              // is also the public Nostr lud16, editable in the Profile
-              // tab too; both write the same field. Validated
-              // server-side (LUD-21 probe) on save.
+              // The LN address is the sats payout destination, editable
+              // right here — in Settings and in the modal. It is the
+              // LUD-21-validated settlement address (probed server-side
+              // on save), separate from the public Nostr lud16 on the
+              // Profile tab (ADR 0030).
               <div className={styles.field}>
                 <label htmlFor="lightning_address" className={styles.label}>
                   {t("lightningAddress")}

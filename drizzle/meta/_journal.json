@@ -99,6 +99,13 @@
       "when": 1779800000000,
       "tag": "0013_nwc_payout",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1779900000000,
+      "tag": "0014_nostr_lightning_address",
+      "breakpoints": true
     }
   ]
 }

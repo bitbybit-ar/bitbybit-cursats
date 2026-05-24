@@ -12,6 +12,15 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Your Nostr Lightning Address is now separate from your payout
+  address.** The Profile tab's Lightning Address is your public Nostr
+  `lud16` — shown on your storefront's zap button and synced with your
+  Nostr profile — and accepts any provider, with no LUD-21 requirement.
+  The LUD-21 check now applies only to the payout Lightning Address on
+  the "How you get paid" tab. Saving your profile no longer prompts for
+  a signature or fails because of an incompatible Lightning provider.
+  Decision in ADR
+  [0030](docs/architecture/decisions/0030-split-public-nostr-ln-address-from-payout.md).
 - **CVU accounts accepted on the Wapu rail; copy now reads "CBU/CVU".**
   The payout-destination field accepts a 23-digit CVU (Mercado Pago,
   Ualá, etc.) alongside a 22-digit CBU, and every user-facing string
@@ -240,6 +249,13 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **Display name now syncs from your Nostr profile at sign-in.**
+  Previously, if the relay lookup was slow on your first sign-in, your
+  name stuck as a `user-…` placeholder until you manually opened
+  /settings and re-saved. Sign-in now refreshes a placeholder name (and
+  any still-empty avatar, banner, bio, or Nostr Lightning Address) from
+  your kind:0 metadata, without overwriting anything you've edited
+  (issue #30).
 - **Toasts pause their auto-dismiss on hover.** Hovering a toast now
   clears its 3-second dismiss timer and re-arms it on mouse-out, so a
   message you are reading no longer slides away mid-read

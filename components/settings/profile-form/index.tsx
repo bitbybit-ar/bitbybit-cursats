@@ -7,10 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { useSignerContext } from "@/lib/contexts/signer-context";
-import {
-  buildSettingsAuthEvent,
-  hashSettingsBody,
-} from "@/lib/creator/sign-settings-payload";
 import { buildProfileMetadataEvent } from "@/lib/nostr/events";
 import { publishSignedEvent } from "@/lib/nostr/publish";
 import type { Kind0Profile } from "@/lib/nostr/profile";
@@ -23,7 +19,12 @@ interface ProfileFormProps {
   initialBio: string;
   initialAvatarUrl: string;
   initialBannerUrl: string;
-  initialLightningAddress: string;
+  /**
+   * The public Nostr Lightning Address (kind:0 lud16). Editing it here
+   * carries no LUD-21 requirement and no NIP-98 re-sign (ADR 0030) —
+   * the payout destination lives on the "How you get paid" tab.
+   */
+  initialNostrLightningAddress: string;
   /**
    * True when ANY profile field came from kind:0 fallback (no value
    * was set on the cursats row yet). Surfaces a hint at the top of
@@ -44,7 +45,7 @@ export function ProfileForm({
   initialBio,
   initialAvatarUrl,
   initialBannerUrl,
-  initialLightningAddress,
+  initialNostrLightningAddress,
   prefilledFromNostr,
 }: ProfileFormProps) {
   const t = useTranslations("settings.form");
@@ -58,8 +59,8 @@ export function ProfileForm({
   const [bio, setBio] = useState(initialBio);
   const [avatarUrl, setAvatarUrl] = useState(initialAvatarUrl);
   const [bannerUrl, setBannerUrl] = useState(initialBannerUrl);
-  const [lightningAddress, setLightningAddress] = useState(
-    initialLightningAddress
+  const [nostrLightningAddress, setNostrLightningAddress] = useState(
+    initialNostrLightningAddress
   );
   const [isPending, setIsPending] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -92,88 +93,30 @@ export function ProfileForm({
       }
     }
 
-    const nextLightningAddress = emptyToNull(lightningAddress);
-    const lightningChanged =
-      nextLightningAddress !== emptyToNull(initialLightningAddress);
-
     setIsPending(true);
     try {
+      // Profile fields are public identity, not payment destinations,
+      // so this save needs no NIP-98 re-sign and no LUD-21 probe (the
+      // public Nostr lud16 accepts any address — ADR 0030).
       const serialized = JSON.stringify({
         display_name: displayName.trim(),
         bio: emptyToNull(bio),
         avatar_url: nextAvatarUrl,
         banner_url: nextBannerUrl,
-        lightning_address: nextLightningAddress,
+        nostr_lightning_address: emptyToNull(nostrLightningAddress),
       });
-
-      const headers: Record<string, string> = {
-        "content-type": "application/json",
-      };
-
-      // LN-address changes require a NIP-98 re-sign (ADR 0008/0015).
-      if (lightningChanged) {
-        const url = new URL("/api/settings", window.location.origin).toString();
-        const payloadHash = await hashSettingsBody(serialized);
-        const unsigned = buildSettingsAuthEvent(url, payloadHash);
-        try {
-          const signed = await signWithPrompt(unsigned);
-          headers.Authorization = `Nostr ${btoa(JSON.stringify(signed))}`;
-        } catch (err) {
-          if (
-            isSignerCancellation(err) ||
-            (err instanceof Error && err.message === "re_sign_in_cancelled")
-          ) {
-            showToast(t("signCancelled"), "info");
-            return;
-          }
-          showToast(t("saveFailed"), "error");
-          return;
-        }
-      }
 
       const res = await fetch("/api/settings", {
         method: "PATCH",
-        headers,
+        headers: { "content-type": "application/json" },
         body: serialized,
       });
       if (!res.ok) {
-        if (res.status === 401 || res.status === 404) {
-          if (res.status === 404) {
-            router.push("/");
-            return;
-          }
-          const json = (await res.json().catch(() => null)) as {
-            error?: string;
-          } | null;
-          if (json?.error === "auth_clock_skew") {
-            showToast(t("signClockSkew"), "error");
-            return;
-          }
-          showToast(t("signRequiredBody"), "error");
+        // 404 means the user row is gone (deleted account) — bounce
+        // home. Anything else is a generic save failure.
+        if (res.status === 404) {
+          router.push("/");
           return;
-        }
-        if (res.status === 400) {
-          const json = (await res.json().catch(() => null)) as {
-            error?: string;
-            reason?: string;
-          } | null;
-          if (json?.error === "lightning_address_invalid") {
-            // Each reason maps to a distinct seller-facing message —
-            // "your provider doesn't speak LUD-21" is actionable
-            // (switch providers); "unreachable" is transient (retry).
-            const reasonKey: Record<string, string> = {
-              invalid_address: "lightningAddressInvalidFormat",
-              lnurl_unreachable: "lightningAddressUnreachable",
-              lnurl_no_lud21: "lightningAddressNoLud21",
-              lnurl_invalid_response: "lightningAddressMalformed",
-              bolt11_no_payment_hash: "lightningAddressMalformed",
-            };
-            const key =
-              (json.reason && reasonKey[json.reason]) ||
-              "lightningAddressInvalid";
-            showToast(t(key), "error");
-            return;
-          }
         }
         showToast(t("saveFailed"), "error");
         return;
@@ -208,7 +151,7 @@ export function ProfileForm({
       if (p.about !== undefined) setBio(p.about ?? "");
       if (p.picture !== undefined) setAvatarUrl(p.picture ?? "");
       if (p.banner !== undefined) setBannerUrl(p.banner ?? "");
-      if (p.lud16 !== undefined) setLightningAddress(p.lud16 ?? "");
+      if (p.lud16 !== undefined) setNostrLightningAddress(p.lud16 ?? "");
       showToast(t("syncSuccess"), "success");
     } catch {
       showToast(tErr("network"), "error");
@@ -230,7 +173,7 @@ export function ProfileForm({
         about: emptyToNull(bio) ?? undefined,
         picture: emptyToNull(avatarUrl) ?? undefined,
         banner: emptyToNull(bannerUrl) ?? undefined,
-        lud16: emptyToNull(lightningAddress) ?? undefined,
+        lud16: emptyToNull(nostrLightningAddress) ?? undefined,
       };
       const unsigned = buildProfileMetadataEvent(metadata);
       const signed = await signWithPrompt(unsigned);
@@ -344,22 +287,22 @@ export function ProfileForm({
         </div>
 
         <div className={styles.field}>
-          <label htmlFor="lightning_address" className={styles.label}>
-            {t("lightningAddress")}
+          <label htmlFor="nostr_lightning_address" className={styles.label}>
+            {t("nostrLightningAddress")}
             <Tooltip
-              text={t("lightningAddressTooltip")}
-              example={t("lightningAddressExample")}
+              text={t("nostrLightningAddressTooltip")}
+              example={t("nostrLightningAddressExample")}
               label={tCommon("tooltipLabel")}
             />
           </label>
           <input
-            id="lightning_address"
+            id="nostr_lightning_address"
             type="text"
             inputMode="email"
             className={styles.input}
-            value={lightningAddress}
-            onChange={(e) => setLightningAddress(e.target.value)}
-            placeholder={t("lightningAddressPlaceholder")}
+            value={nostrLightningAddress}
+            onChange={(e) => setNostrLightningAddress(e.target.value)}
+            placeholder={t("nostrLightningAddressPlaceholder")}
             autoComplete="off"
             spellCheck={false}
           />

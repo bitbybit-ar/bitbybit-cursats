@@ -11,7 +11,10 @@ import {
 } from "@/lib/schemas/auth";
 import { SESSION_INACTIVITY_MINUTES } from "@/lib/auth-constants";
 import { fetchKind0Profile } from "@/lib/nostr/profile";
-import { ensureUserForPubkey } from "@/lib/creator/users";
+import {
+  ensureUserForPubkey,
+  refreshUserFromKind0,
+} from "@/lib/creator/users";
 
 /**
  * NIP-98 (HTTP Auth) login.
@@ -107,6 +110,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // from /settings later. Failures here are non-fatal — sign-in
   // proceeds even if the user insert errors (legacy sessions from
   // before this code can still hit lazy-create surfaces).
+  //
+  // `ensureUserForPubkey` seeds the row only on *creation*; a row first
+  // created during a slow-relay sign-in keeps its placeholder
+  // display_name forever otherwise (issue #30). So follow up with
+  // `refreshUserFromKind0`, which fills placeholder/empty fields on the
+  // existing row without clobbering anything the user has edited.
   try {
     const profile = await fetchKind0Profile(pubkey);
     await ensureUserForPubkey(pubkey, {
@@ -114,7 +123,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       avatar_url: profile.picture,
       banner_url: profile.banner,
       bio: profile.about,
+      nostr_lightning_address: profile.lud16,
     });
+    await refreshUserFromKind0(pubkey, profile);
   } catch (err) {
     console.warn(
       `[auth/nostr] ensureUserForPubkey failed for ${pubkey}:`,

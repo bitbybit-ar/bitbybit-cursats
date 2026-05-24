@@ -11,6 +11,7 @@ import {
 } from "@/lib/creator/ar-bank-id";
 import { LightningAddressSchema, NwcUriSchema } from "@/lib/schemas/primitives";
 import { encrypt } from "@/lib/crypto";
+import type { Kind0Profile } from "@/lib/nostr/profile";
 import { writeAuditLog } from "./audit";
 
 /**
@@ -66,6 +67,10 @@ export const UpdateUserProfileSchema = z
     alias: AliasSchema.nullable(),
     cbu: CbuSchema.nullable(),
     lightning_address: LightningAddressSchema.nullable(),
+    // Public Nostr Lightning Address (kind:0 lud16), edited on the
+    // Profile tab. Format-validated only — no LUD-21 probe, no re-sign
+    // (it is not a payment-destination field). ADR 0030.
+    nostr_lightning_address: LightningAddressSchema.nullable(),
     // Plaintext NWC URI in; encrypted at rest by updateUserProfile.
     nwc_uri: NwcUriSchema.nullable(),
     payout_method: z.enum(["cbu_alias", "lightning_address", "lightning_nwc"]),
@@ -137,6 +142,8 @@ export interface InitialUserProfile {
   avatar_url?: string;
   banner_url?: string;
   bio?: string;
+  /** Public Nostr Lightning Address (kind:0 lud16). ADR 0030. */
+  nostr_lightning_address?: string;
 }
 
 /**
@@ -191,6 +198,7 @@ export async function ensureUserForPubkey(
           avatar_url: initial?.avatar_url ?? null,
           banner_url: initial?.banner_url ?? null,
           bio: initial?.bio ?? null,
+          nostr_lightning_address: initial?.nostr_lightning_address ?? null,
         })
         .returning();
       return row;
@@ -205,6 +213,72 @@ export async function ensureUserForPubkey(
     }
   }
   throw new Error("ensure_user_failed: slug retries exhausted");
+}
+
+/**
+ * Compute which row fields to refresh from a kind:0 profile (pure;
+ * unit-tested). Conservative by design — never clobbers a value the
+ * user has set:
+ *   - `display_name` is replaced only while it still equals the
+ *     pubkey-derived placeholder (`user-<8hex>`).
+ *   - `avatar_url`, `banner_url`, `bio`, `nostr_lightning_address` are
+ *     filled only when currently empty.
+ * Returns the (possibly empty) patch; `slug` is never included —
+ * changing it would break the seller's storefront URL.
+ */
+export function kind0RefreshPatch(
+  existing: User,
+  profile: Kind0Profile
+): Partial<User> {
+  const isEmpty = (v: string | null | undefined): boolean =>
+    !v || v.trim().length === 0;
+
+  const next: Partial<User> = {};
+
+  const placeholderName = `user-${existing.pubkey.slice(0, 8).toLowerCase()}`;
+  const kind0Name = profile.display_name?.trim() || profile.name?.trim();
+  if (kind0Name && existing.display_name === placeholderName) {
+    next.display_name = kind0Name.slice(0, 80);
+  }
+  if (isEmpty(existing.avatar_url) && profile.picture?.trim()) {
+    next.avatar_url = profile.picture.trim();
+  }
+  if (isEmpty(existing.banner_url) && profile.banner?.trim()) {
+    next.banner_url = profile.banner.trim();
+  }
+  if (isEmpty(existing.bio) && profile.about?.trim()) {
+    next.bio = profile.about.trim();
+  }
+  if (isEmpty(existing.nostr_lightning_address) && profile.lud16?.trim()) {
+    next.nostr_lightning_address = profile.lud16.trim().slice(0, 128);
+  }
+
+  return next;
+}
+
+/**
+ * Refresh an existing user row from freshly-fetched kind:0 metadata at
+ * sign-in (issue #30). `ensureUserForPubkey` seeds a row only on
+ * *creation*; a row created during a sign-in whose 3 s relay fetch
+ * timed out keeps its placeholder `display_name` forever otherwise,
+ * and only a manual /settings save would fix it.
+ *
+ * Best-effort: callers wrap this in try/catch and never fail sign-in
+ * over it. The patch logic lives in `kind0RefreshPatch`.
+ */
+export async function refreshUserFromKind0(
+  pubkey: string,
+  profile: Kind0Profile
+): Promise<void> {
+  const existing = await getUserByPubkey(pubkey);
+  if (!existing) return;
+
+  const next = kind0RefreshPatch(existing, profile);
+  if (Object.keys(next).length === 0) return;
+  next.updated_at = new Date();
+
+  const db = getDb();
+  await db.update(users).set(next).where(eq(users.id, existing.id));
 }
 
 /**
@@ -311,6 +385,11 @@ export async function updateUserProfile(
   if (patch.cbu !== undefined) next.cbu = patch.cbu;
   if (patch.lightning_address !== undefined) {
     next.lightning_address = patch.lightning_address;
+  }
+  // Public Nostr lud16 (ADR 0030) — stored plaintext; it is public
+  // identity, not a credential, and carries no LUD-21 requirement.
+  if (patch.nostr_lightning_address !== undefined) {
+    next.nostr_lightning_address = patch.nostr_lightning_address;
   }
   // The NWC URI is a wallet credential — encrypt it before it touches
   // the row (ADR 0029). `patch.nwc_uri` is the plaintext URI the route
