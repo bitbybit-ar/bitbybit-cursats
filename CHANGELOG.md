@@ -18,6 +18,18 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   (for certification renewals or gifting a second code) instead of the
   single buy button. Anonymous visitors and first-time buyers are
   unchanged.
+- **Get paid in sats via NWC (Nostr Wallet Connect).** The sats rail
+  now accepts an NWC connection (NIP-47) as an alternative to a
+  LUD-21 Lightning Address — so sellers on Primal, Alby, Coinos, Zeus
+  or LNbits can receive directly, even though those wallets (and
+  Wallet of Satoshi, Strike, ZBD) don't expose a LUD-21 `verify` URL.
+  Checkout mints the buyer's invoice with the seller's wallet
+  (`make_invoice`) and the order poller confirms settlement with
+  `lookup_invoice`; funds never touch the platform. The connection
+  string is stored AES-256-GCM-encrypted, validated at save time
+  behind the NIP-07 re-sign, and the seller is asked to grant a
+  receive-only connection (no `pay_invoice`). Decision in ADR
+  [0029](docs/architecture/decisions/0029-nwc-sats-rail-input-method.md).
 - **Inline validation for the CBU/alias payout fields.** The payout
   form now checks CBU (22 digits) and alias (BCRA 6–20 chars of
   letters/numbers/dots/hyphens, at least one letter) on blur and on

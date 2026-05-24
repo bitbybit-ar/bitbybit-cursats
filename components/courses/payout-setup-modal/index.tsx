@@ -5,7 +5,7 @@ import { Modal } from "@/components/ui/modal";
 import { PayoutForm } from "@/components/settings/payout-form";
 import styles from "./payout-setup-modal.module.scss";
 
-type PayoutMethod = "cbu_alias" | "lightning_address";
+type PayoutMethod = "cbu_alias" | "lightning_address" | "lightning_nwc";
 type TransferSpeed = "fiat_transfer" | "fast_fiat_transfer";
 
 export interface PayoutSavedValues {

@@ -65,7 +65,7 @@ function serverErrorMessageKey(
   return "saveFailed";
 }
 
-type PayoutMethod = "cbu_alias" | "lightning_address";
+type PayoutMethod = "cbu_alias" | "lightning_address" | "lightning_nwc";
 type TransferSpeed = "fiat_transfer" | "fast_fiat_transfer";
 
 interface PayoutFormProps {

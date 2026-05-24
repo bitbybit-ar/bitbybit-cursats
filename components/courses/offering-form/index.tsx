@@ -20,7 +20,7 @@ import { MAX_TAGS_PER_OFFERING, type Offering } from "@/lib/creator/offerings";
 import { WAPU_MIN_NET_ARS } from "@/lib/wapu-limits";
 import styles from "./offering-form.module.scss";
 
-type PayoutMethod = "cbu_alias" | "lightning_address";
+type PayoutMethod = "cbu_alias" | "lightning_address" | "lightning_nwc";
 
 export interface OfferingFormPayoutState {
   cbu: string;
