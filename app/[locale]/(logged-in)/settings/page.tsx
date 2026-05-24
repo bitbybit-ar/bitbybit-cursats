@@ -96,6 +96,7 @@ export default async function SettingsPage({
               initialPayoutMethod={user.payout_method}
               initialTransferSpeed={user.transfer_speed}
               currentLightningAddress={initialLightningAddress}
+              nwcConnected={Boolean(user.nwc_uri)}
             />
           ) : null}
           {section === "preferences" ? (

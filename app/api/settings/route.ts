@@ -14,6 +14,8 @@ import { parseNostrAuthHeader } from "@/lib/nostr/http-auth";
 import { validateNip98AuthEvent } from "@/lib/nostr/verify";
 import { hashSettingsBody } from "@/lib/creator/sign-settings-payload";
 import { getLightningClient, LightningMintError } from "@/lib/lightning";
+import { decrypt } from "@/lib/crypto";
+import { validateNwcConnection, NwcError } from "@/lib/nwc";
 
 /**
  * Update the current user's profile (CBU, alias, Lightning Address,
@@ -34,6 +36,12 @@ import { getLightningClient, LightningMintError } from "@/lib/lightning";
  * advertises LUD-21 (the `verify` URL on its callback response).
  * Providers without LUD-21 are rejected — the LN rail has no
  * server-side way to confirm settlement otherwise.
+ *
+ * The NWC method (ADR 0029) is the analogue: when the user sets or
+ * changes their `nwc_uri`, we open the connection and probe
+ * make_invoice/lookup_invoice via lib/nwc. The URI is a wallet
+ * credential — encrypted at rest (lib/crypto) and never returned to
+ * the client (the response carries a `nwc_connected` flag instead).
  */
 export async function PATCH(req: NextRequest): Promise<NextResponse> {
   const auth = await requireUser();
@@ -72,11 +80,18 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
   const payoutMethodChanged =
     parsed.data.payout_method !== undefined &&
     parsed.data.payout_method !== auth.user.payout_method;
+  // The stored nwc_uri is encrypted; compare against the decrypted
+  // current value so an unchanged URI doesn't trigger a re-sign or a
+  // re-probe (every encrypt() yields a fresh ciphertext).
+  const currentNwcUri = auth.user.nwc_uri ? decrypt(auth.user.nwc_uri) : null;
+  const nwcUriChanged =
+    parsed.data.nwc_uri !== undefined && parsed.data.nwc_uri !== currentNwcUri;
   const requiresReSign =
     cbuChanged ||
     aliasChanged ||
     lightningAddressChanged ||
-    payoutMethodChanged;
+    payoutMethodChanged ||
+    nwcUriChanged;
 
   // LUD-21 sanity check (ADR 0015). Probe the upstream provider
   // whenever the user sets or changes their LN address, regardless
@@ -98,6 +113,27 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
       if (err instanceof LightningMintError) {
         return NextResponse.json(
           { error: "lightning_address_invalid", reason: err.code },
+          { status: 400 }
+        );
+      }
+      throw err;
+    }
+  }
+
+  // NWC connection check (ADR 0029), the NWC analogue of the LUD-21
+  // probe above. Whenever the user sets or changes their NWC URI, we
+  // open the connection and confirm it can mint + look up invoices
+  // (get_info capabilities + a probe make_invoice/lookup_invoice).
+  // Same rationale as the LN probe: a later flip to the NWC method
+  // would otherwise activate an unverified connection.
+  const nextNwcUri = parsed.data.nwc_uri ?? currentNwcUri;
+  if (nwcUriChanged && nextNwcUri) {
+    try {
+      await validateNwcConnection(nextNwcUri);
+    } catch (err) {
+      if (err instanceof NwcError) {
+        return NextResponse.json(
+          { error: "nwc_invalid", reason: err.code },
           { status: 400 }
         );
       }
@@ -150,6 +186,9 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
       cbu: updated.cbu,
       alias: updated.alias,
       lightning_address: updated.lightning_address,
+      // Never return the NWC URI — it's an encrypted wallet
+      // credential. The client only needs to know one is connected.
+      nwc_connected: Boolean(updated.nwc_uri),
       payout_method: updated.payout_method,
       transfer_speed: updated.transfer_speed,
       locale: updated.locale,

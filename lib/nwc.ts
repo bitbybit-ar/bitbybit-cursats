@@ -141,7 +141,32 @@ function withTimeout<T>(p: Promise<T>, label: string): Promise<T> {
       NWC_TIMEOUT_MS
     );
   });
-  return Promise.race([p, timeout]).finally(() => clearTimeout(timer)) as Promise<T>;
+  return Promise.race([p, timeout]).finally(() =>
+    clearTimeout(timer)
+  ) as Promise<T>;
+}
+
+// The slice of NWCClient this module actually uses. Kept as a seam so
+// tests can inject a fake client without standing up a relay — the
+// same pattern lib/lightning.ts uses for its LightningClient.
+type NwcClientLike = Pick<
+  NWCClient,
+  "getInfo" | "makeInvoice" | "lookupInvoice" | "close"
+>;
+
+let buildNwcClient: (uri: string) => NwcClientLike = (uri) =>
+  new NWCClient({ nostrWalletConnectUrl: uri });
+
+/** Test-only: inject a fake NWC client factory. */
+export function _setNwcClientFactoryForTests(
+  factory: (uri: string) => NwcClientLike
+): void {
+  buildNwcClient = factory;
+}
+
+/** Test-only: restore the real `@getalby/sdk` client factory. */
+export function _resetNwcClientFactoryForTests(): void {
+  buildNwcClient = (uri) => new NWCClient({ nostrWalletConnectUrl: uri });
 }
 
 /**
@@ -150,10 +175,10 @@ function withTimeout<T>(p: Promise<T>, label: string): Promise<T> {
  */
 async function withClient<T>(
   uri: string,
-  fn: (client: NWCClient) => Promise<T>
+  fn: (client: NwcClientLike) => Promise<T>
 ): Promise<T> {
   parseAndGuardUri(uri);
-  const client = new NWCClient({ nostrWalletConnectUrl: uri.trim() });
+  const client = buildNwcClient(uri.trim());
   try {
     return await fn(client);
   } finally {
@@ -263,11 +288,17 @@ export async function mintNwcInvoice(
     }
     const bolt11 = tx?.invoice;
     if (typeof bolt11 !== "string" || bolt11.length === 0) {
-      throw new NwcError("make_invoice_failed", "make_invoice returned no invoice");
+      throw new NwcError(
+        "make_invoice_failed",
+        "make_invoice returned no invoice"
+      );
     }
     const payment_hash = tx.payment_hash || extractPaymentHash(bolt11);
     if (!payment_hash) {
-      throw new NwcError("no_payment_hash", "make_invoice returned no payment_hash");
+      throw new NwcError(
+        "no_payment_hash",
+        "make_invoice returned no payment_hash"
+      );
     }
     const expires_at =
       typeof tx.expires_at === "number" && tx.expires_at > 0

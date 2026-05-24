@@ -29,6 +29,16 @@ const LN_PROBE_REASON_KEYS: Record<string, string> = {
   bolt11_no_payment_hash: "lightningAddressMalformed",
 };
 
+// NWC probe failure reason (NwcError.code) → seller-facing message key.
+const NWC_PROBE_REASON_KEYS: Record<string, string> = {
+  invalid_uri: "nwcInvalidUri",
+  unreachable: "nwcUnreachable",
+  unsupported: "nwcUnsupported",
+  make_invoice_failed: "nwcUnreachable",
+  lookup_failed: "nwcUnreachable",
+  no_payment_hash: "nwcInvalid",
+};
+
 /**
  * Maps a /api/settings error response to the best `settings.form`
  * message key, so the toast reflects the actual server-side reason
@@ -50,6 +60,10 @@ function serverErrorMessageKey(
       "lightningAddressInvalid"
     );
   }
+  // NWC probe failure (top-level error + NwcError.code as reason).
+  if (json.error === "nwc_invalid") {
+    return (json.reason && NWC_PROBE_REASON_KEYS[json.reason]) ?? "nwcInvalid";
+  }
   // Zod schema failures arrive as invalid_body + issues[].message,
   // where each message is the schema's refine code.
   if (json.error === "invalid_body" && Array.isArray(json.issues)) {
@@ -59,6 +73,7 @@ function serverErrorMessageKey(
     if (messages.includes("lightning_address_invalid")) {
       return "lightningAddressInvalidFormat";
     }
+    if (messages.includes("nwc_uri_invalid")) return "nwcInvalidFormat";
   }
   if (json.error === "auth_clock_skew") return "signClockSkew";
   if (json.error === "auth_invalid_signature") return "signRequiredBody";
@@ -80,6 +95,14 @@ interface PayoutFormProps {
    */
   currentLightningAddress: string;
   /**
+   * Whether the user already has an NWC connection stored
+   * (`users.nwc_uri`). The URI itself is an encrypted credential and
+   * is never sent to the client, so the field starts empty; this flag
+   * lets the form show a "connected" state and treat an empty NWC
+   * field as "keep the existing connection" rather than "clear it".
+   */
+  nwcConnected: boolean;
+  /**
    * When provided, replaces the default `router.refresh()` after a
    * successful save. The payout-setup modal in the create-course
    * flow uses this to close itself and continue the parent form
@@ -90,6 +113,7 @@ interface PayoutFormProps {
     alias: string;
     payoutMethod: PayoutMethod;
     lightningAddress: string;
+    nwcConnected: boolean;
   }) => void;
   /**
    * Embedded mode: render only the form fields, dropping the card
@@ -127,6 +151,7 @@ export function PayoutForm({
   initialPayoutMethod,
   initialTransferSpeed,
   currentLightningAddress,
+  nwcConnected,
   onSaved,
   embedded = false,
 }: PayoutFormProps) {
@@ -152,9 +177,16 @@ export function PayoutForm({
   const [lightningAddress, setLightningAddress] = useState(
     currentLightningAddress
   );
+  // The NWC URI is a write-only credential field: it starts empty even
+  // when one is stored (the server never sends it back). Empty + an
+  // existing connection means "keep it"; a pasted value replaces it.
+  const [nwcUri, setNwcUri] = useState("");
   const [transferSpeed, setTransferSpeed] =
     useState<TransferSpeed>(initialTransferSpeed);
   const [isPending, setIsPending] = useState(false);
+
+  // The two sats methods share one top-level "Sats" choice.
+  const isSats = payoutMethod !== "cbu_alias";
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -193,6 +225,20 @@ export function PayoutForm({
       }
     }
 
+    // NWC: a pasted value replaces the stored connection; an empty
+    // field keeps the existing one (the URI is never echoed back).
+    const typedNwc = emptyToNull(nwcUri);
+    if (payoutMethod === "lightning_nwc") {
+      if (!typedNwc && !nwcConnected) {
+        showToast(t("nwcRequired"), "error");
+        return;
+      }
+      if (typedNwc && !typedNwc.startsWith("nostr+walletconnect://")) {
+        showToast(t("nwcInvalidFormat"), "error");
+        return;
+      }
+    }
+
     const nextCbu = emptyToNull(cbu);
     const nextAlias = emptyToNull(alias);
     const nextLightningAddress = emptyToNull(lightningAddress);
@@ -203,8 +249,14 @@ export function PayoutForm({
     // re-sign (ADR 0008/0015), same as cbu/alias/rail.
     const lightningChanged =
       nextLightningAddress !== emptyToNull(currentLightningAddress);
+    // A freshly pasted NWC URI is a payment-destination change too.
+    const nwcProvided = Boolean(typedNwc);
     const requiresReSign =
-      cbuChanged || aliasChanged || railChanged || lightningChanged;
+      cbuChanged ||
+      aliasChanged ||
+      railChanged ||
+      lightningChanged ||
+      nwcProvided;
 
     setIsPending(true);
     try {
@@ -214,6 +266,9 @@ export function PayoutForm({
         payout_method: payoutMethod,
         transfer_speed: transferSpeed,
         lightning_address: nextLightningAddress,
+        // Only send the NWC URI when the user pasted a new one — omit
+        // it otherwise so the stored (encrypted) connection is kept.
+        ...(typedNwc ? { nwc_uri: typedNwc } : {}),
       });
 
       const headers: Record<string, string> = {
@@ -278,6 +333,10 @@ export function PayoutForm({
           alias: alias.trim(),
           payoutMethod,
           lightningAddress: lightningAddress.trim(),
+          // On the NWC method a successful save means a connection
+          // exists (freshly pasted or already stored); otherwise keep
+          // whatever was stored before.
+          nwcConnected: payoutMethod === "lightning_nwc" ? true : nwcConnected,
         });
       } else {
         router.refresh();
@@ -321,14 +380,16 @@ export function PayoutForm({
             </span>
           </label>
           <label
-            className={`${styles.radio} ${payoutMethod === "lightning_address" ? styles.radioSelected : ""}`}
+            className={`${styles.radio} ${isSats ? styles.radioSelected : ""}`}
           >
             <input
               type="radio"
               name="payout_method"
-              value="lightning_address"
-              checked={payoutMethod === "lightning_address"}
+              value="sats"
+              checked={isSats}
               onChange={() => {
+                // Default the sats sub-method to Lightning Address; the
+                // seller can switch to NWC in the sub-toggle below.
                 setPayoutMethod("lightning_address");
                 setCbuError(null);
                 setAliasError(null);
@@ -458,33 +519,112 @@ export function PayoutForm({
             </fieldset>
           </>
         ) : (
-          // The LN address is the sats payout destination, so it's
-          // editable right here — in Settings and in the modal. It is
-          // also the public Nostr lud16, editable in the Profile tab
-          // too; both write the same field. Validated server-side
-          // (LUD-21 probe) on save.
-          <div className={styles.field}>
-            <label htmlFor="lightning_address" className={styles.label}>
-              {t("lightningAddress")}
-              <Tooltip
-                text={t("lightningAddressTooltip")}
-                example={t("lightningAddressExample")}
-                label={tCommon("tooltipLabel")}
-              />
-            </label>
-            <input
-              id="lightning_address"
-              type="text"
-              inputMode="email"
-              className={styles.input}
-              value={lightningAddress}
-              onChange={(e) => setLightningAddress(e.target.value)}
-              placeholder={t("lightningAddressPlaceholder")}
-              autoComplete="off"
-              autoCapitalize="none"
-              spellCheck={false}
-            />
-          </div>
+          <>
+            <fieldset className={styles.fieldset}>
+              <legend className={styles.legend}>{t("satsMethod")}</legend>
+              <label
+                className={`${styles.radio} ${payoutMethod === "lightning_address" ? styles.radioSelected : ""}`}
+              >
+                <input
+                  type="radio"
+                  name="sats_method"
+                  value="lightning_address"
+                  checked={payoutMethod === "lightning_address"}
+                  onChange={() => setPayoutMethod("lightning_address")}
+                />
+                <span>
+                  <strong>{t("satsMethodAddress")}</strong>
+                  <span className={styles.radioHint}>
+                    {t("satsMethodAddressHint")}
+                  </span>
+                </span>
+              </label>
+              <label
+                className={`${styles.radio} ${payoutMethod === "lightning_nwc" ? styles.radioSelected : ""}`}
+              >
+                <input
+                  type="radio"
+                  name="sats_method"
+                  value="lightning_nwc"
+                  checked={payoutMethod === "lightning_nwc"}
+                  onChange={() => setPayoutMethod("lightning_nwc")}
+                />
+                <span>
+                  <strong>{t("satsMethodNwc")}</strong>
+                  <span className={styles.radioHint}>
+                    {t("satsMethodNwcHint")}
+                  </span>
+                </span>
+              </label>
+            </fieldset>
+
+            {payoutMethod === "lightning_address" ? (
+              // The LN address is the sats payout destination, so it's
+              // editable right here — in Settings and in the modal. It
+              // is also the public Nostr lud16, editable in the Profile
+              // tab too; both write the same field. Validated
+              // server-side (LUD-21 probe) on save.
+              <div className={styles.field}>
+                <label htmlFor="lightning_address" className={styles.label}>
+                  {t("lightningAddress")}
+                  <Tooltip
+                    text={t("lightningAddressTooltip")}
+                    example={t("lightningAddressExample")}
+                    label={tCommon("tooltipLabel")}
+                  />
+                </label>
+                <input
+                  id="lightning_address"
+                  type="text"
+                  inputMode="email"
+                  className={styles.input}
+                  value={lightningAddress}
+                  onChange={(e) => setLightningAddress(e.target.value)}
+                  placeholder={t("lightningAddressPlaceholder")}
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                />
+              </div>
+            ) : (
+              // NWC connection — a write-only credential field. Funds
+              // land in the seller's own wallet; Cursats only mints +
+              // looks up invoices. Validated server-side (probe) on
+              // save and stored encrypted.
+              <div className={styles.field}>
+                <label htmlFor="nwc_uri" className={styles.label}>
+                  {t("nwcUri")}
+                  <Tooltip
+                    text={t("nwcUriTooltip")}
+                    example={t("nwcUriExample")}
+                    label={tCommon("tooltipLabel")}
+                  />
+                </label>
+                <textarea
+                  id="nwc_uri"
+                  className={styles.input}
+                  value={nwcUri}
+                  onChange={(e) => setNwcUri(e.target.value)}
+                  placeholder={
+                    nwcConnected
+                      ? t("nwcConnectedPlaceholder")
+                      : t("nwcUriPlaceholder")
+                  }
+                  rows={3}
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                />
+                {nwcConnected ? (
+                  <p className={styles.sectionHint}>
+                    {t("nwcConnectedStatus")}
+                  </p>
+                ) : null}
+                <p className={styles.sectionHint}>{t("nwcUriHelp")}</p>
+                <p className={styles.sectionHint}>{t("nwcReceiveOnly")}</p>
+              </div>
+            )}
+          </>
         )}
       </section>
 

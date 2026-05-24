@@ -13,6 +13,7 @@ export interface PayoutSavedValues {
   alias: string;
   payoutMethod: PayoutMethod;
   lightningAddress: string;
+  nwcConnected: boolean;
 }
 
 interface PayoutSetupModalProps {
@@ -26,6 +27,8 @@ interface PayoutSetupModalProps {
    */
   initialTransferSpeed?: TransferSpeed;
   currentLightningAddress: string;
+  /** Whether the seller already has an NWC connection stored. */
+  nwcConnected: boolean;
   onSaved: (next: PayoutSavedValues) => void;
   onClose: () => void;
 }
@@ -43,6 +46,7 @@ export function PayoutSetupModal({
   initialPayoutMethod,
   initialTransferSpeed = "fiat_transfer",
   currentLightningAddress,
+  nwcConnected,
   onSaved,
   onClose,
 }: PayoutSetupModalProps) {
@@ -57,6 +61,7 @@ export function PayoutSetupModal({
         initialPayoutMethod={initialPayoutMethod}
         initialTransferSpeed={initialTransferSpeed}
         currentLightningAddress={currentLightningAddress}
+        nwcConnected={nwcConnected}
         onSaved={onSaved}
         embedded
       />

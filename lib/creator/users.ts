@@ -9,7 +9,8 @@ import {
   RESERVED_SLUGS,
   classifyPayoutDestination,
 } from "@/lib/creator/ar-bank-id";
-import { LightningAddressSchema } from "@/lib/schemas/primitives";
+import { LightningAddressSchema, NwcUriSchema } from "@/lib/schemas/primitives";
+import { encrypt } from "@/lib/crypto";
 import { writeAuditLog } from "./audit";
 
 /**
@@ -65,7 +66,9 @@ export const UpdateUserProfileSchema = z
     alias: AliasSchema.nullable(),
     cbu: CbuSchema.nullable(),
     lightning_address: LightningAddressSchema.nullable(),
-    payout_method: z.enum(["cbu_alias", "lightning_address"]),
+    // Plaintext NWC URI in; encrypted at rest by updateUserProfile.
+    nwc_uri: NwcUriSchema.nullable(),
+    payout_method: z.enum(["cbu_alias", "lightning_address", "lightning_nwc"]),
     transfer_speed: z.enum(["fiat_transfer", "fast_fiat_transfer"]),
     locale: z.enum(["es", "en"]),
     notification_prefs: NotificationPrefsSchema,
@@ -309,6 +312,12 @@ export async function updateUserProfile(
   if (patch.lightning_address !== undefined) {
     next.lightning_address = patch.lightning_address;
   }
+  // The NWC URI is a wallet credential — encrypt it before it touches
+  // the row (ADR 0029). `patch.nwc_uri` is the plaintext URI the route
+  // already validated with a probe; null clears the stored connection.
+  if (patch.nwc_uri !== undefined) {
+    next.nwc_uri = patch.nwc_uri === null ? null : encrypt(patch.nwc_uri);
+  }
   if (patch.payout_method !== undefined) {
     next.payout_method = patch.payout_method;
   }
@@ -383,6 +392,7 @@ export function pickPayoutAlias(user: User): string | null {
  *
  *   - cbu_alias        → at least one of `cbu` / `alias`
  *   - lightning_address → `lightning_address` present
+ *   - lightning_nwc    → `nwc_uri` present (ADR 0029)
  *
  * Sellers must satisfy this before they can create an offering;
  * a checkout against an unconfigured seller would already be
@@ -393,16 +403,20 @@ export function hasPayoutConfigured(user: User): boolean {
   if (user.payout_method === "lightning_address") {
     return Boolean(user.lightning_address?.trim());
   }
+  if (user.payout_method === "lightning_nwc") {
+    return Boolean(user.nwc_uri?.trim());
+  }
   return Boolean(user.cbu?.trim() || user.alias?.trim());
 }
 
 /**
  * The course-pricing currency a seller must use, derived from their
- * payout rail (ADR 0026). A `lightning_address` seller receives sats
- * and thinks in sats; a `cbu_alias` seller cashes out to pesos and
- * thinks in ARS. The currency follows the rail rather than being a
- * free per-course choice.
+ * payout rail (ADR 0026). A sats seller (either `lightning_address`
+ * or `lightning_nwc`, ADR 0029) receives sats and thinks in sats; a
+ * `cbu_alias` seller cashes out to pesos and thinks in ARS. The
+ * currency follows the rail rather than being a free per-course
+ * choice.
  */
 export function expectedPriceCurrency(user: User): "ars" | "sats" {
-  return user.payout_method === "lightning_address" ? "sats" : "ars";
+  return user.payout_method === "cbu_alias" ? "ars" : "sats";
 }

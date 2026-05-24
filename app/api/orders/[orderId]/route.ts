@@ -5,6 +5,11 @@ import {
   emitOrderPaidNotifications,
 } from "@/lib/wapu-settlement";
 import { getLightningClient } from "@/lib/lightning";
+import { lookupNwcInvoice } from "@/lib/nwc";
+import { getUserById } from "@/lib/admin/users";
+import { decrypt } from "@/lib/crypto";
+
+type OrderRow = NonNullable<Awaited<ReturnType<typeof getOrder>>>;
 
 /**
  * Status poll for the checkout page. Public — the orderId in the
@@ -15,8 +20,10 @@ import { getLightningClient } from "@/lib/lightning";
  *   - wapu_ars: `pollWapuDeposit` checks the Wapu deposit transaction.
  *     On `Completed` it marks the order paid, draws the code, emits
  *     notifications, and opens the seller's ARS withdrawal.
- *   - direct_lightning: we poll the seller's LUD-21 verify URL; on
- *     `settled` we mark paid + draw code + the same notifications.
+ *   - direct_lightning + LN address: poll the seller's LUD-21 verify
+ *     URL; on `settled` mark paid + draw code + notifications.
+ *   - direct_lightning + NWC (no verify URL): poll the seller's wallet
+ *     via NWC lookup_invoice on the order's payment_hash (ADR 0029).
  *
  * Both paths leave the status untouched on transient upstream
  * failures so the buyer page just polls again.
@@ -42,12 +49,11 @@ export async function GET(
       order_id: order.id,
       status,
       paid_at:
-        status === "paid"
-          ? (order.paid_at ?? new Date()).toISOString()
-          : null,
+        status === "paid" ? (order.paid_at ?? new Date()).toISOString() : null,
     });
   }
 
+  // direct_lightning, LN-address sub-method: poll the LUD-21 verify URL.
   if (
     order.status === "pending" &&
     order.rail === "direct_lightning" &&
@@ -58,24 +64,7 @@ export async function GET(
       const ln = getLightningClient();
       const verify = await ln.pollVerify(order.lnurl_verify_url);
       if (verify.settled) {
-        const result = await markOrderPaid({
-          order_id: order.id,
-          paid_at: new Date(),
-        });
-        if (result.updated) {
-          const draw = await drawAndAssignCode({ order_id: order.id });
-          if (draw.status === "pool_empty") {
-            console.warn(
-              `[orders/${order.id}] code pool empty on direct_lightning settle — manual intervention required`
-            );
-          }
-          await emitOrderPaidNotifications(order);
-        }
-        return NextResponse.json({
-          order_id: order.id,
-          status: "paid",
-          paid_at: new Date().toISOString(),
-        });
+        return await settleDirectLightningPaid(order);
       }
     } catch (err) {
       // Verification is best-effort. A transient failure must NOT
@@ -88,9 +77,67 @@ export async function GET(
     }
   }
 
+  // direct_lightning, NWC sub-method (no verify URL): poll the seller's
+  // wallet over NWC. The connection is loaded + decrypted server-side
+  // at poll time; an in-flight order that predates a settings flip
+  // simply stops settling if the connection is gone (rare; the buyer's
+  // invoice expires).
+  if (
+    order.status === "pending" &&
+    order.rail === "direct_lightning" &&
+    !order.lnurl_verify_url &&
+    order.payment_hash
+  ) {
+    try {
+      const seller = await getUserById(order.user_id);
+      if (seller?.nwc_uri) {
+        const verify = await lookupNwcInvoice(
+          decrypt(seller.nwc_uri),
+          order.payment_hash
+        );
+        if (verify.settled) {
+          return await settleDirectLightningPaid(order);
+        }
+      }
+    } catch (err) {
+      console.warn(
+        `[orders/${order.id}] NWC lookup failed:`,
+        err instanceof Error ? err.message : err
+      );
+    }
+  }
+
   return NextResponse.json({
     order_id: order.id,
     status: order.status,
     paid_at: order.paid_at?.toISOString() ?? null,
+  });
+}
+
+/**
+ * Shared buyer-paid effects for a direct_lightning order, regardless
+ * of sub-method (LUD-21 or NWC): flip to paid (idempotent), draw the
+ * redemption code, and emit the buyer/seller notifications.
+ */
+async function settleDirectLightningPaid(
+  order: OrderRow
+): Promise<NextResponse> {
+  const result = await markOrderPaid({
+    order_id: order.id,
+    paid_at: new Date(),
+  });
+  if (result.updated) {
+    const draw = await drawAndAssignCode({ order_id: order.id });
+    if (draw.status === "pool_empty") {
+      console.warn(
+        `[orders/${order.id}] code pool empty on direct_lightning settle — manual intervention required`
+      );
+    }
+    await emitOrderPaidNotifications(order);
+  }
+  return NextResponse.json({
+    order_id: order.id,
+    status: "paid",
+    paid_at: new Date().toISOString(),
   });
 }
