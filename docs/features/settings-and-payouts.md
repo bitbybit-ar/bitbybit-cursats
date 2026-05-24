@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | What lives in `/settings`, Two tiers of fields, The re-sign flow, Save-time probes, Switching payout methods, By design | Documented NWC (NIP-47) as the third `payout_method` value: added `nwc_uri` to the Payout fields and the Tier-2 re-sign list, the NWC connection probe alongside the LUD-21 probe, the encrypted-at-rest credential, and corrected "Switching payout methods" from two values to three (both sats methods map to `direct_lightning`). | ADR 0029 — most wallets the audience uses fail LUD-21, so NWC is the alternative way onto the sats rail, and its URI is a stored secret. |
 | 2026-05-24 | What lives in `/settings`, Two tiers of fields, The LUD-21 probe | Split the public Nostr Lightning Address (`nostr_lightning_address`, a free Identity-tier field) from the payout `lightning_address`; the LUD-21 probe now runs only on the payout one. | ADR 0030 — the shared column made the LUD-21 probe block profile saves (issue #30). |
 | 2026-05-23 | By design | Reframed the scope section (formerly "What we deliberately do not do") as "By design", leading each point with the strength (Nostr re-sign as the second factor, atomic saves, one-shot purchases). | The "what we don't do" framing read as incompleteness, but each item is a deliberate design strength — the section should sell it, not apologize for it. |
 | 2026-05-23 | What lives in `/settings`, Two tiers of fields | Folded the Notifications tab into Preferences (single Save), dropped the informational Theme block, and noted the payout notification toggles. | Mobile/UX pass — fewer tabs, and theme was never persisted server-side. |
@@ -21,7 +22,7 @@
 1. [What lives in `/settings`](#what-lives-in-settings)
 2. [Two tiers of fields](#two-tiers-of-fields)
 3. [The re-sign flow](#the-re-sign-flow)
-4. [The LUD-21 probe (LN-rail entry)](#the-lud-21-probe-ln-rail-entry)
+4. [Save-time probes (LUD-21 and NWC)](#save-time-probes-lud-21-and-nwc)
 5. [Switching payout methods](#switching-payout-methods)
 6. [Audit trail](#audit-trail)
 7. [By design](#by-design)
@@ -37,9 +38,11 @@ The seller's single configuration surface at
    `banner_url`, and `nostr_lightning_address` (the public Nostr
    `lud16`, shown on the storefront zap button; ADR 0030 — accepts
    any address, no LUD-21 check, no re-sign).
-2. **Payout** — `payout_method` (the rail picker), plus the
-   per-rail destination fields: `cbu`, `alias` (Wapu rail);
-   `lightning_address` (LN rail).
+2. **Payout** — `payout_method` (the rail picker, one of
+   `cbu_alias` / `lightning_address` / `lightning_nwc`), plus the
+   per-method destination fields: `cbu`, `alias` (Wapu rail);
+   `lightning_address` (sats rail, LUD-21) or `nwc_uri` (sats rail,
+   NWC). Both sats methods route to the `direct_lightning` rail.
 3. **Preferences** — locale default plus the notification toggles
    (buyer `order.paid`, seller `sale.received`, and the Wapu payout
    states `payout.pending` / `payout.released` / `payout.failed`),
@@ -68,7 +71,7 @@ looks weird" — no money flows through these fields.
 
 ### Tier 2 — re-sign required
 
-`cbu`, `alias`, `lightning_address`, `payout_method`.
+`cbu`, `alias`, `lightning_address`, `nwc_uri`, `payout_method`.
 
 These are the **payment-destination fields**. A successful
 PATCH on any of them requires a freshly signed Nostr event
@@ -112,8 +115,9 @@ seller saves a tier-2 field:
    c. Validates the event's described intent matches the
       request body (no signing a "change my bio" event and
       submitting a "change my CBU" request).
-   d. Runs the field-specific validator. For a Lightning Address,
-      this includes the LUD-21 probe (see next section).
+   d. Runs the field-specific validator. For a Lightning Address
+      this includes the LUD-21 probe; for an NWC URI it includes
+      the connection probe (see next section).
    e. On success, writes the row and emits an `admin_audit_log`
       entry (via `lib/creator/audit.ts`). On failure, returns the
       failure reason and leaves the row untouched.
@@ -124,10 +128,16 @@ re-used. NIP-46 users get a notification on their phone or
 remote daemon; nsec users get a clear "we need to re-sign — paste
 nsec again" affordance.
 
-## The LUD-21 probe (LN-rail entry)
+## Save-time probes (LUD-21 and NWC)
+
+Each sats-rail input method is validated with a **live probe** at
+save time, so a broken destination can never end up on a published
+offering. The two probes are described below.
+
+### The LUD-21 probe (Lightning Address)
 
 When the field being saved is the **payout** `lightning_address`,
-the server performs a one-time **live probe** of the address
+the server performs a one-time live probe of the address
 before accepting it. The probe is what keeps a broken or
 non-compliant LN provider from ever ending up on a published
 offering. It does **not** run on the public
@@ -171,11 +181,47 @@ Reasons for doing this at *save* time, not *checkout* time:
   address; they do not get a confusing first-checkout failure
   for an address that worked at save time.
 
+### The NWC probe (connection)
+
+When the field being saved is `nwc_uri` (`payout_method =
+lightning_nwc`), the server validates the connection before
+accepting it:
+
+1. It opens the `nostr+walletconnect://` connection and calls
+   `get_info` to confirm the wallet is reachable and advertises
+   the capabilities we need.
+2. It mints a tiny `make_invoice` and reads it back with
+   `lookup_invoice`, confirming the connection can actually
+   receive and that we can verify settlement — the same contract
+   test the LUD-21 probe runs, over NWC.
+3. A connection that cannot receive, exposes only spend
+   capabilities, or whose relay is unreachable is rejected at save
+   time with a clear error.
+
+Two things distinguish the NWC method from a Lightning Address:
+
+- **The URI is a stored secret.** A Lightning Address is public; an
+  NWC URI is a spending-capable credential. It is stored
+  **AES-256-GCM-encrypted** at rest (`lib/crypto.ts`, key
+  `ENCRYPTION_KEY`), decrypted only in server routes, and **never**
+  returned to the client — the settings API exposes a "connected"
+  flag, not the URI. Editing it later means re-pasting, not viewing
+  the stored value.
+- **Receive-only is enough.** Cursats only calls `make_invoice` and
+  `lookup_invoice`, so the UI tells the seller to issue the
+  connection **without** `pay_invoice` permission. The platform
+  never needs to spend from their wallet.
+
+Decision in ADR
+[0029-nwc-sats-rail-input-method](../architecture/decisions/0029-nwc-sats-rail-input-method.md).
+
 ## Switching payout methods
 
-`payout_method` is a single field with one of two values
-(`cbu_alias` or `lightning_address`, default `cbu_alias`). A
-seller switching rails:
+`payout_method` is a single field with one of three values
+(`cbu_alias`, `lightning_address`, or `lightning_nwc`, default
+`cbu_alias`). The two sats methods both route to the
+`direct_lightning` rail; `cbu_alias` routes to `wapu_ars`. A
+seller switching methods:
 
 1. Goes to `/settings`.
 2. Edits the destination fields for the new rail (if not already
@@ -191,10 +237,12 @@ orders** keep their original rail; nothing retroactively
 switches. This is the same invariant described in
 [settlement-rails — the single dispatch point](./settlement-rails.md#the-single-dispatch-point).
 
-The previous rail's destination fields are **not** wiped on
-switch. A seller can flip back to the old rail without re-entering
-their CBU or LN address; the fields they had are still there.
-Only the picker moves.
+The previous method's destination fields are **not** wiped on
+switch. A seller can flip back to the old method without
+re-entering their CBU or Lightning Address; those fields are still
+there. The encrypted `nwc_uri`, being a write-only secret, is the
+exception — switching away keeps it stored, but changing it means
+re-pasting. Only the picker moves.
 
 ## Audit trail
 
@@ -236,3 +284,9 @@ Decision in ADR
   validates the CBU format (digit count, checksum) at save time;
   Wapu confirms the account at first-payout time, and we surface
   their error if it occurs.
+- **Wallet credentials are encrypted and receive-only.** The NWC
+  URI is the only secret Cursats stores at rest — AES-256-GCM
+  encrypted, decrypted only in server routes, and never returned to
+  the client. The seller is asked for a receive-only connection (no
+  `pay_invoice`), so the platform can mint and verify invoices but
+  can never spend from their wallet.

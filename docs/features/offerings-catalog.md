@@ -1,7 +1,7 @@
 # Offerings catalog
 
 > **Status:** Active
-> **Last updated:** 2026-05-23
+> **Last updated:** 2026-05-24
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | Two primitives, Pricing | Noted that the sats pricing currency applies to both sats-rail methods (`lightning_address` and `lightning_nwc`), and generalized the "LUD-21 poller" lifecycle aside to the direct-lightning poller. | ADR 0029 — NWC is a second sats-rail input method and prices in sats exactly like the Lightning Address. |
 | 2026-05-23 | By design | Reframed the scope section (formerly "What we deliberately do not do") as "By design", leading each point with the strength (unlimited downloads, one-offering-per-thing simplicity). | The "what we don't do" framing read as incompleteness, but each item is a deliberate design strength — the section should sell it, not apologize for it. |
 | 2026-05-23 | Pricing, Two primitives, TOC | Renamed the pricing section to "currency follows the rail" and rewrote it for ADR 0026 (no per-course picker); switched the display-rate source from Yadio to Wapu `/exchange_rates`; replaced the Spanish "Descargar" label with "Download file" and reframed the redemption-UI / proxy-hardening notes in present tense. | Docs must match the implemented currency-follows-rail pricing (ADR 0026), the Wapu rate source (ADR 0027), and the English-only UI. |
 | 2026-05-22 | Lifecycle | Replaced the "Wapu webhook handler / Nostr DM sender" aside with the poll-driven equivalents (Wapu deposit poller, settlement cron). | Webhooks and the server Nostr-DM channel were removed as dead code. |
@@ -85,8 +86,9 @@ Both primitives share the same checkout, payment, confirmation,
 and notification surface. The receipt page is the only place
 where the primitive shows up at all — it picks `code` rendering
 vs `download` rendering on the type column. The Wapu deposit
-poller, the LUD-21 poller, the settlement cron — none of them
-care which primitive an order is for.
+poller, the direct-lightning poller (LUD-21 verify or NWC
+`lookup_invoice`), the settlement cron — none of them care which
+primitive an order is for.
 
 ## URL shape
 
@@ -120,9 +122,10 @@ pinned the convention to English slugs for the reserved tokens.
 ## Pricing — currency follows the rail
 
 The price currency is **determined by the seller's payout rail**,
-not chosen per course. A `cbu_alias` seller prices in **ARS**; a
-`lightning_address` seller prices in **sats**. The create-course
-form derives `priceCurrency` from the seller's `payout_method`
+not chosen per course. A `cbu_alias` seller prices in **ARS**;
+both sats-rail methods (`lightning_address` and `lightning_nwc`)
+price in **sats**. The create-course form derives `priceCurrency`
+from the seller's `payout_method`
 (`components/courses/offering-form/index.tsx`), and
 `/api/my-courses` rejects an offering whose currency does not
 match the rail. There is no free per-course picker.
@@ -130,9 +133,10 @@ match the rail. There is no free per-course picker.
 Why tie it to the rail. The unit the seller is paid in is the
 unit they should price in: an ARS seller who is paid pesos to
 their CBU prices in pesos and bears the Wapu fee on the net; a
-sats seller who is paid sats to their Lightning Address prices in
-sats with no conversion. Pricing in the other unit would only
-introduce rate drift between the sticker and the payout.
+sats seller who is paid sats to their Lightning Address or
+NWC-connected wallet prices in sats with no conversion. Pricing in
+the other unit would only introduce rate drift between the sticker
+and the payout.
 
 The storefront still shows **both** numbers so every buyer can
 read the price in a familiar unit. The stored amount is the

@@ -1,7 +1,7 @@
 # Notifications
 
 > **Status:** Active
-> **Last updated:** 2026-05-23
+> **Last updated:** 2026-05-24
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | Event types | Noted that the buyer-paid confirmation poll on the `direct_lightning` rail can be the LUD-21 `verify` URL or NWC `lookup_invoice`. | ADR 0029 — NWC is a second sats-rail input method; the buyer-paid effects (incl. notifications) are shared across both. |
 | 2026-05-23 | The bell, Event types | Documented the mobile drawer presentation, the Preferences toggles, and the three `payout.*` seller events. | Mobile/UX pass — the bell dropdown was clipped on phones; payout toggles are now user-facing. |
 | 2026-05-22 | Surfaces, Event types, Pointers | Removed the Nostr-DM surface (the bell is now the only notification channel) and the Wapu-webhook code pointers. | The server Nostr-DM channel and the Wapu webhook were removed as dead code. |
 | 2026-05-21 | — | Initial version. | Hackathon documentation pass — describe the in-app notification bell, the event types, the read-state mechanics, and the relationship to outgoing Nostr DMs. |
@@ -84,8 +85,9 @@ display name), and `read_at`.
 ## Event types
 
 Two events fire off the buyer-paid confirmation poll (the Wapu deposit
-transaction, or the LUD-21 verify URL flipping an order to `paid`);
-three more track the ARS seller-payout leg:
+transaction, or — on the `direct_lightning` rail — the LUD-21 `verify`
+URL or NWC `lookup_invoice` flipping an order to `paid`); three more
+track the ARS seller-payout leg:
 
 ### `order.paid` — to the buyer
 
