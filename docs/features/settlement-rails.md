@@ -1,7 +1,7 @@
 # Settlement rails
 
 > **Status:** Active
-> **Last updated:** 2026-05-23
+> **Last updated:** 2026-05-24
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | Rail A — Wapu, By design | Corrected the custody claims: the `wapu_ars` rail credits the buyer's payment as USDT to a Cursats-controlled Wapu wallet (leg 1) before a separate withdrawal settles ARS to the seller (leg 2), so Cursats holds the funds in transit and Wapu + Cursats are intermediaries on that rail. Scoped the "non-custodial" By-design bullet to the sats rail. | The old text claimed Wapu's "direct-payment" put ARS at the seller's bank "not at Cursats's" on the same call — the pre-ADR-0025 model; under the two-leg flow it is false. |
 | 2026-05-23 | By design | Reframed the scope section (formerly "What we deliberately do not do") as "By design", leading each point with the strength (non-custodial, no platform spread, exactly two rails). | The "what we don't do" framing read as incompleteness, but each item is a deliberate design strength — the section should sell it, not apologize for it. |
 | 2026-05-23 | Single dispatch point | Fixed the dispatch diagram's `wapu_ars` leaf to read "Deposit poll is source of truth" instead of the leftover "Webhook is source of truth". | The diagram still showed the pre-ADR-0025 webhook model; the rail is poll-driven. |
 | 2026-05-22 | Wapu rail, Single dispatch point | Source-of-truth for "paid" is now the Wapu deposit poll (no webhook); the rail short-circuit references the deposit poller. | The Wapu rebuild (ADR 0025) made the rail poll-driven. |
@@ -65,10 +66,15 @@ seller's CBU or alias the same business day.
 transaction (`GET /transactions/{id}`) from
 `/api/orders/[orderId]` until it reads `Completed` — no webhook.
 
-**Custody.** Cursats does not custody. Wapu's direct-payment
-endpoint puts the payout destination on the same call that mints
-the invoice, so the ARS ends up at the seller's bank, not at
-Wapu's house account and not at Cursats's.
+**Custody.** This rail is custodial in transit. The buyer's
+Lightning payment is a Wapu deposit that credits **USDT to a
+Cursats-controlled Wapu wallet** (leg 1); a separate withdrawal
+then settles ARS to the seller's CBU/alias (leg 2), and can lag
+the deposit by up to a couple of hours. Until that withdrawal
+clears, the funds sit in the Cursats Wapu account — so on this
+rail Wapu and Cursats act as intermediaries. See ADR
+[0025](../architecture/decisions/0025-wapu-poll-driven-two-leg-rail.md)
+for the two-leg flow.
 
 **Limitations.** Argentine bank account required. Wapu fees and
 spread apply (documented by Wapu, not by Cursats — the seller
@@ -209,10 +215,13 @@ Decision in ADR
 - **Exactly two rails.** Cards, USDT, and MercadoPago are out of
   scope by choice; adding a rail takes a superseding ADR (see
   [0015](../architecture/decisions/0015-sats-settlement-rail.md)).
-- **Non-custodial.** Cursats never holds sats for either party.
-  The closest it comes to the buyer's sats is *creating the
-  invoice* — and even that is minted by Wapu or the seller's
-  LNURL provider, not by Cursats.
+- **Non-custodial on the sats rail.** On `direct_lightning`, sats
+  land straight in the seller's wallet via their LNURL provider or
+  NWC connection — Cursats never holds them. The `wapu_ars` rail is
+  **custodial in transit**: the buyer's payment lands as USDT in a
+  Cursats-controlled Wapu wallet and is settled to the seller's
+  bank in a second leg (see Rail A and ADR 0025), so on that rail
+  Wapu and Cursats are intermediaries until payout clears.
 - **Transparent conversion.** Cursats takes no spread on the
   sats↔ARS conversion — whatever Wapu pays at is what the seller
   gets.

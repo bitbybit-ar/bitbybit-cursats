@@ -3,7 +3,7 @@
 - **Date**: 2026-05-09
 - **Status**: Accepted
 - **Deciders**: BitByBit team
-- **Last updated**: 2026-05-22
+- **Last updated**: 2026-05-24
 
 ---
 
@@ -11,6 +11,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | Consequences | Scoped the "platform never holds funds on either rail" line to the sats rail; noted that the `wapu_ars` rail holds the buyer's payment in transit per ADR 0025. | The blanket claim is false for the Wapu rail under the two-leg flow (ADR 0025), which postdates this ADR. |
 | 2026-05-22 | Consequences | The note that "the auto-renewal flow works on both rails via buyer-side NWC" is moot — autorenewal is deferred (ADR 0020) and the NWC env was removed as dead code. The dual-rail decision and the LUD-21 requirement are unchanged. | NWC/autorenewal code no longer exists; the doc must not present it as current. |
 | 2026-05-09 | — | Initial version. | Pin the second settlement rail and the LUD-21 requirement before merchants start using it. |
 
@@ -94,9 +95,11 @@ defense in depth against a misrouted event flipping a sats-rail order.
 
 - Merchants who self-custody can sell on Cursats without converting
   to ARS.
-- The platform never holds funds on either rail. The sats rail is
-  an even lighter integration than Wapu (no API key, no shared
-  account, no LSP).
+- The platform never holds funds on the **sats** rail — this ADR's
+  rail. The sats rail is an even lighter integration than Wapu (no
+  API key, no shared account, no LSP). (The `wapu_ars` rail does
+  hold the buyer's payment in transit as USDT before settling to
+  the seller — see ADR 0025, which postdates this one.)
 - The buyer UI is unchanged: both rails render the same BOLT11 QR
   and poll the same status endpoint.
 - The auto-renewal flow (ADR 0005, buyer-side NWC) works on both

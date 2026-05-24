@@ -107,7 +107,7 @@
     "metadataDescription": "Cursats usa Lightning para que el comprador pague en sats. El profe elige cómo cobrar: sats directo a su wallet, o pesos al CBU/CVU vía Wapu. Te lo contamos paso a paso.",
     "hero": {
       "title": "<gradient>SATS</gradient> para todos. <gradient>PESOS</gradient> para los que los necesitan.",
-      "subtitle": "Cursats conecta a quien quiere aprender con quien quiere enseñar. Lightning para pagar; sats o pesos para cobrar — el profe elige. La plataforma se sale del medio."
+      "subtitle": "Cursats conecta a quien quiere aprender con quien quiere enseñar. Lightning para pagar; sats o pesos para cobrar — el profe elige."
     },
     "buyers": {
       "title": "Si comprás un curso",
@@ -128,8 +128,8 @@
       "step2Body": "En Settings cargás tu Lightning Address (si ya vivís en sats) o tu CBU/CVU/alias para cobrar en pesos vía Wapu. Es el único requisito antes de publicar.",
       "step3Title": "Publicás tu curso",
       "step3Body": "Tocás \"Publicá tu curso\", completás el formulario y lo enviás.",
-      "step4Title": "Cobrás directo",
-      "step4Body": "Cuando alguien lo compra y paga con Lightning, el dinero va directo a donde lo configuraste — la plataforma no lo toca."
+      "step4Title": "Cobrás a tu manera",
+      "step4Body": "Cuando alguien compra, recibís el pago donde lo configuraste: sats directo a tu wallet, o pesos en tu CBU/CVU vía Wapu."
     },
     "glossary": {
       "title": "Quién es quién",
@@ -150,7 +150,7 @@
   },
   "features": {
     "metadataTitle": "Features",
-    "metadataDescription": "Lo que ofrece Cursats: dos formas de cobrar (sats o pesos), sin custodia de plataforma, login Nostr opcional, entrega in-app y más.",
+    "metadataDescription": "Lo que ofrece Cursats: dos formas de cobrar (sats o pesos), sats sin custodia, login Nostr opcional, entrega in-app y más.",
     "hero": {
       "title": "Lo que ofrece <brand></brand>",
       "subtitle": "Pensado para docentes que enseñan en Argentina.\nPesos a tu CBU/CVU o sats a tu Lightning, vos elegís."
@@ -158,8 +158,8 @@
     "items": {
       "twoRailsTitle": "Dos formas de cobrar",
       "twoRailsBody": "El comprador siempre paga en Lightning. El profe elige: pesos al CBU/CVU vía Wapu (para los que prefieren su rutina con el banco), o sats directo a su Lightning Address (para los que ya viven en sats).",
-      "noCustodyTitle": "Sin custodia de plataforma",
-      "noCustodyBody": "Los sats van directo a la billetera Lightning del profe. En los pagos en ARS, Wapu gestiona los fondos durante el día y los liquida al banco del profe — Cursats nunca los toca.",
+      "noCustodyTitle": "Sats sin custodia",
+      "noCustodyBody": "Si cobrás en sats, van directo a tu wallet Lightning — Cursats nunca los toca. Si cobrás en pesos, el pago entra vía Wapu y se liquida a tu CBU/CVU el mismo día hábil; en ese rail Wapu y Cursats actúan como intermediarios hasta que la plata llega a tu banco.",
       "anonymousByDefaultTitle": "Compra anónima por defecto",
       "anonymousByDefaultBody": "El comprador llega, paga y se va con un código o descarga. Sin formularios, sin emails, sin cuentas obligatorias.",
       "optionalNostrLoginTitle": "Login Nostr opcional",
@@ -200,7 +200,7 @@
       "lostReceiptQ": "¿Y si pierdo el link del recibo?",
       "lostReceiptA": "Si tu Nostr estaba conectado, lo encontrás en \"Mis compras\". Si compraste como anónimo, podés iniciar sesión con Nostr y reclamar el pedido pegando el ID en la página de reclamo.",
       "creatorPayoutQ": "¿Cómo cobro como profe?",
-      "creatorPayoutA": "Elegís cómo cobrar en Configuración: pesos al CBU/CVU o alias (vía Wapu), o sats directo a tu Lightning Address. Cada pago se acredita por separado en el destino que elegiste — Cursats nunca toca el dinero.",
+      "creatorPayoutA": "Elegís cómo cobrar en Configuración: pesos al CBU/CVU o alias (vía Wapu), o sats directo a tu Lightning Address. Si cobrás en sats, llegan directo a tu wallet y Cursats nunca los toca. Si cobrás en pesos, el pago pasa por Wapu y se liquida a tu cuenta el mismo día hábil — en ese rail Wapu y Cursats son intermediarios hasta que la plata llega a tu banco.",
       "nostrSignInQ": "¿Qué es Nostr y por qué lo uso para entrar?",
       "nostrSignInA": "Nostr es un protocolo abierto de identidad y mensajería. Tu llave privada es tu cuenta — sin servidores centrales, sin emails. Para los profes es la única forma de crear y gestionar sus cursos.",
       "feesQ": "¿Cobran comisión?",
