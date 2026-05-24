@@ -17,6 +17,12 @@ interface OrderStatusResponse {
   order_id: string;
   status: "pending" | "paid" | "failed" | "refunded";
   paid_at: string | null;
+  /**
+   * Server hint for how long to wait before the next poll. Varies by
+   * rail (NWC polls less often — each poll opens a relay connection).
+   * Falls back to POLL_INTERVAL_MS when absent.
+   */
+  poll_after_ms?: number;
 }
 
 const POLL_INTERVAL_MS = 3000;
@@ -41,29 +47,44 @@ export function CheckoutStatus({
     }
     if (status === "failed" || status === "refunded") return;
 
-    let timer: ReturnType<typeof setInterval> | null = null;
+    stoppedRef.current = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
 
+    // Self-scheduling poll: the next request is queued only after the
+    // current one resolves, so a slow upstream (e.g. an NWC relay
+    // round-trip) can never stack overlapping requests. The server
+    // tells us how long to wait via `poll_after_ms` (longer for NWC).
     async function tick() {
       if (stoppedRef.current) return;
+      let nextDelay = POLL_INTERVAL_MS;
       try {
         const res = await fetch(`/api/orders/${orderId}`, {
           cache: "no-store",
         });
-        if (!res.ok) return;
-        const data = (await res.json()) as OrderStatusResponse;
-        setStatus(data.status);
+        if (res.ok) {
+          const data = (await res.json()) as OrderStatusResponse;
+          if (
+            typeof data.poll_after_ms === "number" &&
+            data.poll_after_ms > 0
+          ) {
+            nextDelay = data.poll_after_ms;
+          }
+          setStatus(data.status);
+        }
       } catch {
         // Transient — keep polling. The expiry tick below is the
         // hard stop.
       }
+      if (!stoppedRef.current) {
+        timer = setTimeout(tick, nextDelay);
+      }
     }
 
-    timer = setInterval(tick, POLL_INTERVAL_MS);
     void tick();
 
     return () => {
       stoppedRef.current = true;
-      if (timer) clearInterval(timer);
+      if (timer) clearTimeout(timer);
     };
   }, [orderId, router, status]);
 

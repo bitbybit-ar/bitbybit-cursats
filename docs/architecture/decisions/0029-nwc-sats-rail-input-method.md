@@ -151,6 +151,11 @@ the sats rail.
 - A relay dependency: if the seller's NWC relay is unreachable,
   checkout cannot mint and the order poller cannot confirm. Same
   single-vendor shape as the LN-address provider risk in ADR 0015.
+  Each poll also opens a fresh relay connection (no persistent
+  connection in a serverless route), so the buyer's checkout page
+  polls NWC orders at a slower cadence (`poll_after_ms` hint from
+  `/api/orders/[orderId]`) and self-schedules the next poll only after
+  the current one resolves, to keep connection churn bounded.
 
 ### Neutral
 

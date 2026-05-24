@@ -11,6 +11,26 @@ import { decrypt } from "@/lib/crypto";
 
 type OrderRow = NonNullable<Awaited<ReturnType<typeof getOrder>>>;
 
+// How long the buyer's checkout page should wait before polling again.
+// We hand this to the client so the cadence can vary by rail. The
+// wapu_ars and LUD-21 paths are cheap HTTP calls; the NWC path opens a
+// fresh Nostr relay connection per poll (no persistent connection in a
+// serverless route), so it polls less often to cut connection churn.
+// The client also self-schedules (next poll only after the current one
+// resolves), so a slow relay round-trip can never pile up overlapping
+// connections.
+const DEFAULT_POLL_INTERVAL_MS = 3000;
+const NWC_POLL_INTERVAL_MS = 6000;
+
+/** True for a pending NWC order (direct_lightning with no verify URL). */
+function isNwcPending(order: OrderRow): boolean {
+  return (
+    order.status === "pending" &&
+    order.rail === "direct_lightning" &&
+    !order.lnurl_verify_url
+  );
+}
+
 /**
  * Status poll for the checkout page. Public — the orderId in the
  * URL is the access key (≥128 bits of entropy, see ADR 0006).
@@ -111,6 +131,9 @@ export async function GET(
     order_id: order.id,
     status: order.status,
     paid_at: order.paid_at?.toISOString() ?? null,
+    poll_after_ms: isNwcPending(order)
+      ? NWC_POLL_INTERVAL_MS
+      : DEFAULT_POLL_INTERVAL_MS,
   });
 }
 
