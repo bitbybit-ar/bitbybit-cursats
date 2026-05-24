@@ -15,22 +15,23 @@
  * validator stays permissive on segmenting.
  *
  * One soft rule we do enforce: the alias must contain at least one
- * letter. That distinguishes it from a CBU paste in the alias field
- * (CBUs are 22 digits) and matches the convention several big banks
- * use anyway.
+ * letter. That distinguishes it from a CBU/CVU paste in the alias
+ * field (CBUs/CVUs are 22–23 digits) and matches the convention
+ * several big banks use anyway.
  *
- * CBU is 22 digits flat. We do not verify the CBU check-digit
- * algorithm here — Wapu will reject a malformed CBU at create-
- * payment time, and surfacing a generic Wapu error is acceptable
- * for the rare typo where the digits look right but the checksum
- * is off.
+ * A CBU is 22 digits; a CVU (virtual account — Mercado Pago, Ualá,
+ * etc.) is 23. Wapu settles ARS to both, so we accept either length.
+ * We do not verify the check-digit algorithm here — Wapu will reject
+ * a malformed account at create-payment time, and surfacing a generic
+ * Wapu error is acceptable for the rare typo where the digits look
+ * right but the checksum is off.
  */
 
 import { z } from "zod";
 
 const ALIAS_REGEX = /^[A-Za-z0-9.-]{6,20}$/;
 const ALIAS_HAS_LETTER = /[A-Za-z]/;
-const CBU_REGEX = /^\d{22}$/;
+const CBU_REGEX = /^\d{22,23}$/;
 
 /**
  * Slug used in URLs (`/[slug]` since ADR 0017). Lowercase URL-safe,

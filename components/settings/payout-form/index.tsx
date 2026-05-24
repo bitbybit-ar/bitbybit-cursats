@@ -68,7 +68,7 @@ function serverErrorMessageKey(
   // where each message is the schema's refine code.
   if (json.error === "invalid_body" && Array.isArray(json.issues)) {
     const messages = json.issues.map((i) => i.message);
-    if (messages.includes("cbu_invalid")) return "cbuInvalid";
+    if (messages.includes("cbu_invalid")) return "cbuCvuInvalid";
     if (messages.includes("alias_invalid")) return "aliasInvalid";
     if (messages.includes("lightning_address_invalid")) {
       return "lightningAddressInvalidFormat";
@@ -136,7 +136,7 @@ function emptyToNull(value: string): string | null {
 // the field is empty (emptiness is handled by `destinationRequired`)
 // or valid.
 function cbuFieldError(value: string): string | null {
-  if (value.trim() && checkCbu(value) !== null) return "cbuInvalid";
+  if (value.trim() && checkCbu(value) !== null) return "cbuCvuInvalid";
   return null;
 }
 
