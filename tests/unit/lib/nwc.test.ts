@@ -186,18 +186,6 @@ describe("validateNwcConnection", () => {
   });
 });
 
-// Gated real-wallet smoke test — mirrors the Wapu real-staging tests.
-// Set NWC_TEST_URI to a receive-only nostr+walletconnect:// connection
-// to run it; skipped otherwise.
-describe.skipIf(!process.env.NWC_TEST_URI)("NWC real-wallet smoke", () => {
-  it("mints and looks up an invoice against a live wallet", async () => {
-    _resetNwcClientFactoryForTests();
-    const uri = process.env.NWC_TEST_URI as string;
-    const info = await validateNwcConnection(uri);
-    expect(info.methods).toContain("make_invoice");
-    const minted = await mintNwcInvoice(uri, 1, "cursats smoke");
-    expect(minted.bolt11).toMatch(/^ln/i);
-    const state = await lookupNwcInvoice(uri, minted.payment_hash);
-    expect(state.settled).toBe(false); // unpaid probe invoice
-  });
-});
+// The real-wallet smoke test lives in tests/integration (it hits a
+// live relay), gated on NWC_TEST_URI, mirroring the Wapu staging test.
+// Keeping it out of the unit suite keeps unit hermetic.
