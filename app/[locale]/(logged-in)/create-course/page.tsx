@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { BackToCatalog } from "@/components/courses/back-to-catalog";
 import { OfferingForm } from "@/components/courses/offering-form";
 import { requirePageUser } from "@/lib/creator/page-context";
 import styles from "./page.module.scss";
@@ -34,6 +35,7 @@ export default async function NewOfferingPage({
 
   return (
     <>
+      <BackToCatalog />
       <h1 className={styles.title}>{t("title")}</h1>
       <p className={styles.subtitle}>{t("subtitle")}</p>
 

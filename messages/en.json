@@ -345,6 +345,8 @@
   },
   "common": {
     "back": "Back",
+    "backToCatalog": "Back to catalog",
+    "cancel": "Cancel",
     "close": "Close",
     "closeDialog": "Close",
     "tooltipLabel": "More info"
@@ -382,14 +384,22 @@
     "emptyActive": "You haven't created any courses yet.",
     "archivedAt": "Archived on {date}",
     "salesCount": "{count, plural, =0 {no sales} one {# sale} other {# sales}}",
-    "viewSales": "View sales",
+    "actions": {
+      "menuLabel": "Course actions",
+      "view": "View course",
+      "seeOrders": "See orders",
+      "edit": "Edit",
+      "mintCodes": "Mint more codes",
+      "archive": "Archive",
+      "delete": "Delete course",
+      "deleteHasSalesHint": "Courses with sales can't be deleted — archive it instead."
+    },
     "type": {
       "code": "Redemption code",
       "download": "Download"
     },
     "edit": {
       "metadataTitle": "Edit {slug}",
-      "back": "Back to catalog",
       "title": "Edit course",
       "archived": "Archived"
     },
@@ -398,6 +408,7 @@
       "remaining": "You have {count} code(s) available. When the pool runs out, the course is marked \"sold out\" until you mint more.",
       "mintCountLabel": "How many to mint",
       "mintCta": "Mint more codes",
+      "manageCta": "Manage redemption codes",
       "minting": "Minting…",
       "mintSuccess": "Minted {count} new code(s).",
       "mintFailed": "Couldn't mint the codes. Try again.",
@@ -483,7 +494,15 @@
       "archiving": "Archiving…",
       "archived": "Course archived.",
       "archiveFailed": "Couldn't archive the course.",
-      "archiveConfirm": "Are you sure you want to archive this course? It will stop appearing in the storefront."
+      "archiveConfirm": "Are you sure you want to archive this course? It will stop appearing in the storefront.",
+      "archiveConfirmTitle": "Archive this course?",
+      "archiveConfirmCta": "Archive",
+      "deleteConfirmTitle": "Delete this course?",
+      "deleteConfirm": "This permanently deletes the course. This can't be undone.",
+      "deleteConfirmCta": "Delete",
+      "deleted": "Course deleted.",
+      "deleteFailed": "Couldn't delete the course.",
+      "deleteHasSales": "This course has sales and can't be deleted. Archive it instead."
     }
   },
   "orders": {

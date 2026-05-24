@@ -1,8 +1,8 @@
 import { randomBytes } from "node:crypto";
-import { eq, isNull, desc, isNotNull, and } from "drizzle-orm";
+import { eq, isNull, desc, isNotNull, and, count } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/lib/db";
-import { offerings } from "@/lib/db/schema";
+import { offerings, orders } from "@/lib/db/schema";
 import { writeAuditLog } from "./audit";
 
 /**
@@ -416,6 +416,53 @@ export async function archiveOfferingForCreator(
   });
 
   return { ok: true, offering: row };
+}
+
+export type DeleteOfferingResult =
+  | { ok: true }
+  | { ok: false; reason: "not_found" }
+  | { ok: false; reason: "has_sales" };
+
+/**
+ * Permanently delete an offering. Unlike {@link
+ * archiveOfferingForCreator} (the reversible soft-delete), this drops
+ * the row. `orders.offering_id` has no cascade and we never orphan
+ * sale history (see the schema note on `offerings`), so the delete is
+ * refused while *any* order references the offering — the seller
+ * archives instead. ADR 0031 exposes this for unsold courses only.
+ */
+export async function deleteOfferingForCreator(
+  userId: string,
+  id: string,
+  actorPubkey: string
+): Promise<DeleteOfferingResult> {
+  const db = getDb();
+
+  const existing = await getOfferingForCreatorById(userId, id);
+  if (!existing) return { ok: false, reason: "not_found" };
+
+  const [{ value: orderCount }] = await db
+    .select({ value: count() })
+    .from(orders)
+    .where(eq(orders.offering_id, id));
+  if (orderCount > 0) return { ok: false, reason: "has_sales" };
+
+  await db
+    .delete(offerings)
+    .where(and(eq(offerings.user_id, userId), eq(offerings.id, id)));
+
+  await writeAuditLog({
+    user_id: userId,
+    actor_pubkey: actorPubkey,
+    route: "/api/my-courses/[id]/delete",
+    action: "delete",
+    payload_diff: {
+      offering_id: id,
+      slug: existing.slug,
+    },
+  });
+
+  return { ok: true };
 }
 
 export type MintCodesResult =

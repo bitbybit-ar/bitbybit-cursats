@@ -10,6 +10,7 @@
 | Date | Section | Change | Reason |
 |---|---|---|---|
 | 2026-05-24 | Two primitives, By design | Noted the per-order download access bound (five fetches / 30 days) on the `download` primitive, and retitled the "Unlimited downloads" by-design point to "Unlimited sales" so it reads as the inventory strength it describes, not as unlimited per-buyer downloads. | The download proxy now caps per-order fetches and expires the link (`lib/download-limits.ts`); the doc must not imply a buyer gets unlimited downloads. |
+| 2026-05-24 | Lifecycle, Mutation surface | Documented the per-course actions menu on My courses (view, see orders, edit, mint codes, archive, delete), the new permanent **Delete course** action (`DELETE /api/my-courses/[id]/delete`, refused while any order exists — ADR 0031), and rewrote the soft-delete note (offerings retire via `archived_at`; unsold offerings can now be hard-deleted). Noted that minting opens in a dialog and archive/delete use an in-app confirmation rather than the browser prompt. | The My courses surface gained a kebab actions menu with a permanent delete; the doc still claimed nothing is ever hard-deleted. |
 | 2026-05-24 | Two primitives, Pricing | Noted that the sats pricing currency applies to both sats-rail methods (`lightning_address` and `lightning_nwc`), and generalized the "LUD-21 poller" lifecycle aside to the direct-lightning poller. | ADR 0029 — NWC is a second sats-rail input method and prices in sats exactly like the Lightning Address. |
 | 2026-05-23 | By design | Reframed the scope section (formerly "What we deliberately do not do") as "By design", leading each point with the strength (unlimited downloads, one-offering-per-thing simplicity). | The "what we don't do" framing read as incompleteness, but each item is a deliberate design strength — the section should sell it, not apologize for it. |
 | 2026-05-23 | Pricing, Two primitives, TOC | Renamed the pricing section to "currency follows the rail" and rewrote it for ADR 0026 (no per-course picker); switched the display-rate source from Yadio to Wapu `/exchange_rates`; replaced the Spanish "Descargar" label with "Download file" and reframed the redemption-UI / proxy-hardening notes in present tense. | Docs must match the implemented currency-follows-rail pricing (ADR 0026), the Wapu rate source (ADR 0027), and the English-only UI. |
@@ -227,25 +228,37 @@ Notes:
   offering — if the code pool is empty. So a half-configured
   offering can be browsed but not bought, rather than being
   hidden.
-- **Archiving** (the **Archive** button →
+- **Archiving** (the **Archive** action →
   `DELETE /api/my-courses/[id]`) sets `archived_at`. The offering
   disappears from public surfaces; existing orders keep rendering
   (the buyer's receipt page still works), but no new orders can
-  be created against it.
-- **Soft delete** is the canonical posture — a separate
-  `deleted_at` column supports it; nothing is ever hard-deleted
-  from `offerings`, because orders reference offering rows.
+  be created against it. Archiving is **reversible** and is the
+  only way to retire an offering that has sales.
+- **Deleting** (the **Delete course** action →
+  `DELETE /api/my-courses/[id]/delete`) **permanently** removes the
+  row. It is refused with `409 has_sales` while *any* order
+  references the offering — orders point at offering rows with no
+  cascade, so a sold course can only be archived, never deleted.
+  This keeps sale history from being orphaned, and the My courses
+  menu disables Delete once a course has sales.
 
-Decision in ADR
-[0021](../architecture/decisions/0021-settings-preferences-and-soft-delete.md).
+Both destructive actions prompt with an **in-app confirmation
+dialog** (the shared `Modal`-based `ConfirmDialog`), not the
+browser's native `window.confirm`.
+
+Soft delete via `archived_at` remains the default posture (ADR
+[0021](../architecture/decisions/0021-settings-preferences-and-soft-delete.md));
+ADR
+[0031](../architecture/decisions/0031-allow-hard-delete-of-unsold-offerings.md)
+adds the unsold-only hard delete on top of it.
 
 ## Mutation surface
 
 | Route | Action |
 |---|---|
-| `/[locale]/my-courses` | List all owned offerings (active + archived), archive button |
+| `/[locale]/my-courses` | List all owned offerings (active + archived) with cover thumbnails; each row has a per-course **⋮ actions menu** (view, see orders, edit, mint codes, archive, delete) |
 | `/[locale]/create-course` | Create a new offering |
-| `/[locale]/my-courses/[slug]/edit` | Edit, mint codes, archive |
+| `/[locale]/my-courses/[slug]/edit` | Edit, archive, and (for `code` offerings) open the redemption-codes dialog to mint/download codes |
 | `/[locale]/<userSlug>` | Public storefront — active offerings only |
 | `/[locale]/<userSlug>/c/<offeringSlug>` | Public offering detail + buy CTA |
 
@@ -255,7 +268,8 @@ API surface:
 |---|---|
 | `POST /api/my-courses` | Create offering |
 | `PATCH /api/my-courses/[id]` | Edit (any field except type) |
-| `DELETE /api/my-courses/[id]` | Archive (sets `archived_at`) |
+| `DELETE /api/my-courses/[id]` | Archive (sets `archived_at`; reversible) |
+| `DELETE /api/my-courses/[id]/delete` | Permanently delete; refused with `409 has_sales` while any order references it (ADR 0031) |
 | `POST /api/my-courses/[id]/mint-codes` | Append codes to a `code` offering's pool |
 | `GET /api/my-courses/[id]/codes` | List the offering's codes |
 

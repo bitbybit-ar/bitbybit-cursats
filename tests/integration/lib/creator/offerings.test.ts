@@ -2,11 +2,12 @@
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 import { sql, eq } from "drizzle-orm";
 import { testDb, cleanDb, seedUser } from "../../setup";
-import { adminAuditLog } from "@/lib/db/schema";
+import { adminAuditLog, orders } from "@/lib/db/schema";
 import {
   createOfferingForCreator,
   updateOfferingForCreator,
   archiveOfferingForCreator,
+  deleteOfferingForCreator,
   listAllOfferings,
   listArchivedOfferings,
   getOfferingForCreator,
@@ -464,5 +465,116 @@ describe("admin/offerings/list helpers", () => {
     const found = await getOfferingForCreator(user.id, "fetched");
     expect(found?.id).toBe(created.offering.id);
     expect(found?.archived_at).not.toBeNull();
+  });
+});
+
+describe("admin/offerings/deleteOfferingForCreator", () => {
+  it("permanently deletes an offering with no orders and writes a delete audit row", async () => {
+    const user = await seedUser({ pubkey: ACTOR });
+    const created = await createOfferingForCreator(
+      user.id,
+      {
+        slug: "to-delete",
+        type: "code",
+        title: "Soon-deleted",
+        description: "Disposable.",
+        price_amount: 100,
+        price_currency: "ars" as const,
+        image_url: "https://example.com/cover.png",
+        code_count: 5,
+      },
+      ACTOR
+    );
+    if (!created.ok) throw new Error("seed failed");
+
+    const result = await deleteOfferingForCreator(
+      user.id,
+      created.offering.id,
+      ACTOR
+    );
+    expect(result.ok).toBe(true);
+
+    // The row is gone — not merely archived.
+    expect((await listAllOfferings(user.id)).length).toBe(0);
+    expect((await listArchivedOfferings(user.id)).length).toBe(0);
+
+    const audit = await testDb
+      .select()
+      .from(adminAuditLog)
+      .where(eq(adminAuditLog.action, "delete"));
+    expect(audit.length).toBe(1);
+  });
+
+  it("refuses to delete an offering that has any order, with has_sales", async () => {
+    const user = await seedUser({ pubkey: ACTOR });
+    const created = await createOfferingForCreator(
+      user.id,
+      {
+        slug: "sold",
+        type: "code",
+        title: "Has a sale",
+        description: "Sold once.",
+        price_amount: 100,
+        price_currency: "ars" as const,
+        image_url: "https://example.com/cover.png",
+        code_count: 5,
+      },
+      ACTOR
+    );
+    if (!created.ok) throw new Error("seed failed");
+
+    // Seed an order row directly (no need to fund through Wapu).
+    await testDb.insert(orders).values({
+      pubkey: null,
+      offering_id: created.offering.id,
+      user_id: user.id,
+      amount_ars: 100,
+      amount_sats: 0,
+      rail: "wapu_ars",
+    });
+
+    const result = await deleteOfferingForCreator(
+      user.id,
+      created.offering.id,
+      ACTOR
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.reason).toBe("has_sales");
+
+    // The offering is untouched (still active).
+    expect((await listAllOfferings(user.id)).length).toBe(1);
+  });
+
+  it("returns not_found when the id belongs to another user (cross-tenant scoping)", async () => {
+    const owner = await seedUser({ pubkey: "a".repeat(64), slug: "owner" });
+    const intruder = await seedUser({
+      pubkey: "b".repeat(64),
+      slug: "intruder",
+    });
+    const created = await createOfferingForCreator(
+      owner.id,
+      {
+        slug: "owned",
+        type: "code",
+        title: "Owned by someone else",
+        description: "Not yours.",
+        price_amount: 100,
+        price_currency: "ars" as const,
+        image_url: "https://example.com/cover.png",
+        code_count: 5,
+      },
+      owner.pubkey
+    );
+    if (!created.ok) throw new Error("seed failed");
+
+    const result = await deleteOfferingForCreator(
+      intruder.id,
+      created.offering.id,
+      intruder.pubkey
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.reason).toBe("not_found");
   });
 });

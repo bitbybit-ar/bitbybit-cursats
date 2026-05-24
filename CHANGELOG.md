@@ -30,7 +30,20 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   you purchase it again (for a renewal or a gift).
 - **"Orders" button on My courses.** A prominent Orders button now sits
   beside "New course" in the My courses header, so your sales list is
-  one click away. The per-course "View sales" links still work.
+  one click away. Each course's sales are also reachable from its
+  actions menu ("See orders").
+- **Per-course actions menu on My courses.** Each course row now shows
+  its cover thumbnail on the left and a "⋮" menu on the right with
+  View, See orders, Edit, Mint more codes (code courses), Archive, and
+  Delete. Archive is the reversible hide; Delete permanently removes a
+  course and is only available while it has no sales (ADR
+  [0031](docs/architecture/decisions/0031-allow-hard-delete-of-unsold-offerings.md)).
+  Archiving now uses an in-app confirmation dialog instead of the
+  browser's native prompt, and minting redemption codes opens in a
+  dialog.
+- **"Back to catalog" link on create-course and orders.** Both pages
+  now carry the same back link the edit-course page has, so every
+  creator surface returns to My courses in one click.
 - **Your Nostr Lightning Address is now separate from your payout
   address.** The Profile tab's Lightning Address is your public Nostr
   `lud16` — shown on your storefront's zap button and synced with your
@@ -126,6 +139,10 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   order-detail "Orders are read-only in v1…" hint is gone — the qualifier
   carried no useful meaning for sellers. Orders, payments, and buyers
   remain non-mutable views; only the copy was removed.
+- **Tidier course-edit form controls.** The NWC connection field on
+  the "How you get paid" form is now a single-line input instead of a
+  tall multi-line box, and the cover-image "Remove" text link is now a
+  trash-can icon button on the right of the image preview.
 - **"No custody" copy now scoped to the sats rail.** The
   how-it-works, features, and FAQ pages no longer claim the platform
   "never touches" the money on every rail. That is true only when a
@@ -307,6 +324,13 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   tags (the course image plus two brand cards), so WhatsApp showed the
   brand fallback instead of the course and Discord stacked all three.
   Pages without their own image still fall back to a single brand card.
+- **Course images no longer cover the Share popup on a teacher
+  profile.** The storefront's Share and zap dialogs are now rendered
+  in a portal at the document root, so they always sit above the page
+  (previously a course cover image could paint over the open dialog
+  because the dialog was trapped inside the profile header's stacking
+  context). All app modals share the same `Modal`, so this hardens
+  every dialog against that class of layering bug.
 - **Display name now syncs from your Nostr profile at sign-in.**
   Previously, if the relay lookup was slow on your first sign-in, your
   name stuck as a `user-…` placeholder until you manually opened

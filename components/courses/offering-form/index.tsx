@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { ImageUpload } from "@/components/ui/image-upload";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   ShareOnNostrModal,
   type ShareContext,
@@ -106,6 +107,7 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
 
   const [isPending, setIsPending] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   // When a fresh create succeeds we hand off to the Share-on-Nostr
   // modal instead of immediately navigating away. The modal owns
   // the redirect via its `onClose` callback. Null on edit-mode
@@ -470,7 +472,6 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
   async function handleArchive() {
     if (!offering) return;
     if (isArchiving) return;
-    if (!window.confirm(t("archiveConfirm"))) return;
 
     setIsArchiving(true);
     try {
@@ -481,6 +482,7 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
         showToast(t("archiveFailed"), "error");
         return;
       }
+      setShowArchiveConfirm(false);
       showToast(t("archived"), "success");
       router.push("/my-courses");
       router.refresh();
@@ -813,7 +815,7 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
             <Button
               type="button"
               variant="danger"
-              onClick={handleArchive}
+              onClick={() => setShowArchiveConfirm(true)}
               disabled={isArchiving}
             >
               {isArchiving ? t("archiving") : t("archive")}
@@ -821,6 +823,19 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
           ) : null}
         </div>
       </form>
+
+      {showArchiveConfirm ? (
+        <ConfirmDialog
+          title={t("archiveConfirmTitle")}
+          message={t("archiveConfirm")}
+          confirmLabel={t("archiveConfirmCta")}
+          cancelLabel={tCommon("cancel")}
+          variant="danger"
+          loading={isArchiving}
+          onConfirm={handleArchive}
+          onClose={() => setShowArchiveConfirm(false)}
+        />
+      ) : null}
 
       {/* Modals are siblings of the form, not children — PayoutSetupModal
           embeds the settings PayoutForm (its own <form>), so nesting it

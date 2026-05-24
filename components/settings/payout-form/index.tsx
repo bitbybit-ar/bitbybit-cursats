@@ -602,8 +602,9 @@ export function PayoutForm({
                     label={tCommon("tooltipLabel")}
                   />
                 </label>
-                <textarea
+                <input
                   id="nwc_uri"
+                  type="text"
                   className={styles.input}
                   value={nwcUri}
                   onChange={(e) => setNwcUri(e.target.value)}
@@ -612,7 +613,6 @@ export function PayoutForm({
                       ? t("nwcConnectedPlaceholder")
                       : t("nwcUriPlaceholder")
                   }
-                  rows={3}
                   autoComplete="off"
                   autoCapitalize="none"
                   spellCheck={false}

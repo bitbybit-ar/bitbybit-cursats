@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/routing";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowRightIcon } from "@/components/icons";
+import { ArrowRightIcon, BookIcon } from "@/components/icons";
+import { CourseRowActions } from "@/components/courses/course-row-actions";
 import {
   listAllOfferings,
   listArchivedOfferings,
@@ -80,10 +82,23 @@ export default async function PanelOfferingsPage({
               const sales = salesByOffering.get(row.id) ?? 0;
               return (
                 <li key={row.id} className={styles.item}>
-                  <Link
-                    href={`/my-courses/${row.slug}/edit`}
-                    className={styles.row}
-                  >
+                  <div className={styles.row}>
+                    <div className={styles.thumb}>
+                      {row.image_url ? (
+                        <Image
+                          src={row.image_url}
+                          alt=""
+                          fill
+                          sizes="80px"
+                          className={styles.thumbImg}
+                          unoptimized
+                        />
+                      ) : (
+                        <span className={styles.thumbPlaceholder}>
+                          <BookIcon size={20} />
+                        </span>
+                      )}
+                    </div>
                     <div className={styles.rowMain}>
                       <span className={styles.rowTitle}>{row.title}</span>
                       <span className={styles.rowMeta}>
@@ -97,15 +112,15 @@ export default async function PanelOfferingsPage({
                         {t("salesCount", { count: sales })}
                       </span>
                     </div>
-                    <ArrowRightIcon size={16} />
-                  </Link>
-                  <Link
-                    href={`/orders?course=${row.slug}`}
-                    className={styles.salesLink}
-                  >
-                    {t("viewSales")}
-                    <ArrowRightIcon size={14} />
-                  </Link>
+                    <CourseRowActions
+                      offeringId={row.id}
+                      offeringSlug={row.slug}
+                      userSlug={user.slug}
+                      type={row.type}
+                      salesCount={sales}
+                      codeRemaining={row.code_pool?.length ?? 0}
+                    />
+                  </div>
                 </li>
               );
             })}
@@ -123,6 +138,22 @@ export default async function PanelOfferingsPage({
                 className={`${styles.item} ${styles.archivedItem}`}
               >
                 <div className={styles.row}>
+                  <div className={styles.thumb}>
+                    {row.image_url ? (
+                      <Image
+                        src={row.image_url}
+                        alt=""
+                        fill
+                        sizes="80px"
+                        className={styles.thumbImg}
+                        unoptimized
+                      />
+                    ) : (
+                      <span className={styles.thumbPlaceholder}>
+                        <BookIcon size={20} />
+                      </span>
+                    )}
+                  </div>
                   <div className={styles.rowMain}>
                     <span className={styles.rowTitle}>{row.title}</span>
                     <span className={styles.rowMeta}>

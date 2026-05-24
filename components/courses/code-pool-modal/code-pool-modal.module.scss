@@ -3,39 +3,8 @@
 @use "@/styles/typography" as *;
 @use "@/styles/media-mixins" as *;
 
-.panel {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-16;
-  padding: $spacing-24;
-  background: $color-bg-2;
-  border: 1px solid $color-border;
-  border-radius: $border-radius-lg;
-  width: 100%;
-  max-width: 720px;
-  margin-top: $spacing-24;
-
-  @include mobile {
-    padding: $spacing-16;
-  }
-}
-
-.header {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-4;
-}
-
-.title {
-  margin: 0;
-  font-family: $font-family-display;
-  font-size: $font-size-base;
-  font-weight: $font-weight-semibold;
-  color: $color-text-primary;
-}
-
 .subtitle {
-  margin: 0;
+  margin: 0 0 $spacing-16;
   font-size: $font-size-sm;
   color: $color-text-secondary;
 }
@@ -44,6 +13,7 @@
   display: flex;
   gap: $spacing-12;
   align-items: flex-end;
+  margin-bottom: $spacing-16;
 
   @include mobile {
     flex-direction: column;

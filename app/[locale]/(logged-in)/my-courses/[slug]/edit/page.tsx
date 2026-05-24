@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Link } from "@/i18n/routing";
-import { ArrowLeftIcon } from "@/components/icons";
+import { BackToCatalog } from "@/components/courses/back-to-catalog";
 import { OfferingForm } from "@/components/courses/offering-form";
-import { CodePoolPanel } from "@/components/courses/code-pool-panel";
+import { CodePoolSection } from "@/components/courses/code-pool-section";
 import { getOfferingForCreator } from "@/lib/creator/offerings";
 import { requirePageUser } from "@/lib/creator/page-context";
 import styles from "./page.module.scss";
@@ -43,10 +42,7 @@ export default async function EditOfferingPage({
 
   return (
     <>
-      <Link href="/my-courses" className={styles.back}>
-        <ArrowLeftIcon size={16} />
-        {t("back")}
-      </Link>
+      <BackToCatalog />
       <h1 className={styles.title}>{t("title")}</h1>
       <p className={styles.subtitle}>
         <code className={styles.slug}>{offering.slug}</code>
@@ -57,7 +53,7 @@ export default async function EditOfferingPage({
 
       <OfferingForm offering={offering} />
       {offering.type === "code" ? (
-        <CodePoolPanel
+        <CodePoolSection
           offeringId={offering.id}
           offeringSlug={offering.slug}
           initialRemaining={offering.code_pool?.length ?? 0}

@@ -345,6 +345,8 @@
   },
   "common": {
     "back": "Atrás",
+    "backToCatalog": "Volver al catálogo",
+    "cancel": "Cancelar",
     "close": "Cerrar",
     "closeDialog": "Cerrar",
     "tooltipLabel": "Más información"
@@ -382,14 +384,22 @@
     "emptyActive": "Todavía no creaste ningún curso.",
     "archivedAt": "Archivado el {date}",
     "salesCount": "{count, plural, =0 {sin ventas} one {# venta} other {# ventas}}",
-    "viewSales": "Ver ventas",
+    "actions": {
+      "menuLabel": "Acciones del curso",
+      "view": "Ver curso",
+      "seeOrders": "Ver pedidos",
+      "edit": "Editar",
+      "mintCodes": "Generar más códigos",
+      "archive": "Archivar",
+      "delete": "Eliminar curso",
+      "deleteHasSalesHint": "No se pueden eliminar cursos con ventas — archivalo en su lugar."
+    },
     "type": {
       "code": "Código de canje",
       "download": "Descarga"
     },
     "edit": {
       "metadataTitle": "Editar {slug}",
-      "back": "Volver al catálogo",
       "title": "Editar curso",
       "archived": "Archivado"
     },
@@ -398,6 +408,7 @@
       "remaining": "Tenés {count} código(s) disponibles. Cuando se acaben, el curso queda marcado como \"sin cupos\" hasta que generes más.",
       "mintCountLabel": "Cuántos códigos generar",
       "mintCta": "Generar más códigos",
+      "manageCta": "Gestionar códigos de canje",
       "minting": "Generando…",
       "mintSuccess": "Generamos {count} código(s) nuevos.",
       "mintFailed": "No pudimos generar los códigos. Probá de nuevo.",
@@ -483,7 +494,15 @@
       "archiving": "Archivando…",
       "archived": "Curso archivado.",
       "archiveFailed": "No pudimos archivar el curso.",
-      "archiveConfirm": "¿Seguro que querés archivar este curso? Dejará de mostrarse en el storefront."
+      "archiveConfirm": "¿Seguro que querés archivar este curso? Dejará de mostrarse en el storefront.",
+      "archiveConfirmTitle": "¿Archivar este curso?",
+      "archiveConfirmCta": "Archivar",
+      "deleteConfirmTitle": "¿Eliminar este curso?",
+      "deleteConfirm": "Esto elimina el curso de forma permanente. No se puede deshacer.",
+      "deleteConfirmCta": "Eliminar",
+      "deleted": "Curso eliminado.",
+      "deleteFailed": "No pudimos eliminar el curso.",
+      "deleteHasSales": "Este curso tiene ventas y no se puede eliminar. Archivalo en su lugar."
     }
   },
   "orders": {
