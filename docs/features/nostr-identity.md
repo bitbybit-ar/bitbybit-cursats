@@ -1,3 +1,4 @@
+file
 # Nostr identity
 
 > **Status:** Active
@@ -9,6 +10,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | — | Split the login half out into [`authentication.md`](./authentication.md): removed the "Sign-in surface", "Session shape", and "Re-sign on payment-destination fields" sections plus the email/password non-goals, and added cross-links to the new doc. This doc now covers *who you are on Nostr* (profile, tiers, the user row, kind:0); the signer/session mechanics live next door. | The doc was carrying two concerns at once; the login material — including the newly-documented mobile flow — earns its own doc. |
 | 2026-05-24 | Kind:0 seeding, Re-sign on payment-destination fields | Documented `refreshUserFromKind0` topping up placeholder/empty fields at every sign-in, added `lud16` → `nostr_lightning_address` seeding, and noted the public Nostr address is exempt from the re-sign list. | ADR 0030 + issue #30 — sign-in now syncs the display name and the public LN address is split from the payout one. |
 | 2026-05-22 | Identity tiers, Platform admin moderation, What we do not do | Collapsed the identity tiers from three to two (dropped the anonymous-plus-Nostr-DM tier), removed the platform-admin moderation section, and dropped the server-signed-DM mention. | The server Nostr-DM channel and the `PLATFORM_ADMIN_PUBKEYS` moderation lever were removed as dead code. |
 | 2026-05-21 | — | Initial version. | Hackathon documentation pass — explain the three identity tiers, the sign-in surface, the lazy user-row materialisation, and the re-sign discipline on payment-destination fields. |
@@ -19,14 +21,17 @@
 
 1. [Why Nostr at all](#why-nostr-at-all)
 2. [The two identity tiers](#the-two-identity-tiers)
-3. [Sign-in surface — three signers, one API](#sign-in-surface--three-signers-one-api)
-4. [Lazy user-row materialisation](#lazy-user-row-materialisation)
-5. [Kind:0 seeding (and the buyer avatar cache)](#kind0-seeding-and-the-buyer-avatar-cache)
-6. [Re-sign on payment-destination fields](#re-sign-on-payment-destination-fields)
-7. [Session shape](#session-shape)
-8. [What we do not do](#what-we-do-not-do)
+3. [Lazy user-row materialisation](#lazy-user-row-materialisation)
+4. [Kind:0 seeding (and the buyer avatar cache)](#kind0-seeding-and-the-buyer-avatar-cache)
+5. [What we do not do](#what-we-do-not-do)
 
 ---
+
+> **Looking for how sign-in works?** The signer methods (NIP-07,
+> `nsec`, NIP-46), the mobile `nostrconnect://` deep link, the
+> session JWT, and the payment-destination re-sign discipline are
+> documented in [`authentication.md`](./authentication.md). This
+> doc covers profile and identity: tiers, the user row, and kind:0.
 
 ## Why Nostr at all
 
@@ -65,28 +70,8 @@ who paid anonymously can later sign in and claim that order via
 seller can pay anonymously for someone else's offering without
 losing seller status.
 
-## Sign-in surface — three signers, one API
-
-`/sign-in` offers three signer choices, all of which produce the
-same signed auth event on the same `POST /api/auth/nostr`
-endpoint:
-
-1. **NIP-07 browser extension** — Alby, nos2x, Flamingo, etc.
-   The extension signs the auth event without exposing the
-   private key to the page.
-2. **Pasted `nsec1…`** — for evaluators or users who do not yet
-   have an extension installed. The key is held in memory for
-   the lifetime of the tab and is never persisted to disk or
-   sent to the server. (Convenient for the (AI) judge path; see
-   [`testing-plan.md`](../testing-plan.md).)
-3. **NIP-46 bunker** — `bunker://…` URL from Amber, nsec.app,
-   or any compatible remote signer. The key stays on the user's
-   phone or remote daemon; the browser sends an unsigned event
-   and gets a signed event back over a Nostr relay.
-
-The server validates the signature and the event's
-`created_at` freshness, materialises (or finds) the user row,
-mints a session JWT, and sets it as an httpOnly cookie.
+How each tier signs in — the signer choices and the session
+cookie — is covered in [`authentication.md`](./authentication.md).
 
 ## Lazy user-row materialisation
 
@@ -158,61 +143,8 @@ and cache it in `localStorage` with a 24-hour freshness window.
 The fallback chain is `picture → first-letter chip → UserIcon`,
 so even an offline relay never leaves the navbar empty.
 
-## Re-sign on payment-destination fields
-
-Sign-in proves you control the pubkey *right now*. But a session
-cookie is just a cookie — if it leaks, an attacker could in
-principle quietly redirect a seller's settlement to their own
-bank account by editing `/settings`.
-
-The defence is a **per-mutation re-sign** on the fields that
-control where money goes:
-
-- `users.cbu` (Argentine bank account)
-- `users.alias` (Argentine bank alias)
-- `users.lightning_address` (the **payout** LN address)
-- `users.nwc_uri` (the NWC payout connection)
-- `users.payout_method` (the rail dispatch field)
-
-`users.nostr_lightning_address` is deliberately **not** in this
-list — it is the public Nostr `lud16`, not a payout destination, so
-editing it on the Profile tab needs no re-sign (ADR 0030).
-
-The PATCH handler (`app/api/settings/route.ts`, with the payload
-helper in `lib/creator/sign-settings-payload.ts`) refuses to write
-any of these unless the request carries a freshly signed Nostr
-event proving the *same* pubkey re-asserted intent at save time.
-A stolen cookie alone is not enough — the attacker would also
-need to be holding the private key, which means they were
-already the user.
-
-Lightning Address changes additionally pass through a 1-sat
-LUD-21 probe before they're accepted. See
-[settings-and-payouts](./settings-and-payouts.md) for the full
-PATCH flow.
-
-## Session shape
-
-- `jose`-signed JWT.
-- Stored in an httpOnly, Secure, SameSite=Lax cookie.
-- Carries the pubkey, the session expiry, and nothing else
-  (never a private key, never the kind:0 metadata, never the
-  payout fields).
-- Verified on every panel-gated request by the edge middleware
-  in `proxy.ts`; anonymous requests bounce to
-  `/sign-in?next=<original>`.
-
-The JWT signing key lives in env vars and never reaches the
-client. Rotating it invalidates every active session at once;
-that is the intended trade-off versus per-user revocation lists.
-
 ## What we do not do
 
-- **Email.** No email field at sign-up, no email recovery, no
-  email DMs. Decision in ADR
-  [0006](../architecture/decisions/0006-nostr-and-inapp-delivery.md).
-- **Password.** Never. There is no password field anywhere in the
-  app; sign-in is exclusively via Nostr signers.
 - **Buyer-side wallet detection.** A buyer comes to a sats
   checkout to pay sats. The app does not snoop for a wallet, does
   not auto-detect WebLN, does not pre-fetch addresses.

@@ -43,6 +43,7 @@ docs/
     ├── checkout-flow.md
     ├── settlement-rails.md
     ├── nostr-identity.md
+    ├── authentication.md
     ├── offerings-catalog.md
     ├── delivery-and-receipts.md
     ├── notifications.md

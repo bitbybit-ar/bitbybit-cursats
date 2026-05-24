@@ -43,7 +43,8 @@ A Lightning checkout for educational creators
 | **Two ways onto the sats rail** | The direct-sats rail accepts a LUD-21 **Lightning Address** *or* an **NWC** connection (NIP-47). NWC reaches wallets that don't expose a LUD-21 `verify` URL — Primal, Alby, Coinos, Zeus, LNbits. Both land on the one `direct_lightning` rail — NWC is an input method, not a third rail. |
 | **Sats-rail entry checks** | A Lightning Address must pass a 1-sat LUD-21 verify probe; an NWC URI must pass a `get_info` + `make_invoice`/`lookup_invoice` probe. Broken connections cannot reach production. |
 | **Encrypted wallet credential** | The NWC URI is a spending-capable secret, so it is stored AES-256-GCM-encrypted at rest (`ENCRYPTION_KEY`, `lib/crypto.ts`) and never returned to the client — settings exposes a "connected" flag, not the URI. |
-| **Nostr identity** | NIP-07 / nsec / NIP-46 sign-in; lazy user-row materialisation; kind:0 seeding; re-sign required on payment-destination edits. |
+| **Nostr identity** | Anonymous vs signed-in tiers; lazy user-row materialisation; kind:0 seeding of the public profile (read, never written). |
+| **Authentication** | NIP-07 / nsec / NIP-46 sign-in — mobile leads with a one-tap `nostrconnect://` deep link to an installed signer; session JWT; re-sign required on payment-destination edits. |
 | **Two product primitives** | `code` (redeemable in person, drawn from a pre-minted pool) and `download` (served by a status-gated proxy); shared checkout, differentiated only at the receipt page. |
 | **Price currency follows the rail** | ARS-rail sellers price in ARS, sats-rail sellers in sats; the storefront shows both, live-converted via Wapu's `/exchange_rates`. |
 | **Blossom image storage** | Browser-direct, content-addressed; no image bytes ever go through Cursats. |
