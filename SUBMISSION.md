@@ -17,10 +17,13 @@ script. The deployed site is `cursats.bitbybit.com.ar`.
 both rails with fake money. The Wapu rail points at Wapu's staging
 environment by default (`https://staging.wapu.app`) so a judge does
 not need real ARS.
-The Lightning Address rail accepts any LNURL-pay provider that
-supports LUD-21 — including any Alby, Strike, Blink, or LNbits
-account you control, with whatever small-sats balance you have
-on hand.
+The direct-sats rail accepts either a **Lightning Address** whose
+provider supports LUD-21 (Alby, Blink, Coinos, or LNbits) or an
+**NWC** connection (NIP-47 — Primal, Alby, Coinos, Zeus, LNbits)
+that you control, with whatever small-sats balance you have on
+hand. NWC exists because many wallets the Argentine audience uses
+— Primal and Strike among them — do not expose a LUD-21 `verify`
+URL, so the Lightning-Address method can't confirm their payments.
 
 **The seeder is optional, not required.** `npm run db:seed`
 inserts a small set of demo offerings under an owner pubkey you set
@@ -36,8 +39,10 @@ A Lightning checkout for educational creators
 
 | Surface | Where it shows up |
 |---|---|
-| **Dual settlement rails** | One picker in `/settings` routes every future order to Wapu (sats → ARS to CBU) or to a Lightning Address (direct sats). One dispatch point: `users.payout_method`. |
-| **LUD-21 enforcement** | LN-rail addresses must pass a 1-sat probe at save time. Broken providers cannot reach production. |
+| **Dual settlement rails** | One picker in `/settings` routes every future order to Wapu (sats → ARS to CBU) or to the seller's own wallet (direct sats). One dispatch point: `users.payout_method`. |
+| **Two ways onto the sats rail** | The direct-sats rail accepts a LUD-21 **Lightning Address** *or* an **NWC** connection (NIP-47). NWC reaches wallets that don't expose a LUD-21 `verify` URL — Primal, Alby, Coinos, Zeus, LNbits. Both land on the one `direct_lightning` rail — NWC is an input method, not a third rail. |
+| **Sats-rail entry checks** | A Lightning Address must pass a 1-sat LUD-21 verify probe; an NWC URI must pass a `get_info` + `make_invoice`/`lookup_invoice` probe. Broken connections cannot reach production. |
+| **Encrypted wallet credential** | The NWC URI is a spending-capable secret, so it is stored AES-256-GCM-encrypted at rest (`ENCRYPTION_KEY`, `lib/crypto.ts`) and never returned to the client — settings exposes a "connected" flag, not the URI. |
 | **Nostr identity** | NIP-07 / nsec / NIP-46 sign-in; lazy user-row materialisation; kind:0 seeding; re-sign required on payment-destination edits. |
 | **Two product primitives** | `code` (redeemable in person, drawn from a pre-minted pool) and `download` (served by a status-gated proxy); shared checkout, differentiated only at the receipt page. |
 | **Price currency follows the rail** | ARS-rail sellers price in ARS, sats-rail sellers in sats; the storefront shows both, live-converted via Wapu's `/exchange_rates`. |
@@ -60,10 +65,12 @@ in [`docs/features/`](./docs/features/).
 - **For the Wapu rail** — a Wapu staging account
   (`https://staging.wapu.app`) and its API key. Wapu's staging
   uses fake money, so no real funds are at risk.
-- **For the Lightning Address rail** — any Lightning Address you
-  control whose provider supports LUD-21 (Alby Hub, Strike,
-  Blink, LNbits all work). You will pay yourself a sats invoice
-  during the demo; keep amounts small.
+- **For the direct-sats rail** — one of two things you control:
+  a Lightning Address whose provider supports LUD-21 (Alby, Blink,
+  Coinos, LNbits), **or** an NWC connection string (NIP-47) from a
+  wallet that speaks it (Primal, Alby, Coinos, Zeus, LNbits). You
+  will pay yourself a sats invoice during the demo; keep amounts
+  small.
 
 ## 2. Install and configure
 
@@ -87,10 +94,16 @@ WAPU_API_KEY=<from be-stage.wapu.app>          # Wapu API key (staging is fine)
 WAPU_PAY_APU_HOST=https://be-stage.wapu.app    # Wapu API base URL
 
 CRON_SECRET=<run: openssl rand -base64 32>     # secures the settlement cron
+
+ENCRYPTION_KEY=<run: openssl rand -base64 32>  # AES-256-GCM key for the NWC URI
 ```
 
 Optional but useful:
 
+- `ENCRYPTION_KEY` is only needed if you test the **NWC** payout
+  method (or deploy to production); dev/test fall back to a
+  deterministic key, so the Wapu and Lightning-Address flows work
+  without it. Never use that fallback for real credentials.
 - `NEXT_PUBLIC_BLOSSOM_SERVERS` — has a public default that
   works; override only if you want to host images yourself.
 
@@ -162,15 +175,21 @@ by [`docs/testing-plan.md`](./docs/testing-plan.md).
    pre-fill (see
    [nostr-identity](./docs/features/nostr-identity.md) for the
    seeding model).
-2. Open `/settings`. Pick a payout method (Wapu or Lightning
-   Address) and fill in the destination field for that rail.
-   (Your storefront slug is assigned automatically at sign-in
-   from your Nostr profile — there is nothing to pick.) Saving a
+2. Open `/settings`. Pick how you get paid — Wapu (pesos), or
+   sats to your wallet by **Lightning Address** or **NWC** — and
+   fill in the destination field for that method. (Your storefront
+   slug is assigned automatically at sign-in from your Nostr
+   profile — there is nothing to pick.) Saving a
    payment-destination field triggers a re-sign prompt — sign
    with the same signer you used to log in.
-3. For the LN rail: pasting a Lightning Address triggers a 1-sat
-   LUD-21 probe. Providers without LUD-21 are rejected here, at
-   save time. (See
+3. The sats methods are validated at save time: pasting a
+   Lightning Address triggers a 1-sat LUD-21 verify probe
+   (providers without a `verify` URL are rejected), while an NWC
+   URI is validated with a `get_info` + tiny
+   `make_invoice`/`lookup_invoice` probe. For NWC, issue a
+   **receive-only** connection (no `pay_invoice`) — Cursats only
+   mints and looks up invoices, and the URI is stored encrypted
+   and never shown again. (See
    [settings-and-payouts](./docs/features/settings-and-payouts.md)
    for the probe mechanics.)
 4. Open `/create-course`. Pick a primitive (`code` or
@@ -219,27 +238,34 @@ withdrawal minimum (see §5.1, step 4).
    under `/orders`, and the navbar bell shows an unread
    notification.
 
-### 5.3 Lightning-Address-rail buy (direct sats)
+### 5.3 Direct-sats-rail buy (Lightning Address or NWC)
 
 Pre-req: you completed §5.1 with `payout_method =
-lightning_address` and a LUD-21 Lightning Address filled in
-(this stamps `direct_lightning` on the order's rail).
+lightning_address` (LUD-21 Lightning Address filled in) **or**
+`payout_method = lightning_nwc` (NWC connection saved). Either
+stamps `direct_lightning` on the order's rail; the buyer flow
+below is identical for both — only the sub-method differs.
 
 1. From a second browser profile, open the offering page and
    click **Pay with sats**. The checkout renders a QR with a
-   BOLT11 invoice minted by the seller's LNURL provider.
+   BOLT11 invoice minted directly by the seller's wallet — by the
+   LNURL provider (Lightning Address) or by the wallet over NWC
+   `make_invoice`.
 2. Pay the invoice from any Lightning wallet. The sats land
    directly in the seller's wallet.
-3. The client polls `/api/orders/[orderId]`, which probes the
-   seller's LUD-21 `verify` URL until it returns
-   `{ settled: true }`. Polling is server-side; the buyer sees
-   it as a "Waiting for your payment…" spinner.
-4. Once verified, the page redirects to `/receipt/[orderId]`,
+3. The client polls `/api/orders/[orderId]`, which confirms
+   settlement server-side using the sub-method stamped at order
+   creation: the seller's LUD-21 `verify` URL (Lightning Address)
+   or NWC `lookup_invoice` against the seller's wallet. The buyer
+   sees it as a "Waiting for your payment…" spinner; NWC orders
+   poll at a slower cadence (`poll_after_ms`) because each poll
+   opens a fresh relay connection.
+4. Once settled, the page redirects to `/receipt/[orderId]`,
    identical to the Wapu-rail flow.
 
 This rail never touches Wapu — confirmation is the LUD-21 verify
-poll only, so nothing on the Wapu side can flip a Lightning-rail
-order to paid.
+or NWC `lookup_invoice` poll only, so nothing on the Wapu side can
+flip a direct-sats order to paid.
 
 ## Where to look in the code
 
@@ -251,6 +277,8 @@ order to paid.
 | Settlement (poll deposit, open + poll withdrawal) | `lib/wapu-settlement.ts`, `app/api/cron/wapu-settlements/route.ts`, `app/api/orders/sync/route.ts` |
 | Wapu API client | `lib/wapu.ts` |
 | Lightning mint + LUD-21 verify | `lib/lightning.ts` (LNURL helper in `lib/nostr/lnurl.ts`) |
+| NWC mint + lookup (NIP-47) | `lib/nwc.ts` (`@getalby/sdk` `NWCClient`, `LightningClient`-shaped wrapper) |
+| Wallet-credential encryption | `lib/crypto.ts` (AES-256-GCM, `ENCRYPTION_KEY`) |
 | Rail dispatch + state machine | `lib/orders.ts` |
 | Code minting / draw | `lib/creator/offerings.ts` (`mintCodesForOffering`), `lib/orders.ts` (`drawAndAssignCode`) |
 | Download proxy | `app/api/downloads/[orderId]/route.ts` |
@@ -271,10 +299,18 @@ order to paid.
   from `.env.local`. Get a key from Wapu staging
   (`https://staging.wapu.app`) and set it.
 - **"Lightning Address rejected"** — the provider does not
-  advertise LUD-21. Try a different provider (Alby Hub, Strike,
-  Blink, LNbits all work). See
+  advertise a LUD-21 `verify` URL. Primal and Strike both fail
+  here. Use a LUD-21 provider (Alby, Blink, Coinos, LNbits) or
+  switch to the **NWC** method, which reaches Primal, Alby, Coinos,
+  Zeus, and LNbits. See
   [settings-and-payouts](./docs/features/settings-and-payouts.md)
   for the probe details.
+- **"NWC connection rejected"** — the `nostr+walletconnect://` URI
+  could not complete the `get_info` + `make_invoice`/`lookup_invoice`
+  probe. Re-issue the connection with **receive** permissions (no
+  `pay_invoice` needed), confirm its relay is reachable, and paste
+  the full URI. If the save itself errors, set `ENCRYPTION_KEY` (§2)
+  — it is required to store the URI.
 - **"Cannot create offering"** — `payout_method` is unset, or
   the destination field for the active rail is empty. Go to
   `/settings` and complete the rail.

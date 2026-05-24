@@ -53,8 +53,8 @@ export const orderStatus = pgEnum("order_status", [
 //   lightning_nwc     — Cursats mints + verifies via the user's NWC
 //                       connection (NIP-47, `users.nwc_uri`); sats
 //                       land in the user's own wallet. The fallback
-//                       for wallets without LUD-21 (Primal, WoS, …).
-//                       ADR 0029.
+//                       for wallets without LUD-21 (Primal, Coinos,
+//                       Zeus, …). ADR 0029.
 export const payoutMethod = pgEnum("payout_method", [
   "cbu_alias",
   "lightning_address",

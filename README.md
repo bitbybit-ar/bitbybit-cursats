@@ -1,10 +1,11 @@
 # Cursats
 
 Lightning checkout for teachers and educational creators. Buyers
-always pay in sats; sellers pick how to get paid — pesos to a CBU
-via Wapu, or sats to a Lightning Address. Built for La Crypta
-Hackathon #3 (Commerce), with **Wapu** as the sponsor and one of
-the two payout rails.
+always pay in sats; sellers pick how to get paid — pesos to a
+CBU/alias via Wapu, or sats straight to their own wallet, connected
+by a Lightning Address or by NWC (Nostr Wallet Connect). Built for La
+Crypta Hackathon #3 (Commerce), with **Wapu** as the sponsor and one
+of the two payout rails.
 
 > Cursá tu próxima clase con sats.
 
@@ -42,33 +43,46 @@ product primitives to learners:
    Buyer gets a download link on the same receipt page (served
    through a status-gated proxy).
 
-Buyers always pay over Lightning. Sellers pick one of two payout
-rails in Settings:
+Buyers always pay over Lightning. Sellers pick how the sats land on
+the other side with a single picker in Settings. There are two
+settlement rails:
 
 - **Wapu (pesos to CBU/alias)** — the inclusive on-ramp. Wapu
   converts the sats to ARS and pushes pesos to the seller's
   Argentine bank. For sellers who want to keep their bank routine
   intact and don't want to learn Bitcoin.
-- **Lightning Address (sats to your wallet)** — direct payouts
-  via LNURL-pay (LUD-21). For sellers who already live in sats and
-  want no converter in the middle.
+- **Sats straight to your wallet** — direct, non-custodial payouts
+  with no converter in the middle, for sellers who already live in
+  sats. Connect your wallet one of two ways:
+  - **Lightning Address** — LNURL-pay with LUD-21 verify
+    (Alby, Blink, Coinos, LNbits).
+  - **NWC (Nostr Wallet Connect, NIP-47)** — for wallets that don't
+    expose a LUD-21 `verify` URL. Wallets popular in Argentina like
+    Primal fail LUD-21, so the Lightning-Address method can't reach
+    them; NWC does (Primal, Alby, Coinos, Zeus, LNbits).
+
+Both wallet methods land on the same `direct_lightning` rail — NWC is
+a second input method for the sats rail, not a third rail.
 
 ## Core flow
 
 ```text
 1. Browse storefront or /explore        → public catalog, no login required
 2. Open offering, click "Pay with sats" → Lightning invoice + QR
-3. Pay over Lightning                   → poll Wapu deposit OR LUD-21 verify
+3. Pay over Lightning                   → poll Wapu deposit, LUD-21 verify, OR NWC lookup
 4. Land on /receipt/[orderId]           → redemption code OR download link
-5. Sats settle to seller's chosen rail  → ARS to CBU (Wapu) OR sats to wallet (LN)
+5. Sats settle to seller's chosen rail  → ARS to CBU (Wapu) OR sats to wallet (LN addr / NWC)
 ```
 
 Step 3 splits by the seller's payout method: a `cbu_alias`
 seller's order rides the `wapu_ars` rail and confirms by polling
-its Wapu deposit transaction; a `lightning_address` seller's order
-rides the `direct_lightning` rail and confirms by polling the
-seller's LNURL-pay `verify` URL. The buyer experience is identical either
-way — same QR, same wait, same receipt page.
+its Wapu deposit transaction; a sats-rail seller's order
+(`lightning_address` or `lightning_nwc`) rides the
+`direct_lightning` rail and confirms by polling either the seller's
+LNURL-pay `verify` URL (Lightning Address) or the seller's wallet
+via NWC `lookup_invoice` — whichever sub-method was stamped on the
+order at creation. The buyer experience is identical every way —
+same QR, same wait, same receipt page.
 
 ## Stack
 
@@ -80,8 +94,10 @@ way — same QR, same wait, same receipt page.
 - **Image storage**: Blossom (BUD-01/02, content-addressed)
 - **Payments rail A**: Wapu API — Lightning invoice + ARS payout to
   CBU/alias
-- **Payments rail B**: LNURL-pay with LUD-21 verify — direct sats to
-  the seller's Lightning Address
+- **Payments rail B** (direct sats): LNURL-pay with LUD-21 verify, or
+  NWC (NIP-47, `@getalby/sdk`) — sats straight to the seller's wallet.
+  The NWC connection URI is stored AES-256-GCM-encrypted at rest
+  (`ENCRYPTION_KEY`) and never returned to the client.
 - **Exchange rate**: Wapu
 - **Auth**: Nostr only — NIP-07 / nsec / NIP-46, session JWT signed
   with `jose` and held in an httpOnly cookie
@@ -98,9 +114,9 @@ npm run dev
 
 Visit `http://localhost:3000`, sign in with Nostr (browser
 extension, pasted nsec, or NIP-46 bunker), and you're a seller.
-Pick a slug in `/settings`, pick a payout method (Wapu for pesos
-or Lightning Address for sats), and create your first offering
-in `/create-course`.
+Your slug is assigned at sign-in; in `/settings` pick how you get
+paid (Wapu for pesos, or sats to your wallet by Lightning Address
+or NWC), then create your first offering in `/create-course`.
 
 If you'd rather skip the create-form clicks, `npm run db:seed`
 drops a small set of demo offerings keyed to a pubkey you control
@@ -108,9 +124,9 @@ drops a small set of demo offerings keyed to a pubkey you control
 
 For evaluators, the ordered walkthrough is in
 [`docs/testing-plan.md`](./docs/testing-plan.md) — numbered steps
-that cover sign-in, creating an offering, both payout rails
-(Wapu + Lightning Address), the receipt-page delivery, and
-the notification bell.
+that cover sign-in, creating an offering, both payout rails (Wapu
+for ARS, and direct sats by Lightning Address or NWC), the
+receipt-page delivery, and the notification bell.
 
 The project is the BitByBit team's entry to **La Crypta Hackathon
 #3 — Commerce**, with **Wapu** as the sponsor and one of the two

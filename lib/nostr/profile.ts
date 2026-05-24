@@ -21,7 +21,7 @@ export interface Kind0Profile {
   banner?: string;
   /** NIP-05 verified identifier, e.g. "alice@cursats.bitbybit.com.ar". */
   nip05?: string;
-  /** Lightning Address (LUD-16), e.g. "alice@walletofsatoshi.com". */
+  /** Lightning Address (LUD-16), e.g. "alice@primal.net". */
   lud16?: string;
 }
 

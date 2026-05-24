@@ -1,7 +1,16 @@
 # Judge walkthrough
 
 > **Status:** Active
-> **Last updated:** 2026-05-23
+> **Last updated:** 2026-05-24
+
+---
+
+## Change Log
+
+| Date | Section | Change | Reason |
+|---|---|---|---|
+| 2026-05-24 | Step 3, Step 6, What you've covered | Added NWC (NIP-47) as the second input method of the sats rail (Step 3c) and generalized the sats-rail buy step to cover both Lightning Address and NWC. Corrected the LUD-21 provider examples (Strike does not expose `verify`). | ADR 0029 — most wallets the audience uses fail LUD-21, so NWC is now the alternative way onto the sats rail. |
+| 2026-05-23 | — | Initial version. | Hackathon evaluation pass — give judges an ordered, button-by-button walkthrough. |
 
 ---
 
@@ -64,11 +73,13 @@ is held in memory only for the lifetime of the tab.
 This exercises the identity section described in
 [settings-and-payouts](./features/settings-and-payouts.md#two-tiers-of-fields).
 
-## Step 3 — Pick your first payout rail
+## Step 3 — Pick how you get paid
 
-There are two rails — Wapu (sats → ARS to CBU) or Lightning
-Address (direct sats). You can do this step twice if you want to
-test both; pick one to start.
+There are two rails — Wapu (sats → ARS to CBU) or direct sats. The
+direct-sats rail has two input methods: a LUD-21 **Lightning
+Address** or an **NWC** connection. So three "how you get paid"
+choices, two rails. You can run this step more than once to test
+each; pick one to start.
 
 ### 3a. Wapu rail
 
@@ -82,17 +93,41 @@ test both; pick one to start.
 4. On success, the row writes and an `admin_audit_log` entry
    records the change with the secret value redacted.
 
-### 3b. Lightning Address rail
+### 3b. Direct sats — Lightning Address
 
 1. Pick **Get paid in sats (Lightning Address)**.
-2. Paste a Lightning Address you control (e.g.,
+2. Paste a Lightning Address you control whose provider supports
+   LUD-21 (Alby, Blink, Coinos, LNbits all work — e.g.,
    `you@getalby.com`).
 3. Save. The server probes the address with a **1-sat LUD-21
-   verify call** before accepting it. Providers without LUD-21
-   are rejected here, at save time, with a clear error.
+   verify call** before accepting it. Providers without a `verify`
+   URL — including Primal and Strike — are rejected here, at save
+   time, with a clear error. Use NWC (3c) for a wallet that
+   supports it.
 4. Re-sign when prompted (same Tier 2 path as 3a).
 
-To switch rails later, repeat 3a or 3b — the previous rail's
+### 3c. Direct sats — NWC (Nostr Wallet Connect)
+
+NWC is the second input method for the same `direct_lightning`
+rail — use it when your wallet does not expose a LUD-21 `verify`
+URL. It reaches Primal, Alby, Coinos, Zeus, and LNbits.
+
+1. Pick **Get paid in sats (NWC)**.
+2. In your wallet, create an NWC connection and copy the
+   `nostr+walletconnect://…` URI. Grant it **receive-only**
+   permissions — Cursats only needs `make_invoice` and
+   `lookup_invoice`; do **not** grant `pay_invoice`.
+3. Paste the URI and Save. The server validates the connection by
+   probing `get_info` and minting a tiny `make_invoice` +
+   `lookup_invoice`; a connection that can't receive (or that is
+   spend-only / has an unreachable relay) is rejected here, at save
+   time.
+4. Re-sign when prompted (same Tier 2 path as 3a). The URI is a
+   wallet credential, so it is stored AES-256-GCM-encrypted at rest
+   and never shown again — `/settings` displays a "connected" flag,
+   not the URI.
+
+To switch rails later, repeat 3a, 3b, or 3c — the previous rail's
 destination fields are preserved on switch, so flipping back is
 a one-click operation. See
 [settlement-rails — single dispatch point](./features/settlement-rails.md#the-single-dispatch-point).
@@ -111,8 +146,9 @@ a one-click operation. See
      (browser-direct, content-addressed); the private download
      file is served later through `/api/downloads/[orderId]`.
 4. The price currency follows your payout rail automatically —
-   ARS for the Wapu rail, sats for the Lightning Address rail
-   (you don't pick it per course). The other currency renders
+   ARS for the Wapu rail, sats for the direct-sats rail (both the
+   Lightning Address and NWC methods price in sats; you don't pick
+   it per course). The other currency renders
    live via the Wapu exchange rate. **On the Wapu rail, price
    above ARS 10,000:** that is Wapu's minimum withdrawal, so the
    form rejects a course whose net payout (price − Wapu fee)
@@ -154,30 +190,35 @@ buyer session is separate from the seller session.
    to `paid` and you're redirected to `/receipt/[orderId]`. There
    are no webhooks, so no tunnel is needed.
 
-## Step 6 — Buy from your own storefront (Lightning Address rail)
+## Step 6 — Buy from your own storefront (direct-sats rail)
 
-Pre-req: §3b completed. If you only did §3a, switch now: go to
-`/settings`, pick **Lightning Address**, save (re-sign). Nothing
-else is needed — the offering still works on the new rail.
-In-flight Wapu orders keep their original rail; future orders
-take the new one. See
+Pre-req: §3b **or** §3c completed. If you only did §3a, switch
+now: go to `/settings`, pick **Lightning Address** or **NWC**,
+save (re-sign). Nothing else is needed — the offering still works
+on the new rail. In-flight Wapu orders keep their original rail;
+future orders take the new one. See
 [settlement-rails — single dispatch point](./features/settlement-rails.md#the-single-dispatch-point).
 
 1. As the buyer (same separate session as §5), reload the
    offering page and click **Pay with sats**.
-2. The QR now shows a BOLT11 invoice minted by your LNURL
-   provider, not Wapu. The buyer experience is otherwise
-   identical: same QR layout, same conversion line, same
+2. The QR now shows a BOLT11 invoice minted directly by your
+   wallet — your LNURL provider (Lightning Address) or your wallet
+   over NWC (`make_invoice`), not Wapu. The buyer experience is
+   otherwise identical: same QR layout, same conversion line, same
    "Waiting for your payment…" spinner.
-3. Pay the invoice. The sats land directly in your LN wallet —
-   no converter, no Wapu in the middle.
+3. Pay the invoice. The sats land directly in your wallet — no
+   converter, no Wapu in the middle.
 4. The client polls `/api/orders/[orderId]`, which server-side
-   probes your provider's LUD-21 verify URL until settled.
+   confirms settlement using the sub-method stamped on the order
+   at creation: the provider's **LUD-21 verify URL** (Lightning
+   Address) or **NWC `lookup_invoice`** against your wallet. NWC
+   orders poll at a slower cadence (`poll_after_ms`) because each
+   poll opens a fresh relay connection.
 5. On settle, the page redirects to `/receipt/[orderId]`.
 
 This rail never touches Wapu. Verify by tailing your dev-server
-logs while paying the LN-rail invoice: no flip happens until the
-LUD-21 verify poll succeeds.
+logs while paying the invoice: no flip happens until the LUD-21
+verify (or NWC `lookup_invoice`) poll reports settled.
 
 ## Step 7 — Receipt page
 
@@ -273,9 +314,12 @@ Quick i18n + theme pass.
 
 By the end of these eleven steps you'll have exercised: all
 three Nostr sign-in methods, kind:0 seeding, both payout rails
-(Wapu deposit polling and Lightning Address LUD-21 verify
-polling), the re-sign discipline on payment-destination fields,
-the LUD-21 1-sat probe, both product primitives (`code` and
+(Wapu deposit polling and the direct-sats rail's two input
+methods — Lightning Address LUD-21 verify polling and NWC
+`lookup_invoice` polling), the re-sign discipline on
+payment-destination fields, the LUD-21 1-sat probe and the NWC
+`get_info`/`make_invoice` connection probe, both product
+primitives (`code` and
 `download`) including the status-gated download proxy, the receipt
 page as the only delivery channel, the claim flow for anonymous
 purchases, the notification bell with mark-read and
