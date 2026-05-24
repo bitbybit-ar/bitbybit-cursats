@@ -23,24 +23,20 @@ export function alternatesFor(
   };
 }
 
-// The brand social card, shared by every page. The localized dynamic
-// `opengraph-image` route is primary — it renders the per-locale value
-// line in real brand type — and the static `/og.png` twin is a
-// fallback for crawlers that can't render the dynamic endpoint. Both
-// are resolved against `metadataBase` (set in the locale layout). The
+// The brand social card: the single fallback used when a page has no
+// image of its own. It's the localized dynamic `opengraph-image`
+// route, which renders the per-locale value line in real brand type,
+// resolved against `metadataBase` (set in the locale layout). The
 // `opengraph-image` file convention lives at the `[locale]` segment,
 // so the default locale serves it unprefixed and `en` carries `/en`.
 type OgImage = { url: string; width?: number; height?: number; alt: string };
 
-function sharedOgImages(locale: string, alt: string): OgImage[] {
+function brandOgImage(locale: string, alt: string): OgImage {
   const dynamicPath =
     locale === routing.defaultLocale
       ? "/opengraph-image"
       : `/${locale}/opengraph-image`;
-  return [
-    { url: dynamicPath, width: 1200, height: 630, alt },
-    { url: "/og.png", width: 1200, height: 630, alt },
-  ];
+  return { url: dynamicPath, width: 1200, height: 630, alt };
 }
 
 /**
@@ -62,9 +58,13 @@ function sharedOgImages(locale: string, alt: string): OgImage[] {
  * reads well on its own (e.g. a creator store or an offering).
  *
  * `image` is an optional page-specific card image (a course image or
- * a creator banner): when set it leads the `og:image` list so the
- * share card previews that content, with the brand card kept after it
- * as a fallback for crawlers that fail to fetch the custom one.
+ * a creator banner): when set it becomes the *only* `og:image`, so the
+ * share card previews that content alone; pages without one fall back
+ * to the single brand card. Every page emits exactly one `og:image` —
+ * multiple tags break sharing both ways: WhatsApp picks the *last* tag
+ * (so it showed the brand fallback instead of the course image) and
+ * Discord renders *every* tag (stacking the course image and both
+ * brand cards).
  */
 export function buildPageMetadata({
   locale,
@@ -84,10 +84,9 @@ export function buildPageMetadata({
   image?: { url: string; alt?: string };
 }): Metadata {
   const ogTitle = socialTitle ?? `${SITE_NAME} — ${title}`;
-  const brandImages = sharedOgImages(locale, ogTitle);
   const images: OgImage[] = image
-    ? [{ url: image.url, alt: image.alt ?? ogTitle }, ...brandImages]
-    : brandImages;
+    ? [{ url: image.url, alt: image.alt ?? ogTitle }]
+    : [brandOgImage(locale, ogTitle)];
   const ogLocale = locale === "es" ? "es_AR" : "en_US";
   const altLocale = locale === "es" ? "en_US" : "es_AR";
 

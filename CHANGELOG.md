@@ -300,6 +300,13 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **Shared course and store links now preview their own image.** A
+  course (or creator store) shared to WhatsApp, Discord, or any social
+  app now shows that course image — not the generic brand card — and
+  only one image. Previously every shared page carried three `og:image`
+  tags (the course image plus two brand cards), so WhatsApp showed the
+  brand fallback instead of the course and Discord stacked all three.
+  Pages without their own image still fall back to a single brand card.
 - **Display name now syncs from your Nostr profile at sign-in.**
   Previously, if the relay lookup was slow on your first sign-in, your
   name stuck as a `user-…` placeholder until you manually opened
