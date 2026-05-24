@@ -59,6 +59,18 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Corrected the suggested Lightning wallets.** The sats-rail
+  validation messages and the address placeholder/examples previously
+  pointed at wallets that do **not** expose a LUD-21 `verify` URL
+  (Wallet of Satoshi, Strike, ZBD, Primal), so a seller pasting one of
+  those would be rejected. The copy now recommends only LUD-21-verified
+  wallets (Alby, Blink) and the placeholder uses `blink.sv`. (NWC
+  support for the remaining wallets is planned separately.)
+- **Rephrased the "No custody" feature claim.** Retitled to "No
+  platform custody" and reworded so it no longer implies ARS funds go
+  straight to the seller's bank — on the Wapu rail, Wapu holds the
+  USDT during the day before settling pesos. Cursats still never holds
+  the funds.
 - **Tooltips no longer overflow the screen on mobile.** The shared
   `Tooltip` popover now measures itself when it opens and nudges back
   inside the viewport (with the arrow staying over the trigger), and
