@@ -42,15 +42,23 @@ export const orderStatus = pgEnum("order_status", [
   "refunded",
 ]);
 
-// How a user gets paid (when they sell). Decision in ADR 0015.
+// How a user gets paid (when they sell). Decisions in ADRs 0015 and
+// 0029. `cbu_alias` rides the wapu_ars order rail; both sats methods
+// (`lightning_address`, `lightning_nwc`) ride direct_lightning.
 //   cbu_alias         — Wapu converts sats→ARS and pushes to the
 //                       user's Argentine bank alias or CBU.
 //   lightning_address — Cursats mints a BOLT11 directly against the
-//                       user's Lightning Address; sats land in
-//                       the user's own wallet, no ARS conversion.
+//                       user's Lightning Address (LNURL-pay, LUD-21);
+//                       sats land in the user's own wallet.
+//   lightning_nwc     — Cursats mints + verifies via the user's NWC
+//                       connection (NIP-47, `users.nwc_uri`); sats
+//                       land in the user's own wallet. The fallback
+//                       for wallets without LUD-21 (Primal, WoS, …).
+//                       ADR 0029.
 export const payoutMethod = pgEnum("payout_method", [
   "cbu_alias",
   "lightning_address",
+  "lightning_nwc",
 ]);
 
 // Wapu fiat-transfer speed for the cbu_alias rail. `fiat_transfer`
@@ -117,12 +125,17 @@ export const users = pgTable(
     // Format: local-part@domain. Validated at write time to also
     // resolve a working LNURL-pay endpoint with LUD-21 support.
     lightning_address: varchar("lightning_address", { length: 128 }),
+    // NWC connection URI used when payout_method = 'lightning_nwc'
+    // (ADR 0029). A `nostr+walletconnect://` string — a wallet
+    // credential, so it is stored AES-256-GCM-ENCRYPTED at rest
+    // (`lib/crypto.ts`), decrypted only in server routes, and never
+    // returned to the client. Validated at write time with a probe
+    // make_invoice + lookup_invoice. Null unless the NWC method is set.
+    nwc_uri: text("nwc_uri"),
     // Which rail this user uses to receive funds (when selling).
     // ADR 0015. 'cbu_alias' preserves prior behavior on migration;
     // users who want sats flip the radio in the settings page.
-    payout_method: payoutMethod("payout_method")
-      .notNull()
-      .default("cbu_alias"),
+    payout_method: payoutMethod("payout_method").notNull().default("cbu_alias"),
     // Wapu fiat-transfer speed for the cbu_alias rail (see enum).
     // Sellers pick standard vs fast in /settings; fast costs a
     // higher Wapu fee.
@@ -240,7 +253,12 @@ export const offerings = pgTable(
 // cron polls to completion.
 //
 // `rail` (ADR 0015) snapshots which settlement rail the order rides.
-// `lnurl_verify_url` is set only on direct_lightning orders.
+// On a direct_lightning order, the sats sub-method is recorded by
+// which verification handle is set (ADR 0029): `lnurl_verify_url`
+// present => LUD-21 Lightning Address (poll the verify URL);
+// `lnurl_verify_url` null => NWC (poll the seller's wallet via
+// lookup_invoice on `payment_hash`). Checkout sets exactly one, so
+// the sub-method is fixed at creation.
 export const orders = pgTable(
   "orders",
   {
@@ -260,6 +278,8 @@ export const orders = pgTable(
     // Which rail this order rides. Stamped at creation from the
     // seller's `payout_method`. ADR 0015.
     rail: orderRail("rail").notNull().default("wapu_ars"),
+    // Hex payment hash of `bolt11`. On a direct_lightning NWC order
+    // it is the lookup key the poller passes to NWC lookup_invoice.
     payment_hash: varchar("payment_hash", { length: 64 }),
     // Wapu deposit (leg 1) transaction id — the Lightning deposit the
     // buyer funds. Polled via GET /transactions/{id} until Completed.
@@ -288,9 +308,11 @@ export const orders = pgTable(
     // `transfer_speed` at order creation, so a later flip does not
     // re-price an in-flight withdrawal. Null on direct_lightning.
     transfer_speed: transferSpeed("transfer_speed"),
-    // LUD-21 verify URL. Only set on direct_lightning orders; the
-    // status poller GETs it to confirm settlement. Null on wapu_ars
-    // orders (those poll the Wapu deposit transaction instead).
+    // LUD-21 verify URL. Set only on direct_lightning orders made
+    // against a Lightning Address; the status poller GETs it to
+    // confirm settlement. Null on wapu_ars orders (poll the Wapu
+    // deposit instead) and on direct_lightning NWC orders (poll the
+    // seller's wallet via NWC lookup_invoice on `payment_hash`).
     lnurl_verify_url: text("lnurl_verify_url"),
     redemption_code: text("redemption_code"),
     created_at: timestamp("created_at").notNull().defaultNow(),

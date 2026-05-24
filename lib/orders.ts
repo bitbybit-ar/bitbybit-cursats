@@ -7,6 +7,8 @@ import {
   LightningMintError,
   type LightningMintErrorCode,
 } from "@/lib/lightning";
+import { mintNwcInvoice, NwcError, type NwcErrorCode } from "@/lib/nwc";
+import { decrypt } from "@/lib/crypto";
 import { pickPayoutAlias } from "@/lib/creator/users";
 import { convertPrice } from "@/lib/exchange-rate";
 
@@ -44,7 +46,9 @@ export type CreateOrderError =
   | "seller_inactive"
   | "seller_payout_missing"
   | "seller_lightning_address_missing"
-  | "lightning_mint_failed";
+  | "lightning_mint_failed"
+  | "seller_nwc_missing"
+  | "nwc_mint_failed";
 
 export class OrderCreateError extends Error {
   constructor(
@@ -54,9 +58,11 @@ export class OrderCreateError extends Error {
      * LightningMintError code rides along so the checkout API can
      * surface a specific reason (lnurl_unreachable vs lnurl_no_lud21
      * vs …) to the buyer instead of a generic "unavailable". Unset
-     * for non-LN failure modes.
+     * for non-LN failure modes. `nwc_code` is the NWC analogue, set
+     * when `code === "nwc_mint_failed"` (ADR 0029).
      */
-    public readonly lightning_code?: LightningMintErrorCode
+    public readonly lightning_code?: LightningMintErrorCode,
+    public readonly nwc_code?: NwcErrorCode
   ) {
     super(code);
     this.name = "OrderCreateError";
@@ -80,9 +86,15 @@ export class OrderCreateError extends Error {
  *     resolves the seller's LN address, mints a BOLT11 directly,
  *     and the seller's wallet receives the sats. No Wapu, no ARS.
  *     The order's `lnurl_verify_url` powers the status poller.
+ *   - seller.payout_method = 'lightning_nwc' → lib/nwc mints a BOLT11
+ *     against the seller's wallet over NWC (NIP-47); the seller's
+ *     wallet receives the sats. No Wapu, no ARS, and no
+ *     `lnurl_verify_url` — the poller confirms via NWC lookup_invoice
+ *     on the order's `payment_hash`. ADR 0029.
  *
- * Failed checkouts delete the pending row before throwing so we do
- * not leave orphans polluting any dashboard.
+ * Both sats methods ride the `direct_lightning` order rail. Failed
+ * checkouts delete the pending row before throwing so we do not leave
+ * orphans polluting any dashboard.
  */
 export async function createOrder(
   input: CreateOrderInput
@@ -136,9 +148,7 @@ export async function createOrder(
       amount_ars: lockedArs,
       amount_sats: 0,
       rail:
-        seller.payout_method === "lightning_address"
-          ? "direct_lightning"
-          : "wapu_ars",
+        seller.payout_method === "cbu_alias" ? "wapu_ars" : "direct_lightning",
     })
     .returning();
 
@@ -151,6 +161,17 @@ export async function createOrder(
         offering_price_currency: offering.price_currency,
         locked_ars: lockedArs,
         lightning_address: seller.lightning_address,
+      });
+      return { order_id: pendingRow.id, funding };
+    }
+    if (seller.payout_method === "lightning_nwc") {
+      const funding = await fundNwcOrder({
+        order_id: pendingRow.id,
+        offering_title: offering.title,
+        offering_price_amount: offering.price_amount,
+        offering_price_currency: offering.price_currency,
+        locked_ars: lockedArs,
+        nwc_uri: seller.nwc_uri,
       });
       return { order_id: pendingRow.id, funding };
     }
@@ -249,6 +270,63 @@ async function fundDirectLightningOrder(opts: {
       payment_hash: invoice.payment_hash,
       bolt11: invoice.bolt11,
       lnurl_verify_url: invoice.verify_url,
+      updated_at: new Date(),
+    })
+    .where(eq(orders.id, opts.order_id));
+
+  return {
+    bolt11: invoice.bolt11,
+    amount_sats: invoice.amount_sats,
+    amount_ars: opts.locked_ars,
+    expires_at: invoice.expires_at,
+    payment_hash: invoice.payment_hash,
+  };
+}
+
+/**
+ * Fund a `lightning_nwc` order (ADR 0029): mint a BOLT11 against the
+ * seller's wallet over NWC. Sats land in the seller's wallet, same as
+ * the LN-address path. Unlike that path there is no `lnurl_verify_url`
+ * — the poller confirms via NWC lookup_invoice on `payment_hash`, and
+ * the absence of `lnurl_verify_url` is what marks the order as NWC.
+ */
+async function fundNwcOrder(opts: {
+  order_id: string;
+  offering_title: string;
+  offering_price_amount: number;
+  offering_price_currency: "ars" | "sats";
+  locked_ars: number;
+  nwc_uri: string | null;
+}): Promise<OrderFunding> {
+  const db = getDb();
+  if (!opts.nwc_uri) {
+    throw new OrderCreateError("seller_nwc_missing");
+  }
+  const amount_sats =
+    opts.offering_price_currency === "sats"
+      ? opts.offering_price_amount
+      : await convertPrice(opts.offering_price_amount, "ars", "sats");
+  // The stored URI is encrypted at rest — decrypt only here, on the
+  // server, to talk to the seller's wallet.
+  const uri = decrypt(opts.nwc_uri);
+  let invoice;
+  try {
+    invoice = await mintNwcInvoice(uri, amount_sats, opts.offering_title);
+  } catch (err) {
+    if (err instanceof NwcError) {
+      throw new OrderCreateError("nwc_mint_failed", undefined, err.code);
+    }
+    throw err;
+  }
+
+  await db
+    .update(orders)
+    .set({
+      amount_sats: invoice.amount_sats,
+      payment_hash: invoice.payment_hash,
+      bolt11: invoice.bolt11,
+      // No lnurl_verify_url: that null is the NWC discriminator the
+      // status poller keys on (schema comment on orders).
       updated_at: new Date(),
     })
     .where(eq(orders.id, opts.order_id));

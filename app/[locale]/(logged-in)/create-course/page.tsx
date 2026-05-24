@@ -43,6 +43,7 @@ export default async function NewOfferingPage({
           alias: user.alias ?? "",
           lightningAddress: user.lightning_address ?? "",
           payoutMethod: user.payout_method,
+          nwcConnected: Boolean(user.nwc_uri),
         }}
       />
     </>

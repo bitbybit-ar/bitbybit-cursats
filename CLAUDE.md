@@ -97,7 +97,11 @@ repo's copy is intentionally identical and should stay in sync.
 - **Payment surfaces are server-only.** Wapu API keys and settlement
   logic live in API routes or server-only modules. Never expose them
   to the client. Use `NEXT_PUBLIC_*` only for non-secret display
-  values.
+  values. A seller's NWC URI (`users.nwc_uri`) is a wallet credential:
+  it is stored AES-256-GCM-encrypted at rest (`lib/crypto.ts`, key
+  `ENCRYPTION_KEY`), decrypted only in server routes, and never
+  returned to the client — the settings API exposes a "connected"
+  flag, not the URI. ADR 0029.
 - **Wapu is a poll-driven, two-leg flow — there are no webhooks.**
   Wapu is a USDT-ledger wallet. Leg 1: a Lightning deposit
   (`POST /wallet/deposit_lightning`) credits USDT to our wallet; the
@@ -118,30 +122,45 @@ repo's copy is intentionally identical and should stay in sync.
   (superseding the webhook posture of ADRs 0002 and 0012).
 - **Two settlement rails, picked per user.** Wapu is still the
   only ARS rail (sats→ARS via Lightning, push to CBU/alias). The
-  second rail receives sats directly to a seller's Lightning
-  Address via LNURL-pay; the seller chooses one in `/settings`.
-  Stored on the user row.
-  The checkout API dispatches on `users.payout_method`. Do not
-  introduce a third rail. Decision in ADR
-  `docs/architecture/decisions/0015-sats-settlement-rail.md`
+  second rail (`direct_lightning`) receives sats directly to a
+  destination the seller controls, via one of **two input methods**:
+  a Lightning Address (LNURL-pay, LUD-21) **or** an NWC connection
+  (NIP-47). The seller picks a method in `/settings`; the
+  `payout_method` enum is `cbu_alias | lightning_address |
+  lightning_nwc`, and both sats methods map to the
+  `direct_lightning` order rail. The checkout API dispatches on
+  `users.payout_method`. There are still only **two order rails** —
+  NWC is a sats-rail input method, **not a third rail. Do not
+  introduce a third rail.** Decisions in ADRs
+  `docs/architecture/decisions/0015-sats-settlement-rail.md` and
+  `docs/architecture/decisions/0029-nwc-sats-rail-input-method.md`
   (superseding the rail-count clause of ADR
   `docs/architecture/decisions/0002-settlement-via-wapu.md`).
-- **LN settlement requires LUD-21.** The seller's LN-address
-  provider must return a `verify` URL on its LNURL-pay callback;
-  without it we have no server-side way to confirm payment. The
-  settings PATCH mints a 1-sat probe invoice when a seller
-  sets/changes their LN address and rejects providers that do not
-  advertise LUD-21.
+- **The `lightning_address` method requires LUD-21; `lightning_nwc`
+  is the alternative.** An LN-address provider must return a `verify`
+  URL on its LNURL-pay callback or we cannot confirm payment
+  server-side; the settings PATCH mints a 1-sat probe invoice on
+  set/change and rejects providers without LUD-21. Most popular AR
+  wallets (Wallet of Satoshi, Primal, Strike) fail LUD-21 — recommend
+  Alby or Blink for the LN-address method, and steer everyone else to
+  NWC. Setting `nwc_uri` is validated with a probe `get_info` +
+  `make_invoice`/`lookup_invoice`; we only use receive/lookup, so the
+  UI tells the seller to issue a connection **without** `pay_invoice`.
+  ADR 0029 supersedes the absolute "LN settlement requires LUD-21"
+  posture of ADR 0015.
 - **Both rails are verified by polling, never a webhook.** On
   `/api/orders/[orderId]`: a `wapu_ars` order polls its Wapu deposit
   transaction (`pollWapuDeposit`); a `direct_lightning` order polls
-  the seller's LUD-21 `lnurl_verify_url`. Buyer-paid effects
-  (`markOrderPaid` + draw code + notifications) are shared. The
-  `wapu_ars` seller payout leg is tracked separately on
+  either the seller's LUD-21 `lnurl_verify_url` (`lightning_address`)
+  or the seller's wallet via NWC `lookup_invoice` (`lightning_nwc`),
+  per the sub-method stamped on the order at creation. Buyer-paid
+  effects (`markOrderPaid` + draw code + notifications) are shared.
+  The `wapu_ars` seller payout leg is tracked separately on
   `orders.payout_status` and advanced by the settlement cron.
 - **Price currency follows the payout rail; the seller bears the
-  Wapu fee.** `cbu_alias` sellers price in ARS, `lightning_address`
-  sellers price in sats — there is no free per-course picker
+  Wapu fee.** `cbu_alias` sellers price in ARS; both sats methods
+  (`lightning_address` and `lightning_nwc`) price in sats — there is
+  no free per-course picker
   (`expectedPriceCurrency` in `lib/creator/users.ts`; `/api/my-courses`
   rejects a mismatch). On the ARS rail the seller receives
   `gross − fee`; the create-course form previews it via

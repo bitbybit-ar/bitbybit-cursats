@@ -20,13 +20,15 @@ import { MAX_TAGS_PER_OFFERING, type Offering } from "@/lib/creator/offerings";
 import { WAPU_MIN_NET_ARS } from "@/lib/wapu-limits";
 import styles from "./offering-form.module.scss";
 
-type PayoutMethod = "cbu_alias" | "lightning_address";
+type PayoutMethod = "cbu_alias" | "lightning_address" | "lightning_nwc";
 
 export interface OfferingFormPayoutState {
   cbu: string;
   alias: string;
   lightningAddress: string;
   payoutMethod: PayoutMethod;
+  /** Whether the seller has an NWC connection stored (lightning_nwc). */
+  nwcConnected: boolean;
 }
 
 interface OfferingFormProps {
@@ -45,6 +47,9 @@ interface OfferingFormProps {
 function isPayoutConfigured(state: OfferingFormPayoutState): boolean {
   if (state.payoutMethod === "lightning_address") {
     return state.lightningAddress.trim().length > 0;
+  }
+  if (state.payoutMethod === "lightning_nwc") {
+    return state.nwcConnected;
   }
   return state.cbu.trim().length > 0 || state.alias.trim().length > 0;
 }
@@ -141,12 +146,13 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
   const [priceAmount, setPriceAmount] = useState(
     offering ? String(offering.price_amount) : ""
   );
-  // Price currency follows the payout rail (ADR 0026): ARS for the
-  // cbu_alias rail, sats for lightning_address — there is no free
-  // picker. In edit mode the offering's stored currency is
-  // authoritative (the amount is denominated in it).
+  // Price currency follows the payout rail (ADR 0026, 0029): ARS for
+  // the cbu_alias rail, sats for both sats methods (lightning_address
+  // and lightning_nwc) — there is no free picker. In edit mode the
+  // offering's stored currency is authoritative (the amount is
+  // denominated in it).
   const railCurrency: "ars" | "sats" =
-    currentPayout?.payoutMethod === "lightning_address" ? "sats" : "ars";
+    currentPayout?.payoutMethod === "cbu_alias" ? "ars" : "sats";
   const priceCurrency: "ars" | "sats" = isEdit
     ? offering!.price_currency
     : railCurrency;
@@ -444,6 +450,7 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
       alias: next.alias,
       lightningAddress: next.lightningAddress,
       payoutMethod: next.payoutMethod,
+      nwcConnected: next.nwcConnected,
     });
     setShowPayoutModal(false);
 
@@ -835,6 +842,7 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
           initialAlias={currentPayout.alias}
           initialPayoutMethod={currentPayout.payoutMethod}
           currentLightningAddress={currentPayout.lightningAddress}
+          nwcConnected={currentPayout.nwcConnected}
           onSaved={handlePayoutSaved}
           onClose={() => setShowPayoutModal(false)}
         />

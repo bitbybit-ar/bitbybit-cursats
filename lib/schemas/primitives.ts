@@ -43,3 +43,18 @@ export const LightningAddressSchema = z
   .refine((s) => parseLightningAddress(s) !== null, {
     message: "lightning_address_invalid",
   });
+
+/**
+ * NWC connection URI (NIP-47), used by the sats rail's NWC payout
+ * method (ADR 0029). Enforces only the surface shape — a
+ * `nostr+walletconnect://` prefix and a sane length. The settings
+ * PATCH does the authoritative check (relay SSRF guard + a probe
+ * make_invoice/lookup_invoice via `lib/nwc`), and the value is
+ * encrypted at rest before it is stored.
+ */
+export const NwcUriSchema = z
+  .string()
+  .transform((s) => s.trim())
+  .refine((s) => s.startsWith("nostr+walletconnect://") && s.length <= 2000, {
+    message: "nwc_uri_invalid",
+  });

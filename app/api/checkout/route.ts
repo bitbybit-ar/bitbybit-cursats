@@ -84,6 +84,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       if (err.lightning_code) {
         body.lightning_reason = err.lightning_code;
       }
+      // Same idea for an NWC mint failure (ADR 0029).
+      if (err.nwc_code) {
+        body.nwc_reason = err.nwc_code;
+      }
       return NextResponse.json(body, { status });
     }
     console.error("[checkout] failed:", err);

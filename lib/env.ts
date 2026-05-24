@@ -39,3 +39,28 @@ export function getAuthSecret(): Uint8Array {
   }
   return new TextEncoder().encode("dev-secret-change-in-production");
 }
+
+// AES-256-GCM key for encrypting wallet credentials at rest — today
+// just `users.nwc_uri`, the seller's NWC connection (ADR 0029). The
+// value is a base64-encoded 32-byte key. Required in production;
+// deterministic dev/test fallback so the suite and `npm run dev` run
+// without env wiring (the fallback is not secret and must never be
+// used to protect real credentials).
+export function getEncryptionKey(): Buffer {
+  const raw = process.env.ENCRYPTION_KEY;
+  if (raw && raw.length > 0) {
+    const buf = Buffer.from(raw, "base64");
+    if (buf.length !== 32) {
+      throw new Error(
+        "ENCRYPTION_KEY must decode to 32 bytes. Generate one with `openssl rand -base64 32`."
+      );
+    }
+    return buf;
+  }
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "ENCRYPTION_KEY is required in production to encrypt wallet credentials at rest. Generate one with `openssl rand -base64 32`."
+    );
+  }
+  return Buffer.alloc(32, "cursats-dev-encryption-key");
+}
