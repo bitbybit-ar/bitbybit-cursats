@@ -24,6 +24,19 @@
   }
 }
 
+// Embedded mode (inside the payout-setup modal): the same vertical
+// rhythm as `.section` but without the card chrome — the modal is
+// already the card, and it owns the title + intro.
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-20;
+
+  @include mobile {
+    gap: $spacing-16;
+  }
+}
+
 .sectionHeader {
   display: flex;
   flex-direction: column;
@@ -53,7 +66,11 @@
   padding: 0;
   margin: 0;
 
-  > legend {
+  // The legend and any helper paragraph (e.g. the payout-speed hint)
+  // span both columns, so the two option cards below pair up on a
+  // single row instead of the text stealing a cell.
+  > legend,
+  > p {
     grid-column: 1 / -1;
   }
 
@@ -172,17 +189,6 @@
     outline: 2px solid $focus-ring;
     outline-offset: 1px;
   }
-}
-
-.payoutLnNote {
-  margin: 0;
-  padding: $spacing-12;
-  background: $color-bg;
-  border: 1px solid $color-border;
-  border-radius: $border-radius-md;
-  font-size: $font-size-sm;
-  color: $color-text-secondary;
-  line-height: 1.5;
 }
 
 .actions {

@@ -1,4 +1,13 @@
-import { useId, type ReactNode } from "react";
+"use client";
+
+import {
+  useCallback,
+  useId,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { cn } from "@/lib/utils";
 import styles from "./tooltip.module.scss";
 
@@ -26,6 +35,10 @@ interface TooltipProps {
   children?: ReactNode;
 }
 
+// Keep the popover this far from the viewport edge when nudging it
+// back on-screen.
+const VIEWPORT_MARGIN = 8;
+
 export function Tooltip({
   text,
   example,
@@ -35,11 +48,35 @@ export function Tooltip({
   children,
 }: TooltipProps) {
   const id = useId();
+  const popoverRef = useRef<HTMLSpanElement>(null);
+  // Horizontal nudge (px) applied on top of the default centering so a
+  // popover near a screen edge — e.g. a tooltip on a left-aligned label
+  // on a phone — can't spill off the viewport. Recomputed each time the
+  // tooltip is about to open, so it self-corrects after resize/scroll.
+  const [shift, setShift] = useState(0);
+
+  const clampIntoViewport = useCallback(() => {
+    const el = popoverRef.current;
+    if (!el) return;
+    // The rect already reflects the current shift (it's baked into the
+    // transform), so we adjust by the delta needed to clear each edge.
+    const rect = el.getBoundingClientRect();
+    let next = shift;
+    if (rect.left < VIEWPORT_MARGIN) {
+      next += VIEWPORT_MARGIN - rect.left;
+    } else if (rect.right > window.innerWidth - VIEWPORT_MARGIN) {
+      next -= rect.right - (window.innerWidth - VIEWPORT_MARGIN);
+    }
+    if (next !== shift) setShift(next);
+  }, [shift]);
+
   return (
     <span
       className={cn(styles.wrapper, block && styles.wrapperBlock)}
       tabIndex={focusableWrapper ? 0 : undefined}
       aria-describedby={focusableWrapper ? id : undefined}
+      onPointerEnter={clampIntoViewport}
+      onFocus={clampIntoViewport}
     >
       {children ?? (
         <button
@@ -51,7 +88,13 @@ export function Tooltip({
           ?
         </button>
       )}
-      <span id={id} role="tooltip" className={styles.popover}>
+      <span
+        id={id}
+        role="tooltip"
+        ref={popoverRef}
+        className={styles.popover}
+        style={{ "--tooltip-shift": `${shift}px` } as CSSProperties}
+      >
         <span className={styles.text}>{text}</span>
         {example && <span className={styles.example}>{example}</span>}
       </span>

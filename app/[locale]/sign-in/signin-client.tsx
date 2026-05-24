@@ -230,71 +230,73 @@ export function SignInClient({ locale }: SignInClientProps) {
 
   return (
     <Container center>
-      <Card variant="default" className={styles.card}>
-        <h1 className={styles.title}>{t("title")}</h1>
-        <p className={styles.subtitle}>{t("subtitle")}</p>
+      <div className={styles.column}>
+        <Card variant="default" className={styles.card}>
+          <h1 className={styles.title}>{t("title")}</h1>
+          <p className={styles.subtitle}>{t("subtitle")}</p>
 
-        <SignerMethodButtons
-          onSigner={handleSigner}
-          onError={handleError}
-          onSelectNip46Qr={() => setPanel("nip46-qr")}
-          onSelectNip46Bunker={() => setPanel("nip46-bunker")}
-          onSelectNsec={() => setPanel("nsec")}
-          animate
-        />
+          <SignerMethodButtons
+            onSigner={handleSigner}
+            onError={handleError}
+            onSelectNip46Qr={() => setPanel("nip46-qr")}
+            onSelectNip46Bunker={() => setPanel("nip46-bunker")}
+            onSelectNsec={() => setPanel("nsec")}
+            animate
+          />
 
-        <div className={styles.divider}>
-          <span>{t("orNew")}</span>
-        </div>
-
-        <Button
-          type="button"
-          variant="secondary"
-          fullWidth
-          onClick={handleCreateIdentity}
-          disabled={isCreating}
-          className={styles.createButton}
-        >
-          <BoltIcon size={20} />
-          <div className={styles.createInfo}>
-            <span className={styles.createName}>
-              {isCreating ? t("creatingIdentity") : t("createIdentity")}
-            </span>
-            <span className={styles.createDescription}>
-              {t("createIdentityDescription")}
-            </span>
+          <div className={styles.divider}>
+            <span>{t("orNew")}</span>
           </div>
-        </Button>
 
-        {errorMessage && panel === "picker" ? (
-          <p className={styles.error} role="alert">
-            {errorMessage}
-          </p>
-        ) : null}
+          <Button
+            type="button"
+            variant="secondary"
+            fullWidth
+            onClick={handleCreateIdentity}
+            disabled={isCreating}
+            className={styles.createButton}
+          >
+            <BoltIcon size={20} />
+            <div className={styles.createInfo}>
+              <span className={styles.createName}>
+                {isCreating ? t("creatingIdentity") : t("createIdentity")}
+              </span>
+              <span className={styles.createDescription}>
+                {t("createIdentityDescription")}
+              </span>
+            </div>
+          </Button>
 
-        {/* The WoT browser extension can't be installed on phones,
-            so the hint only makes sense on desktop. */}
-        {!isMobile ? (
-          <p className={styles.wotHint}>
-            {t("wotHint")}{" "}
-            <a
-              href="https://nostr-wot.com/download"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={styles.wotLink}
-            >
-              {t("wotExtensionLabel")}
-            </a>
-            ?
-          </p>
-        ) : null}
-      </Card>
+          {errorMessage && panel === "picker" ? (
+            <p className={styles.error} role="alert">
+              {errorMessage}
+            </p>
+          ) : null}
 
-      <div className={styles.backLinkWrapper}>
-        <Link href="/" className={styles.backLink}>
-          <ArrowLeftIcon size={16} />
-          {t("backToHome")}
-        </Link>
+          {/* The WoT browser extension can't be installed on phones,
+              so the hint only makes sense on desktop. */}
+          {!isMobile ? (
+            <p className={styles.wotHint}>
+              {t("wotHint")}{" "}
+              <a
+                href="https://nostr-wot.com/download"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.wotLink}
+              >
+                {t("wotExtensionLabel")}
+              </a>
+              ?
+            </p>
+          ) : null}
+        </Card>
+
+        <div className={styles.backLinkWrapper}>
+          <Link href="/" className={styles.backLink}>
+            <ArrowLeftIcon size={16} />
+            {t("backToHome")}
+          </Link>
+        </div>
       </div>
 
       {panel === "nsec" ? (

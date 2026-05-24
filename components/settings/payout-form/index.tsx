@@ -12,7 +12,58 @@ import {
   hashSettingsBody,
 } from "@/lib/admin/sign-settings-payload";
 import { isSignerCancellation } from "@/lib/nostr/auth-errors";
+import { checkAlias, checkCbu } from "@/lib/admin/ar-bank-id";
 import styles from "./payout-form.module.scss";
+
+// Minimal user@domain shape check for the LN address before hitting
+// the server's LUD-21 probe — catches obvious typos without a round
+// trip. The probe remains the authoritative check.
+const LN_ADDRESS_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// LUD-21 probe failure reason → seller-facing message key.
+const LN_PROBE_REASON_KEYS: Record<string, string> = {
+  invalid_address: "lightningAddressInvalidFormat",
+  lnurl_unreachable: "lightningAddressUnreachable",
+  lnurl_no_lud21: "lightningAddressNoLud21",
+  lnurl_invalid_response: "lightningAddressMalformed",
+  bolt11_no_payment_hash: "lightningAddressMalformed",
+};
+
+/**
+ * Maps a /api/settings error response to the best `settings.form`
+ * message key, so the toast reflects the actual server-side reason
+ * (bad CBU, bad alias, LN format/LUD-21, auth) instead of a generic
+ * failure. Returns a key; the component passes it through `t()`.
+ */
+function serverErrorMessageKey(
+  json: {
+    error?: string;
+    reason?: string;
+    issues?: Array<{ message?: string }>;
+  } | null
+): string {
+  if (!json) return "saveFailed";
+  // LUD-21 probe failure (top-level error + reason).
+  if (json.error === "lightning_address_invalid") {
+    return (
+      (json.reason && LN_PROBE_REASON_KEYS[json.reason]) ??
+      "lightningAddressInvalid"
+    );
+  }
+  // Zod schema failures arrive as invalid_body + issues[].message,
+  // where each message is the schema's refine code.
+  if (json.error === "invalid_body" && Array.isArray(json.issues)) {
+    const messages = json.issues.map((i) => i.message);
+    if (messages.includes("cbu_invalid")) return "cbuInvalid";
+    if (messages.includes("alias_invalid")) return "aliasInvalid";
+    if (messages.includes("lightning_address_invalid")) {
+      return "lightningAddressInvalidFormat";
+    }
+  }
+  if (json.error === "auth_clock_skew") return "signClockSkew";
+  if (json.error === "auth_invalid_signature") return "signRequiredBody";
+  return "saveFailed";
+}
 
 type PayoutMethod = "cbu_alias" | "lightning_address";
 type TransferSpeed = "fiat_transfer" | "fast_fiat_transfer";
@@ -23,9 +74,9 @@ interface PayoutFormProps {
   initialPayoutMethod: PayoutMethod;
   initialTransferSpeed: TransferSpeed;
   /**
-   * Read-only display value. The actual Lightning Address is owned
-   * by the Profile form; this section only shows the rail picker
-   * and (when relevant) a pointer back to Profile.
+   * The saved Lightning Address, used to seed the editable field on
+   * the sats rail. The same value is also editable on the Profile tab
+   * (as the Nostr lud16); both write the one `users.lightning_address`.
    */
   currentLightningAddress: string;
   /**
@@ -38,7 +89,16 @@ interface PayoutFormProps {
     cbu: string;
     alias: string;
     payoutMethod: PayoutMethod;
+    lightningAddress: string;
   }) => void;
+  /**
+   * Embedded mode: render only the form fields, dropping the card
+   * wrapper and the "How you get paid" header. Used inside the
+   * payout-setup modal, which supplies its own title + intro — so we
+   * avoid a card-inside-a-card and a duplicate heading. The Settings
+   * page leaves this false and keeps the section card + header.
+   */
+  embedded?: boolean;
 }
 
 function emptyToNull(value: string): string | null {
@@ -53,6 +113,7 @@ export function PayoutForm({
   initialTransferSpeed,
   currentLightningAddress,
   onSaved,
+  embedded = false,
 }: PayoutFormProps) {
   const t = useTranslations("settings.form");
   const tCommon = useTranslations("common");
@@ -65,6 +126,12 @@ export function PayoutForm({
     useState<PayoutMethod>(initialPayoutMethod);
   const [cbu, setCbu] = useState(initialCbu);
   const [alias, setAlias] = useState(initialAlias);
+  // The LN address is the sats payout destination, editable here (and
+  // also on the Profile tab as the Nostr lud16 — both write the same
+  // field). Seeded from the saved value.
+  const [lightningAddress, setLightningAddress] = useState(
+    currentLightningAddress
+  );
   const [transferSpeed, setTransferSpeed] =
     useState<TransferSpeed>(initialTransferSpeed);
   const [isPending, setIsPending] = useState(false);
@@ -73,24 +140,51 @@ export function PayoutForm({
     e.preventDefault();
     if (isPending) return;
 
-    if (payoutMethod === "cbu_alias" && !cbu.trim() && !alias.trim()) {
-      showToast(t("destinationRequired"), "error");
-      return;
+    // Validate every field for the active rail before submitting, and
+    // surface a specific message for each — the same validators the
+    // server uses (checkCbu/checkAlias), so client and server agree.
+    if (payoutMethod === "cbu_alias") {
+      if (!cbu.trim() && !alias.trim()) {
+        showToast(t("destinationRequired"), "error");
+        return;
+      }
+      // CBU is 22 digits flat.
+      if (cbu.trim() && checkCbu(cbu) !== null) {
+        showToast(t("cbuInvalid"), "error");
+        return;
+      }
+      // Alias: BCRA rule — 6–20 chars of [A-Za-z0-9.-], at least one
+      // letter, no ñ/accents. Case-insensitive on the rail, so we don't
+      // touch case.
+      if (alias.trim() && checkAlias(alias) !== null) {
+        showToast(t("aliasInvalid"), "error");
+        return;
+      }
     }
-    if (
-      payoutMethod === "lightning_address" &&
-      !currentLightningAddress.trim()
-    ) {
-      showToast(t("lightningAddressRequired"), "error");
-      return;
+
+    if (payoutMethod === "lightning_address") {
+      if (!lightningAddress.trim()) {
+        showToast(t("lightningAddressRequired"), "error");
+        return;
+      }
+      if (!LN_ADDRESS_RE.test(lightningAddress.trim())) {
+        showToast(t("lightningAddressInvalidFormat"), "error");
+        return;
+      }
     }
 
     const nextCbu = emptyToNull(cbu);
     const nextAlias = emptyToNull(alias);
+    const nextLightningAddress = emptyToNull(lightningAddress);
     const cbuChanged = nextCbu !== emptyToNull(initialCbu);
     const aliasChanged = nextAlias !== emptyToNull(initialAlias);
     const railChanged = payoutMethod !== initialPayoutMethod;
-    const requiresReSign = cbuChanged || aliasChanged || railChanged;
+    // An LN-address change is a payment-destination change → NIP-98
+    // re-sign (ADR 0008/0015), same as cbu/alias/rail.
+    const lightningChanged =
+      nextLightningAddress !== emptyToNull(currentLightningAddress);
+    const requiresReSign =
+      cbuChanged || aliasChanged || railChanged || lightningChanged;
 
     setIsPending(true);
     try {
@@ -99,6 +193,7 @@ export function PayoutForm({
         alias: nextAlias,
         payout_method: payoutMethod,
         transfer_speed: transferSpeed,
+        lightning_address: nextLightningAddress,
       });
 
       const headers: Record<string, string> = {
@@ -131,22 +226,29 @@ export function PayoutForm({
         body: serialized,
       });
       if (!res.ok) {
-        if (res.status === 401 || res.status === 404) {
-          if (res.status === 404) {
-            router.push("/");
-            return;
-          }
-          const json = (await res.json().catch(() => null)) as {
-            error?: string;
-          } | null;
-          if (json?.error === "auth_clock_skew") {
-            showToast(t("signClockSkew"), "error");
-            return;
-          }
-          showToast(t("signRequiredBody"), "error");
+        if (res.status === 404) {
+          router.push("/");
           return;
         }
-        showToast(t("saveFailed"), "error");
+        const json = (await res.json().catch(() => null)) as {
+          error?: string;
+          reason?: string;
+          issues?: Array<{ message?: string }>;
+        } | null;
+        if (res.status === 401 || res.status === 403) {
+          showToast(
+            t(
+              json?.error === "auth_clock_skew"
+                ? "signClockSkew"
+                : "signRequiredBody"
+            ),
+            "error"
+          );
+          return;
+        }
+        // Surface the specific server-side error (bad CBU/alias, LN
+        // format/LUD-21, …) rather than a generic failure.
+        showToast(t(serverErrorMessageKey(json)), "error");
         return;
       }
       showToast(t("saved"), "success");
@@ -155,6 +257,7 @@ export function PayoutForm({
           cbu: cbu.trim(),
           alias: alias.trim(),
           payoutMethod,
+          lightningAddress: lightningAddress.trim(),
         });
       } else {
         router.refresh();
@@ -168,11 +271,13 @@ export function PayoutForm({
 
   return (
     <form className={styles.form} onSubmit={handleSubmit}>
-      <section className={styles.section}>
-        <header className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>{t("sectionPayout")}</h2>
-          <p className={styles.sectionHint}>{t("sectionPayoutHint")}</p>
-        </header>
+      <section className={embedded ? styles.fields : styles.section}>
+        {embedded ? null : (
+          <header className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>{t("sectionPayout")}</h2>
+            <p className={styles.sectionHint}>{t("sectionPayoutHint")}</p>
+          </header>
+        )}
 
         <fieldset className={styles.fieldset}>
           <legend className={styles.legend}>{t("payoutMethod")}</legend>
@@ -210,96 +315,120 @@ export function PayoutForm({
 
         {payoutMethod === "cbu_alias" ? (
           <>
-          <div className={styles.row}>
-            <div className={styles.field}>
-              <label htmlFor="cbu" className={styles.label}>
-                {t("cbu")}
-                <Tooltip
-                  text={t("cbuTooltip")}
-                  example={t("cbuExample")}
-                  label={tCommon("tooltipLabel")}
+            <div className={styles.row}>
+              <div className={styles.field}>
+                <label htmlFor="cbu" className={styles.label}>
+                  {t("cbu")}
+                  <Tooltip
+                    text={t("cbuTooltip")}
+                    example={t("cbuExample")}
+                    label={tCommon("tooltipLabel")}
+                  />
+                </label>
+                <input
+                  id="cbu"
+                  type="text"
+                  inputMode="numeric"
+                  className={styles.input}
+                  value={cbu}
+                  onChange={(e) => setCbu(e.target.value)}
+                  placeholder={t("cbuPlaceholder")}
+                  autoComplete="off"
+                  spellCheck={false}
                 />
-              </label>
-              <input
-                id="cbu"
-                type="text"
-                inputMode="numeric"
-                className={styles.input}
-                value={cbu}
-                onChange={(e) => setCbu(e.target.value)}
-                placeholder={t("cbuPlaceholder")}
-                autoComplete="off"
-                spellCheck={false}
-              />
+              </div>
+
+              <div className={styles.field}>
+                <label htmlFor="alias" className={styles.label}>
+                  {t("alias")}
+                  <Tooltip
+                    text={t("aliasTooltip")}
+                    example={t("aliasExample")}
+                    label={tCommon("tooltipLabel")}
+                  />
+                </label>
+                <input
+                  id="alias"
+                  type="text"
+                  className={styles.input}
+                  value={alias}
+                  onChange={(e) => setAlias(e.target.value)}
+                  placeholder={t("aliasPlaceholder")}
+                  maxLength={20}
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                />
+              </div>
             </div>
 
-            <div className={styles.field}>
-              <label htmlFor="alias" className={styles.label}>
-                {t("alias")}
-                <Tooltip
-                  text={t("aliasTooltip")}
-                  example={t("aliasExample")}
-                  label={tCommon("tooltipLabel")}
+            <fieldset className={styles.fieldset}>
+              <legend className={styles.legend}>{t("transferSpeed")}</legend>
+              <p className={styles.sectionHint}>{t("transferSpeedHint")}</p>
+              <label
+                className={`${styles.radio} ${transferSpeed === "fiat_transfer" ? styles.radioSelected : ""}`}
+              >
+                <input
+                  type="radio"
+                  name="transfer_speed"
+                  value="fiat_transfer"
+                  checked={transferSpeed === "fiat_transfer"}
+                  onChange={() => setTransferSpeed("fiat_transfer")}
                 />
+                <span>
+                  <strong>{t("transferStandard")}</strong>
+                  <span className={styles.radioHint}>
+                    {t("transferStandardHint")}
+                  </span>
+                </span>
               </label>
-              <input
-                id="alias"
-                type="text"
-                className={styles.input}
-                value={alias}
-                onChange={(e) => setAlias(e.target.value)}
-                placeholder={t("aliasPlaceholder")}
-                autoComplete="off"
-                spellCheck={false}
-              />
-            </div>
-          </div>
-
-          <fieldset className={styles.fieldset}>
-            <legend className={styles.legend}>{t("transferSpeed")}</legend>
-            <p className={styles.sectionHint}>{t("transferSpeedHint")}</p>
-            <label
-              className={`${styles.radio} ${transferSpeed === "fiat_transfer" ? styles.radioSelected : ""}`}
-            >
-              <input
-                type="radio"
-                name="transfer_speed"
-                value="fiat_transfer"
-                checked={transferSpeed === "fiat_transfer"}
-                onChange={() => setTransferSpeed("fiat_transfer")}
-              />
-              <span>
-                <strong>{t("transferStandard")}</strong>
-                <span className={styles.radioHint}>
-                  {t("transferStandardHint")}
+              <label
+                className={`${styles.radio} ${transferSpeed === "fast_fiat_transfer" ? styles.radioSelected : ""}`}
+              >
+                <input
+                  type="radio"
+                  name="transfer_speed"
+                  value="fast_fiat_transfer"
+                  checked={transferSpeed === "fast_fiat_transfer"}
+                  onChange={() => setTransferSpeed("fast_fiat_transfer")}
+                />
+                <span>
+                  <strong>{t("transferFast")}</strong>
+                  <span className={styles.radioHint}>
+                    {t("transferFastHint")}
+                  </span>
                 </span>
-              </span>
-            </label>
-            <label
-              className={`${styles.radio} ${transferSpeed === "fast_fiat_transfer" ? styles.radioSelected : ""}`}
-            >
-              <input
-                type="radio"
-                name="transfer_speed"
-                value="fast_fiat_transfer"
-                checked={transferSpeed === "fast_fiat_transfer"}
-                onChange={() => setTransferSpeed("fast_fiat_transfer")}
-              />
-              <span>
-                <strong>{t("transferFast")}</strong>
-                <span className={styles.radioHint}>
-                  {t("transferFastHint")}
-                </span>
-              </span>
-            </label>
-          </fieldset>
+              </label>
+            </fieldset>
           </>
         ) : (
-          <p className={styles.payoutLnNote}>
-            {t("payoutLnNote", {
-              address: currentLightningAddress || t("payoutLnEmpty"),
-            })}
-          </p>
+          // The LN address is the sats payout destination, so it's
+          // editable right here — in Settings and in the modal. It is
+          // also the public Nostr lud16, editable in the Profile tab
+          // too; both write the same field. Validated server-side
+          // (LUD-21 probe) on save.
+          <div className={styles.field}>
+            <label htmlFor="lightning_address" className={styles.label}>
+              {t("lightningAddress")}
+              <Tooltip
+                text={t("lightningAddressTooltip")}
+                example={t("lightningAddressExample")}
+                label={tCommon("tooltipLabel")}
+              />
+            </label>
+            <input
+              id="lightning_address"
+              type="text"
+              inputMode="email"
+              className={styles.input}
+              value={lightningAddress}
+              onChange={(e) => setLightningAddress(e.target.value)}
+              placeholder={t("lightningAddressPlaceholder")}
+              autoComplete="off"
+              autoCapitalize="none"
+              spellCheck={false}
+            />
+          </div>
         )}
       </section>
 

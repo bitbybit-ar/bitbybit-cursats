@@ -59,6 +59,38 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Tooltips no longer overflow the screen on mobile.** The shared
+  `Tooltip` popover now measures itself when it opens and nudges back
+  inside the viewport (with the arrow staying over the trigger), and
+  its width is capped to the screen. Fixes `?` tooltips on left-aligned
+  labels (e.g. the create-course form) clipping off-screen on phones.
+- **Course pricing adapts to the seller's payout state.** The Pricing
+  section now handles three cases explicitly: with no payout method
+  configured it hides the price field (the currency is undefined until
+  a rail is chosen) and shows a "Set up payment method" button that
+  opens the inline payout-setup modal; on the Wapu (CBU/alias) rail it
+  prices in ARS with the live fee/net estimate and minimum-net check;
+  on the Lightning rail it prices in sats. Publish stays disabled
+  until a payout method exists.
+- **Create/edit course form now fills the container width.** The form
+  was capped at 960px and left-aligned, leaving a lopsided gap on the
+  right next to the full-width page header. It now spans the full
+  container; Title and Slug pair into a two-column row, the price
+  input sits beside its currency note and live fee/net estimate, and
+  the code-count input is width-capped so short fields don't stretch.
+  Long fields (description, tags, download URL, cover) stay
+  full-width. All panes collapse to a single column on mobile.
+- **Rich landing animations now run on tablets and small laptops.**
+  The card-deck deal (Features) and the pinned scroll-journey
+  (How-it-works) were gated at a 1024px CSS-pixel viewport, so a
+  desktop-class laptop rendering below that width (OS display scaling,
+  browser zoom, or a non-maximized window) saw only the simplified
+  fade fallback. All landing animations now gate on a single axis —
+  the layout's mobile breakpoint (768px) — so every non-phone width
+  gets the same animation as desktop. The highlighted-courses grid
+  reveal also moved from pointer-type to viewport-width detection, so
+  a tablet or touchscreen laptop gets the desktop slide-in rather than
+  the phone fade-up.
 - **Settings: Notifications folded into Preferences.** The standalone
   Notifications tab is gone; its toggles now live under **Preferences**
   with a single Save. The informational "Theme" block was removed

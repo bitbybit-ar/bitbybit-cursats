@@ -26,9 +26,13 @@ interface FeatureDeckProps {
   slots: readonly DeckSlot[];
 }
 
-// Match the polaroid module's mobile fallback breakpoint — the stage
-// can't hold a deck above a single-column phone layout.
-const DESKTOP_MIN_PX = 1024;
+// The board is a wrapping multi-column grid above the mobile
+// breakpoint ($breakpoint-mobile, 768px) and collapses to a single
+// column below it (see `.board` @include mobile). The deck deal needs
+// that multi-column grid to fan into, so we run it for every
+// non-mobile width — small laptops and tablets included — and fall
+// back to the per-card cascade only on phones.
+const DECK_MIN_PX = 768;
 
 // Cadence — total deal time ≈ rows × ROW + (cols-1) × PER + spring
 // tail. Tuned so the whole 3×3 deal completes in ~4s with the
@@ -70,7 +74,7 @@ function clusterRows(positions: PositionedSlot[]): PositionedSlot[][] {
 export function FeatureDeck({ slots }: FeatureDeckProps) {
   const reduceMotion = useReducedMotion();
   const [mounted, setMounted] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(false);
+  const [isWide, setIsWide] = useState(false);
   const [inView, setInView] = useState(false);
   const [offsets, setOffsets] = useState<
     Map<string, { dx: number; dy: number }>
@@ -85,16 +89,16 @@ export function FeatureDeck({ slots }: FeatureDeckProps) {
   useEffect(() => {
     setMounted(true);
     if (reduceMotion) return;
-    const mq = window.matchMedia(`(min-width: ${DESKTOP_MIN_PX}px)`);
-    setIsDesktop(mq.matches);
-    const onChange = () => setIsDesktop(mq.matches);
+    const mq = window.matchMedia(`(min-width: ${DECK_MIN_PX}px)`);
+    setIsWide(mq.matches);
+    const onChange = () => setIsWide(mq.matches);
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
   }, [reduceMotion]);
 
   const enabled = mounted && !reduceMotion;
-  const animated = enabled && isDesktop;
-  const cascade = enabled && !isDesktop;
+  const animated = enabled && isWide;
+  const cascade = enabled && !isWide;
 
   // Use the first slot as the deck origin and measure each slot's
   // center relative to it. Runs in useLayoutEffect so positions

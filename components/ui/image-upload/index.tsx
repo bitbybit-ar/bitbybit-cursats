@@ -25,14 +25,20 @@ import {
   uploadToBlossom,
 } from "@/lib/blossom/client";
 import { isSignerCancellation } from "@/lib/nostr/auth-errors";
+import { cn } from "@/lib/utils";
 import styles from "./image-upload.module.scss";
+
+type Mode = "upload" | "url";
 
 interface ImageUploadProps {
   /** Currently persisted URL or null. */
   value: string | null;
   onChange: (url: string | null) => void;
-  /** Field label, sourced from the parent's translation namespace. */
-  label: string;
+  /**
+   * Optional field label. Omit when the surrounding section already
+   * names the field (e.g. the create-course "Cover image" header).
+   */
+  label?: string;
   /** When set, render the field as optional with the supplied label. */
   optionalLabel?: string;
   /** When true, the form requires a value (used for the "required" tag). */
@@ -63,6 +69,10 @@ export function ImageUpload({
   const t = useTranslations("myCourses.form.imageUpload");
   const { signWithPrompt } = useSignerContext();
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
+  // Which input the user is using to set the cover. Upload is the
+  // primary path; "url" swaps in a paste-a-link field. The persisted
+  // `value` is shared across both, so switching modes never loses it.
+  const [mode, setMode] = useState<Mode>("upload");
 
   async function handleFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -118,12 +128,14 @@ export function ImageUpload({
 
   return (
     <div className={styles.field}>
-      <span className={styles.label}>
-        {label}
-        {optionalLabel && !required ? (
-          <span className={styles.optional}>{optionalLabel}</span>
-        ) : null}
-      </span>
+      {label ? (
+        <span className={styles.label}>
+          {label}
+          {optionalLabel && !required ? (
+            <span className={styles.optional}>{optionalLabel}</span>
+          ) : null}
+        </span>
+      ) : null}
 
       {value ? (
         <div className={styles.preview}>
@@ -151,40 +163,71 @@ export function ImageUpload({
         </div>
       ) : null}
 
-      <div className={styles.controls}>
-        <label className={styles.fileButton}>
-          <input
-            type="file"
-            accept={ACCEPTED_TYPES.join(",")}
-            className={styles.fileInput}
-            onChange={handleFile}
-            disabled={phase.kind === "uploading"}
-          />
-          <span>
-            {phase.kind === "uploading" ? t("uploading") : t("pickFile")}
-          </span>
-        </label>
-      </div>
+      <div className={styles.inputRow}>
+        <div
+          className={styles.modeToggle}
+          role="group"
+          aria-label={t("modeToggleLabel")}
+        >
+          <button
+            type="button"
+            aria-pressed={mode === "upload"}
+            className={cn(
+              styles.modeButton,
+              mode === "upload" && styles.modeButtonActive
+            )}
+            onClick={() => setMode("upload")}
+          >
+            {t("modeUpload")}
+          </button>
+          <button
+            type="button"
+            aria-pressed={mode === "url"}
+            className={cn(
+              styles.modeButton,
+              mode === "url" && styles.modeButtonActive
+            )}
+            onClick={() => setMode("url")}
+          >
+            {t("modeUrl")}
+          </button>
+        </div>
 
-      <details className={styles.fallback}>
-        <summary className={styles.fallbackSummary}>
-          {t("pasteUrlInstead")}
-        </summary>
-        <input
-          type="url"
-          className={styles.urlInput}
-          value={value ?? ""}
-          onChange={(e) => onChange(e.target.value || null)}
-          placeholder="https://…"
-        />
-      </details>
+        {mode === "upload" ? (
+          <label className={styles.fileButton}>
+            <input
+              type="file"
+              accept={ACCEPTED_TYPES.join(",")}
+              className={styles.fileInput}
+              onChange={handleFile}
+              disabled={phase.kind === "uploading"}
+            />
+            <span>
+              {phase.kind === "uploading" ? t("uploading") : t("pickFile")}
+            </span>
+          </label>
+        ) : (
+          <input
+            type="url"
+            className={styles.urlInput}
+            value={value ?? ""}
+            onChange={(e) => onChange(e.target.value || null)}
+            placeholder="https://…"
+            aria-label={t("modeUrl")}
+            autoComplete="off"
+            spellCheck={false}
+          />
+        )}
+      </div>
 
       {phase.kind === "error" ? (
         <p className={styles.error} role="alert">
           {phase.message}
         </p>
       ) : null}
-      <p className={styles.hint}>{t("hint")}</p>
+      <p className={styles.hint}>
+        {mode === "upload" ? t("hint") : t("urlHint")}
+      </p>
     </div>
   );
 }

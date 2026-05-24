@@ -9,7 +9,6 @@
   flex-direction: column;
   gap: $spacing-32;
   width: 100%;
-  max-width: 960px;
 }
 
 .section {
@@ -32,6 +31,12 @@
 }
 
 .sectionTitle {
+  // Flex so a section title can carry an inline tooltip trigger
+  // (e.g. Pricing) aligned with the heading text. Titles without one
+  // are unaffected — a single text child lays out identically.
+  display: flex;
+  align-items: center;
+  gap: $spacing-8;
   margin: 0;
   font-family: $font-family-display;
   font-size: $font-size-base;
@@ -50,6 +55,55 @@
   display: flex;
   flex-direction: column;
   gap: $spacing-4;
+}
+
+// A short numeric/enum field (e.g. code count) that would read as
+// broken if stretched to the full card width. Caps it at a sane
+// measure and lets it sit left; on mobile it goes edge-to-edge.
+.fieldNarrow {
+  max-width: 360px;
+
+  @include mobile {
+    max-width: none;
+  }
+}
+
+// Right-hand companion to the price input inside `.row`: the rail
+// currency note plus the live Wapu fee/net estimate. Pairing it
+// beside the input (instead of stacking helper text underneath) is
+// what lets the pricing section use the full container width.
+.priceAside {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-4;
+  justify-content: center;
+
+  @include mobile {
+    justify-content: flex-start;
+  }
+}
+
+// Shown in the Pricing section when the seller has no payout method
+// configured. The price field is hidden entirely (its currency is
+// undefined until a rail is chosen), replaced by this prompt + a
+// button that opens the payout-setup modal. No box of its own — the
+// prompt reads as a paragraph directly under the section hint, with
+// the action button centered below it.
+.payoutCallout {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-16;
+}
+
+.payoutCalloutText {
+  margin: 0;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: $line-height-base;
+}
+
+.payoutCalloutButton {
+  align-self: center;
 }
 
 .payoutEstimate {
