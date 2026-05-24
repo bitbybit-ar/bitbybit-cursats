@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | Two primitives (`code`) | Documented the required per-offering redeem/contact link (`offerings.redeem_url`) captured in the create-course form and surfaced on the receipt's "Contact the teacher" card; accepted protocols are `https:`, `mailto:`, `tel:`. | Code buyers had no guidance on where to use their code; the offering now records where to redeem it (issue #60). |
 | 2026-05-24 | Two primitives, By design | Noted the per-order download access bound (five fetches / 30 days) on the `download` primitive, and retitled the "Unlimited downloads" by-design point to "Unlimited sales" so it reads as the inventory strength it describes, not as unlimited per-buyer downloads. | The download proxy now caps per-order fetches and expires the link (`lib/download-limits.ts`); the doc must not imply a buyer gets unlimited downloads. |
 | 2026-05-24 | Lifecycle, Mutation surface | Documented the per-course actions menu on My courses (view, see orders, edit, mint codes, archive, delete), the new permanent **Delete course** action (`DELETE /api/my-courses/[id]/delete`, refused while any order exists — ADR 0031), and rewrote the soft-delete note (offerings retire via `archived_at`; unsold offerings can now be hard-deleted). Noted that minting opens in a dialog and archive/delete use an in-app confirmation rather than the browser prompt. | The My courses surface gained a kebab actions menu with a permanent delete; the doc still claimed nothing is ever hard-deleted. |
 | 2026-05-24 | Two primitives, Pricing | Noted that the sats pricing currency applies to both sats-rail methods (`lightning_address` and `lightning_nwc`), and generalized the "LUD-21 poller" lifecycle aside to the direct-lightning poller. | ADR 0029 — NWC is a second sats-rail input method and prices in sats exactly like the Lightning Address. |
@@ -64,6 +65,16 @@ last code at once — the loser lands on a "code pending" receipt
 state rather than being double-charged. Redemption itself stays
 in-person and low-friction: the seller reads the code off the
 buyer's phone at the next class and marks it off on their side.
+
+Every `code` offering also carries a **redeem/contact link**
+(`offerings.redeem_url`), required in the create-course form's
+"Content & delivery" section. It is the page or contact channel —
+a web page, WhatsApp/Telegram link, email (`mailto:`), or phone
+(`tel:`) — where the buyer presents the code, and it surfaces on
+the receipt's "Contact the teacher" card (see
+[delivery-and-receipts](./delivery-and-receipts.md#the-receipt-page--always-available)).
+The accepted protocols (`https:`, `mailto:`, `tel:`) are enforced
+both client-side and by the Zod schema (`lib/creator/redeem-url.ts`).
 
 ### `download` — digital file
 

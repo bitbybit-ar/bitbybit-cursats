@@ -113,6 +113,13 @@
       "when": 1780000000000,
       "tag": "0015_download_access_limits",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1780100000000,
+      "tag": "0016_offering_redeem_url",
+      "breakpoints": true
     }
   ]
 }

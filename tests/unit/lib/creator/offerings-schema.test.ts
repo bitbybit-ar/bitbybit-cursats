@@ -21,6 +21,7 @@ const validCode = {
   price_amount: 5000,
   price_currency: "ars" as const,
   image_url: "https://example.com/cover.png",
+  redeem_url: "https://wa.me/5491100000000",
   code_count: 10,
 };
 
@@ -59,6 +60,43 @@ describe("CreateOfferingSchema — code offerings", () => {
     ).toBe(false);
     expect(
       CreateOfferingSchema.safeParse({ ...validCode, code_count: 10_001 }).success
+    ).toBe(false);
+  });
+
+  it("rejects a code offering with no redeem_url", () => {
+    const { redeem_url: _omit, ...noRedeem } = validCode;
+    const parsed = CreateOfferingSchema.safeParse(noRedeem);
+    expect(parsed.success).toBe(false);
+    if (!parsed.success) {
+      expect(
+        parsed.error.issues.some((i) => i.path.includes("redeem_url"))
+      ).toBe(true);
+    }
+  });
+
+  it("accepts https, wa.me, mailto:, and tel: redeem links", () => {
+    for (const redeem_url of [
+      "https://example.com/redeem",
+      "https://wa.me/5491100000000",
+      "mailto:teacher@example.com",
+      "tel:+5491100000000",
+    ]) {
+      expect(
+        CreateOfferingSchema.safeParse({ ...validCode, redeem_url }).success
+      ).toBe(true);
+    }
+  });
+
+  it("rejects an http:// or malformed redeem_url", () => {
+    expect(
+      CreateOfferingSchema.safeParse({
+        ...validCode,
+        redeem_url: "http://example.com/redeem",
+      }).success
+    ).toBe(false);
+    expect(
+      CreateOfferingSchema.safeParse({ ...validCode, redeem_url: "not-a-url" })
+        .success
     ).toBe(false);
   });
 });
@@ -185,6 +223,19 @@ describe("UpdateOfferingSchema", () => {
       UpdateOfferingSchema.safeParse({
         type: "download",
         download_url: "https://files.example.com/x.pdf",
+      }).success
+    ).toBe(true);
+  });
+
+  it("rejects type=code with no redeem_url", () => {
+    expect(UpdateOfferingSchema.safeParse({ type: "code" }).success).toBe(false);
+  });
+
+  it("accepts type=code with a valid redeem_url", () => {
+    expect(
+      UpdateOfferingSchema.safeParse({
+        type: "code",
+        redeem_url: "mailto:teacher@example.com",
       }).success
     ).toBe(true);
   });

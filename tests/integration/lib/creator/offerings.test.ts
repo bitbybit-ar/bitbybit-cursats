@@ -46,6 +46,7 @@ describe("admin/offerings/createOfferingForCreator", () => {
         price_amount: 5000,
         price_currency: "ars" as const,
         image_url: "https://example.com/cover.png",
+        redeem_url: "https://wa.me/5491100000000",
         code_count: 5,
       },
       ACTOR
@@ -54,6 +55,7 @@ describe("admin/offerings/createOfferingForCreator", () => {
     if (!result.ok) return;
     expect(result.offering.slug).toBe("intro-bitcoin");
     expect(result.offering.user_id).toBe(user.id);
+    expect(result.offering.redeem_url).toBe("https://wa.me/5491100000000");
     // ADR 0019 follow-on: the server mints `code_count` unique
     // codes server-side. Each code is the platform's 8-char
     // alphanumeric format (4-4 with a hyphen, e.g. NF26-HJVU).
@@ -189,6 +191,47 @@ describe("admin/offerings/updateOfferingForCreator", () => {
     expect(auditRows.length).toBe(1);
     const diff = auditRows[0].payload_diff as { changed: string[] };
     expect(diff.changed.sort()).toEqual(["price_amount", "title"]);
+  });
+
+  it("patches redeem_url and leaves it untouched when omitted", async () => {
+    const user = await seedUser({ pubkey: ACTOR });
+    const created = await createOfferingForCreator(
+      user.id,
+      {
+        slug: "redeem-edit",
+        type: "code",
+        title: "Original",
+        description: "Original.",
+        price_amount: 1000,
+        price_currency: "ars" as const,
+        image_url: "https://example.com/cover.png",
+        redeem_url: "https://wa.me/5491100000000",
+        code_count: 5,
+      },
+      ACTOR
+    );
+    if (!created.ok) throw new Error("seed failed");
+
+    const changed = await updateOfferingForCreator(
+      user.id,
+      created.offering.id,
+      { redeem_url: "mailto:teacher@example.com" },
+      ACTOR
+    );
+    expect(changed.ok).toBe(true);
+    if (!changed.ok) return;
+    expect(changed.offering.redeem_url).toBe("mailto:teacher@example.com");
+
+    // A patch that omits redeem_url must not clear it.
+    const untouched = await updateOfferingForCreator(
+      user.id,
+      created.offering.id,
+      { title: "Renamed" },
+      ACTOR
+    );
+    expect(untouched.ok).toBe(true);
+    if (!untouched.ok) return;
+    expect(untouched.offering.redeem_url).toBe("mailto:teacher@example.com");
   });
 
   it("returns not_found for an unknown id", async () => {
