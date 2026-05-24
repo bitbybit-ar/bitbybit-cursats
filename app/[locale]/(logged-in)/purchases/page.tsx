@@ -216,13 +216,25 @@ export default async function PurchasesPage({
                     </p>
                   </div>
 
-                  <span
-                    className={`${styles.status} ${
-                      styles[`status-${order.status}`]
-                    }`}
-                  >
-                    {tStatus(order.status)}
-                  </span>
+                  {isPaid ? (
+                    <Link
+                      href={receiptHref}
+                      aria-label={t("viewReceipt")}
+                      className={`${styles.status} ${
+                        styles[`status-${order.status}`]
+                      }`}
+                    >
+                      {tStatus(order.status)}
+                    </Link>
+                  ) : (
+                    <span
+                      className={`${styles.status} ${
+                        styles[`status-${order.status}`]
+                      }`}
+                    >
+                      {tStatus(order.status)}
+                    </span>
+                  )}
 
                   <div className={styles.actions}>
                     {isPending ? (
@@ -232,10 +244,9 @@ export default async function PurchasesPage({
                       >
                         {t("continueCheckout")} <ArrowRightIcon size={14} />
                       </Link>
-                    ) : (
+                    ) : isPaid ? null : (
                       <Link href={receiptHref} className={styles.actionPrimary}>
-                        {isPaid ? t("openCourse") : t("viewReceipt")}{" "}
-                        <ArrowRightIcon size={14} />
+                        {t("viewReceipt")} <ArrowRightIcon size={14} />
                       </Link>
                     )}
                     <Link

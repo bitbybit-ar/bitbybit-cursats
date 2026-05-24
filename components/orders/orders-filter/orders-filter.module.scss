@@ -1,0 +1,20 @@
+@use "@/styles/spacing" as *;
+@use "@/styles/media-mixins" as *;
+
+.controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: $spacing-16;
+
+  @include mobile {
+    justify-content: stretch;
+  }
+}
+
+.filter {
+  min-width: 220px;
+
+  @include mobile {
+    width: 100%;
+  }
+}

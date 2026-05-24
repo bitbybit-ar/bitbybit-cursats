@@ -1,10 +1,13 @@
-import { and, count, desc, eq, sql } from "drizzle-orm";
+import { and, count, desc, eq, isNull, sql, type SQL } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { orders, offerings } from "@/lib/db/schema";
+import type { OrderStatusFilter } from "@/lib/orders-params";
 
 export interface CreatorOrderRow {
   id: string;
   status: typeof orders.$inferSelect.status;
+  rail: typeof orders.$inferSelect.rail;
+  payout_status: typeof orders.$inferSelect.payout_status;
   amount_ars: number;
   amount_sats: number;
   created_at: Date;
@@ -18,38 +21,151 @@ export interface CreatorOrderDetail extends CreatorOrderRow {
   payment_hash: string | null;
   wapu_deposit_tx_id: string | null;
   wapu_withdrawal_tx_id: string | null;
-  payout_status: typeof orders.$inferSelect.payout_status;
   redemption_code: string | null;
 }
 
 const DEFAULT_LIMIT = 50;
 
-export async function listCreatorOrders(
-  userId: string,
-  opts: { limit?: number; offeringSlug?: string } = {}
-): Promise<CreatorOrderRow[]> {
-  const db = getDb();
-  const conditions = [eq(orders.user_id, userId)];
-  if (opts.offeringSlug) {
-    conditions.push(eq(offerings.slug, opts.offeringSlug));
+// Display label + colour tone for a single order, derived from the
+// buyer leg (`status`), the rail, and the seller payout leg
+// (`payout_status`). The returned `key` is an `orderLabel` i18n key and
+// — for everything except `refunded` — is exactly the filter bucket the
+// row would match in `statusFilterConditions`. `tone` maps to the
+// existing `.status-{paid,pending,failed,refunded}` badge classes.
+export type OrderDisplayKey =
+  | "pendingPayment"
+  | "withdrawalPending"
+  | "settling"
+  | "settled"
+  | "settlementFailed"
+  | "paid"
+  | "failed"
+  | "refunded";
+
+export function orderDisplayStatus(o: {
+  status: CreatorOrderRow["status"];
+  rail: CreatorOrderRow["rail"];
+  payout_status: CreatorOrderRow["payout_status"];
+}): { key: OrderDisplayKey; tone: "pending" | "paid" | "failed" | "refunded" } {
+  if (o.status === "pending") return { key: "pendingPayment", tone: "pending" };
+  if (o.status === "failed") return { key: "failed", tone: "failed" };
+  if (o.status === "refunded") return { key: "refunded", tone: "refunded" };
+  // status === "paid"
+  if (o.rail === "direct_lightning") return { key: "paid", tone: "paid" };
+  // wapu_ars: the payout leg drives the label.
+  switch (o.payout_status) {
+    case "pending":
+      return { key: "settling", tone: "pending" };
+    case "released":
+      return { key: "settled", tone: "paid" };
+    case "failed":
+      return { key: "settlementFailed", tone: "failed" };
+    default:
+      return { key: "withdrawalPending", tone: "pending" };
   }
-  return db
-    .select({
-      id: orders.id,
-      status: orders.status,
-      amount_ars: orders.amount_ars,
-      amount_sats: orders.amount_sats,
-      created_at: orders.created_at,
-      paid_at: orders.paid_at,
-      pubkey: orders.pubkey,
-      offering_title: offerings.title,
-      offering_slug: offerings.slug,
-    })
-    .from(orders)
-    .leftJoin(offerings, eq(orders.offering_id, offerings.id))
-    .where(and(...conditions))
-    .orderBy(desc(orders.created_at))
-    .limit(opts.limit ?? DEFAULT_LIMIT);
+}
+
+// Inverse of `orderDisplayStatus`: the WHERE conditions for a compound
+// status bucket. Empty array means "no constraint" (the `all` filter).
+function statusFilterConditions(status: OrderStatusFilter): SQL[] {
+  switch (status) {
+    case "pendingPayment":
+      return [eq(orders.status, "pending")];
+    case "withdrawalPending":
+      return [
+        eq(orders.status, "paid"),
+        eq(orders.rail, "wapu_ars"),
+        isNull(orders.payout_status),
+      ];
+    case "settling":
+      return [
+        eq(orders.status, "paid"),
+        eq(orders.rail, "wapu_ars"),
+        eq(orders.payout_status, "pending"),
+      ];
+    case "settled":
+      return [
+        eq(orders.status, "paid"),
+        eq(orders.rail, "wapu_ars"),
+        eq(orders.payout_status, "released"),
+      ];
+    case "settlementFailed":
+      return [
+        eq(orders.status, "paid"),
+        eq(orders.rail, "wapu_ars"),
+        eq(orders.payout_status, "failed"),
+      ];
+    case "paid":
+      return [eq(orders.status, "paid"), eq(orders.rail, "direct_lightning")];
+    case "failed":
+      return [eq(orders.status, "failed")];
+    case "all":
+    default:
+      return [];
+  }
+}
+
+// Paged seller order list, mirroring `listPurchasesPaged`: returns the
+// page rows plus the total matching count so the page can render a
+// pager. Filters by offering slug (the `?course=` link) and/or a
+// compound status bucket, both applied server-side.
+export async function listCreatorOrdersPaged(
+  userId: string,
+  opts: {
+    offeringSlug?: string;
+    status?: OrderStatusFilter;
+    page?: number;
+    pageSize?: number;
+  } = {}
+): Promise<{ rows: CreatorOrderRow[]; total: number }> {
+  const page = Math.max(1, opts.page ?? 1);
+  const pageSize = Math.max(1, opts.pageSize ?? DEFAULT_LIMIT);
+  const offset = (page - 1) * pageSize;
+
+  try {
+    const db = getDb();
+    const conditions: SQL[] = [eq(orders.user_id, userId)];
+    if (opts.offeringSlug) {
+      conditions.push(eq(offerings.slug, opts.offeringSlug));
+    }
+    if (opts.status) {
+      conditions.push(...statusFilterConditions(opts.status));
+    }
+    const whereClause = and(...conditions);
+
+    const [rows, totalRaw] = await Promise.all([
+      db
+        .select({
+          id: orders.id,
+          status: orders.status,
+          rail: orders.rail,
+          payout_status: orders.payout_status,
+          amount_ars: orders.amount_ars,
+          amount_sats: orders.amount_sats,
+          created_at: orders.created_at,
+          paid_at: orders.paid_at,
+          pubkey: orders.pubkey,
+          offering_title: offerings.title,
+          offering_slug: offerings.slug,
+        })
+        .from(orders)
+        .leftJoin(offerings, eq(orders.offering_id, offerings.id))
+        .where(whereClause)
+        .orderBy(desc(orders.created_at))
+        .limit(pageSize)
+        .offset(offset),
+      db
+        .select({ value: sql<number>`count(*)::int` })
+        .from(orders)
+        .leftJoin(offerings, eq(orders.offering_id, offerings.id))
+        .where(whereClause),
+    ]);
+
+    return { rows, total: totalRaw[0]?.value ?? 0 };
+  } catch (err) {
+    console.error("listCreatorOrdersPaged failed", err);
+    return { rows: [], total: 0 };
+  }
 }
 
 /**
@@ -85,6 +201,8 @@ export async function getCreatorOrderDetail(
     .select({
       id: orders.id,
       status: orders.status,
+      rail: orders.rail,
+      payout_status: orders.payout_status,
       amount_ars: orders.amount_ars,
       amount_sats: orders.amount_sats,
       created_at: orders.created_at,
@@ -93,7 +211,6 @@ export async function getCreatorOrderDetail(
       payment_hash: orders.payment_hash,
       wapu_deposit_tx_id: orders.wapu_deposit_tx_id,
       wapu_withdrawal_tx_id: orders.wapu_withdrawal_tx_id,
-      payout_status: orders.payout_status,
       redemption_code: orders.redemption_code,
       offering_title: offerings.title,
       offering_slug: offerings.slug,
@@ -174,6 +291,8 @@ export async function getCreatorStudentDetail(
     .select({
       id: orders.id,
       status: orders.status,
+      rail: orders.rail,
+      payout_status: orders.payout_status,
       amount_ars: orders.amount_ars,
       amount_sats: orders.amount_sats,
       created_at: orders.created_at,

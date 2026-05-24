@@ -16,6 +16,16 @@
   }
 }
 
+.headerActions {
+  display: flex;
+  gap: $spacing-12;
+
+  @include mobile {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
 .title {
   margin: 0;
   font-family: $font-family-display;

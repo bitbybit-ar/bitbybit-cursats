@@ -40,7 +40,10 @@ function notificationHref(n: NotificationDTO): string | null {
   const orderId =
     typeof payload.order_id === "string" ? payload.order_id : null;
   if (!orderId) return null;
-  return n.kind === "order.paid" ? `/receipt/${orderId}` : null;
+  if (n.kind === "order.paid") return `/receipt/${orderId}`;
+  // All seller-facing kinds (sale.received, payout.pending/released/failed)
+  // link to the seller's order detail.
+  return `/orders/${orderId}`;
 }
 
 interface NotificationListProps {

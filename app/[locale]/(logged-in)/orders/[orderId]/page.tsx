@@ -5,7 +5,10 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/routing";
 import { Card } from "@/components/ui/card";
 import { ArrowLeftIcon } from "@/components/icons";
-import { getCreatorOrderDetail } from "@/lib/creator/orders";
+import {
+  getCreatorOrderDetail,
+  orderDisplayStatus,
+} from "@/lib/creator/orders";
 import { requirePageUser } from "@/lib/creator/page-context";
 import styles from "./page.module.scss";
 
@@ -45,7 +48,8 @@ export default async function PanelOrderDetailPage({
   if (!order) notFound();
 
   const t = await getTranslations("orders.detail");
-  const tStatus = await getTranslations("orderStatus");
+  const tLabel = await getTranslations("orderLabel");
+  const display = orderDisplayStatus(order);
   const arsFormatter = new Intl.NumberFormat(
     locale === "es" ? "es-AR" : "en-US"
   );
@@ -64,9 +68,9 @@ export default async function PanelOrderDetailPage({
       <h1 className={styles.title}>{t("title")}</h1>
       <p className={styles.subtitle}>
         <span
-          className={`${styles.status} ${styles[`status-${order.status}`]}`}
+          className={`${styles.status} ${styles[`status-${display.tone}`]}`}
         >
-          {tStatus(order.status)}
+          {tLabel(display.key)}
         </span>
       </p>
 

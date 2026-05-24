@@ -293,6 +293,7 @@
   "receipt": {
     "title": "¡Listo! Tu compra está confirmada.",
     "subtitle": "Guardá esta página: es tu comprobante permanente.",
+    "buyAgain": "Comprar de nuevo",
     "settlement": {
       "ars": "Liquidado en pesos al CBU/CVU/alias del profesor.",
       "sats": "Liquidado en sats al Lightning Address del profesor."
@@ -370,6 +371,7 @@
     "title": "Mis cursos",
     "subtitle": "Catálogo de cursos y materiales que vendés.",
     "createCta": "Nuevo curso",
+    "ordersCta": "Pedidos",
     "activeHeading": "Activos",
     "archivedHeading": "Archivados",
     "emptyActive": "Todavía no creaste ningún curso.",
@@ -488,6 +490,8 @@
     "unknownOffering": "Oferta desconocida",
     "filteredBy": "Mostrando pedidos de {course}.",
     "clearFilter": "Ver todos los pedidos",
+    "filterLabel": "Filtrar por estado",
+    "noMatches": "No hay pedidos que coincidan con estos filtros.",
     "sync": "Sincronizar pedidos",
     "syncing": "Sincronizando…",
     "syncDone": "Pedidos sincronizados con Wapu.",
@@ -702,13 +706,23 @@
     "searchLabel": "Buscar en tus compras",
     "searchPlaceholder": "Buscar por título o docente",
     "noMatches": "No hay compras que coincidan con estos filtros.",
-    "openCourse": "Abrir curso",
     "viewReceipt": "Ver comprobante",
     "viewListing": "Página del curso",
     "continueCheckout": "Continuar pago"
   },
   "orderStatus": {
     "pending": "Pendiente",
+    "paid": "Pagado",
+    "failed": "Fallido",
+    "refunded": "Reembolsado"
+  },
+  "orderLabel": {
+    "all": "Todos",
+    "pendingPayment": "Pago pendiente",
+    "withdrawalPending": "Retiro pendiente",
+    "settling": "Liquidando",
+    "settled": "Liquidado",
+    "settlementFailed": "Liquidación fallida",
     "paid": "Pagado",
     "failed": "Fallido",
     "refunded": "Reembolsado"
