@@ -175,8 +175,9 @@ export function PayoutForm({
       const nextAliasError = aliasFieldError(alias);
       setCbuError(nextCbuError);
       setAliasError(nextAliasError);
-      if (nextCbuError || nextAliasError) {
-        showToast(t(nextCbuError ?? (nextAliasError as string)), "error");
+      const firstError = nextCbuError ?? nextAliasError;
+      if (firstError) {
+        showToast(t(firstError), "error");
         return;
       }
     }
