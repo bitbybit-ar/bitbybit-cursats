@@ -1,4 +1,4 @@
-import { and, eq, desc, ilike, sql, type SQL } from "drizzle-orm";
+import { and, eq, desc, ilike, lt, sql, type SQL } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { orders, offerings, users } from "@/lib/db/schema";
 import { getWapuClient } from "@/lib/wapu";
@@ -338,6 +338,31 @@ async function fundNwcOrder(opts: {
     expires_at: invoice.expires_at,
     payment_hash: invoice.payment_hash,
   };
+}
+
+/**
+ * Claim one download slot on a paid `download` order. Atomic: the
+ * conditional `download_count < max` lives in the UPDATE's WHERE, so
+ * two concurrent fetches at the cap boundary can never both succeed
+ * (the second matches no row). Returns the post-increment count when a
+ * slot was claimed, or `{ ok: false }` when the order is already at the
+ * cap. The download proxy calls this last, after every other access
+ * check, so a 404/400 never burns a slot.
+ */
+export async function tryConsumeDownload(
+  orderId: string,
+  max: number
+): Promise<{ ok: true; count: number } | { ok: false }> {
+  const db = getDb();
+  const [row] = await db
+    .update(orders)
+    .set({
+      download_count: sql`${orders.download_count} + 1`,
+      updated_at: new Date(),
+    })
+    .where(and(eq(orders.id, orderId), lt(orders.download_count, max)))
+    .returning({ count: orders.download_count });
+  return row ? { ok: true, count: row.count } : { ok: false };
 }
 
 /**

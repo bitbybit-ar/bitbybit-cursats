@@ -3,7 +3,7 @@
 - **Date**: 2026-05-06
 - **Status**: Accepted (amended 2026-05-22 — the Nostr DM channel was removed; delivery is the in-app receipt page only)
 - **Deciders**: BitByBit team
-- **Last updated**: 2026-05-22
+- **Last updated**: 2026-05-24
 
 ---
 
@@ -11,6 +11,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | Decision | Specified the download link's access bounds: a paid `download` order may fetch the file up to five times within 30 days of payment, enforced atomically by the `/api/downloads/[orderId]` proxy (`lib/download-limits.ts`). The receipt card surfaces remaining downloads and the expiry date. | The original decision named a "short-lived" download URL without bounds; this pins concrete, enforced limits so a receipt link doesn't grant unlimited fetches. |
 | 2026-05-22 | Status, Decision | Removed the Nostr DM channel from the decision: the server signing key (`NOSTR_NSEC`) and DM code were deleted as dead code, so delivery is now the in-app receipt page only. The no-email and in-app-receipt decisions stand. The Context and Consequences below are left as the original record. | The DM push was never relied upon and was removed; the doc must not present it as a current channel. |
 | 2026-05-06 | Decision, Consequences | Added a third DM trigger — logged-in Nostr buyers — alongside npub-at-checkout and NWC-derived pubkey. Cross-linked to ADR 0007. | ADR 0007 introduces optional Nostr login for buyers; DM delivery should fire automatically for logged-in sessions, so this doc must reflect that. |
 | 2026-05-06 | — | Initial version. | Pin the delivery channel before scaffolding any notification code so we don't accidentally pull in an email provider. |
@@ -52,9 +53,18 @@ packs without needing to push anything.
 **Primary delivery: in-app receipt page** at
 `/[locale]/gracias/[orderId]` with a permanent, unguessable
 `orderId`. It renders the redemption code (for `code` offerings)
-or a short-lived signed download URL (for `download` offerings),
-plus order summary. Always shown immediately after payment — does
-not require the buyer to provide any identity.
+or a download link (for `download` offerings), plus order summary.
+Always shown immediately after payment — does not require the buyer
+to provide any identity.
+
+For `download` offerings the receipt links to the
+`/api/downloads/[orderId]` proxy rather than the raw file URL, so the
+source URL stays out of the DOM and access stays bounded: a paid
+order may fetch the file up to `MAX_DOWNLOADS_PER_ORDER` (5) times,
+for `DOWNLOAD_ACCESS_WINDOW_DAYS` (30) days after payment
+(`lib/download-limits.ts`). The proxy bumps the per-order counter
+atomically and returns `410` once the cap or window is spent; the
+receipt card shows the remaining count and the expiry date.
 
 **No Nostr DM channel** (amended 2026-05-22). The original
 decision added an optional NIP-44-encrypted Nostr DM — for buyers

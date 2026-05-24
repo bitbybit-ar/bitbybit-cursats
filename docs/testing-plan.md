@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | Receipt walkthrough | Had judges confirm the receipt download card shows the remaining download count + expiry date and that the proxy 410s once the per-order fetch cap (five) or 30-day window is spent; scoped the "works forever" claim to the receipt page. | The download proxy now enforces a per-order cap and a post-payment window (`lib/download-limits.ts`); the walkthrough should exercise it. |
 | 2026-05-24 | Step 3, Step 6, What you've covered | Added NWC (NIP-47) as the second input method of the sats rail (Step 3c) and generalized the sats-rail buy step to cover both Lightning Address and NWC. Corrected the LUD-21 provider examples (Strike does not expose `verify`). | ADR 0029 — most wallets the audience uses fail LUD-21, so NWC is now the alternative way onto the sats rail. |
 | 2026-05-23 | — | Initial version. | Hackathon evaluation pass — give judges an ordered, button-by-button walkthrough. |
 
@@ -228,12 +229,15 @@ verify (or NWC `lookup_invoice`) poll reports settled.
    - For a `download` offering: a **Download file** button
      pointing at the download proxy `/api/downloads/[orderId]`.
 2. Bookmark or copy the URL. This is the **only** delivery
-   channel — it works forever, regardless of the buyer's
-   identity.
+   channel — the receipt page itself works forever, regardless of
+   the buyer's identity.
 3. (Optional) For a `download` offering, click **Download file**
    and confirm the file streams through `/api/downloads/[orderId]`.
    The proxy gates on the order's `paid` status — it 403s an
-   unpaid order. See
+   unpaid order. Confirm the receipt card shows the remaining
+   download count and expiry date, and that the proxy 410s once the
+   per-order fetch cap (five) or the 30-day window is spent
+   (`lib/download-limits.ts`). See
    [delivery-and-receipts](./features/delivery-and-receipts.md#the-download-proxy).
 
 ## Step 8 — Notifications

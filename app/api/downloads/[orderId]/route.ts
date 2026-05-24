@@ -1,7 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getOrder } from "@/lib/orders";
+import { getOrder, tryConsumeDownload } from "@/lib/orders";
 import { getOfferingById } from "@/lib/offerings";
+import {
+  MAX_DOWNLOADS_PER_ORDER,
+  isDownloadAccessExpired,
+} from "@/lib/download-limits";
 
 const ParamsSchema = z.object({ orderId: z.string().uuid() });
 
@@ -14,7 +18,10 @@ const ParamsSchema = z.object({ orderId: z.string().uuid() });
  * Access model
  *   The orderId in the URL is the access key (≥128-bit entropy
  *   per ADR 0006). No session required — anonymous buyers must be
- *   able to redeem from any device with the receipt link.
+ *   able to redeem from any device with the receipt link. A paid
+ *   order grants a *bounded* right to the file: up to
+ *   MAX_DOWNLOADS_PER_ORDER fetches, within
+ *   DOWNLOAD_ACCESS_WINDOW_DAYS of payment (lib/download-limits.ts).
  *
  * Status checks
  *   - 404 on missing order, missing/archived offering, or
@@ -23,13 +30,11 @@ const ParamsSchema = z.object({ orderId: z.string().uuid() });
  *     whether an order id exists when the offering type is wrong.
  *   - 403 on `pending` / `failed` / `refunded` order status — the
  *     buyer hasn't paid (yet, or any more).
+ *   - 410 once the download window has elapsed (`link_expired`) or
+ *     the per-order download cap is reached (`download_limit_reached`).
  *
- * Future hardening (not in this commit)
- *   - Per-order expiry (e.g. 24h after `paid_at`) — ADR 0006 names
- *     this; we'll need a comparator here once we wire it.
- *   - Single-use semantics — track download count on a new column
- *     or a separate `downloads` table; this proxy is the single
- *     point that decrements / refuses.
+ * The download counter is bumped atomically and only after every
+ * other check passes, so a rejected request never consumes a slot.
  */
 export async function GET(
   _req: NextRequest,
@@ -71,6 +76,22 @@ export async function GET(
   }
   if (target.protocol !== "https:") {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+
+  // The download link is live for a bounded window after payment.
+  if (isDownloadAccessExpired(order.paid_at)) {
+    return NextResponse.json({ error: "link_expired" }, { status: 410 });
+  }
+
+  // Claim a download slot last, after every other gate, so a 4xx never
+  // burns one. The check + increment is atomic (see tryConsumeDownload),
+  // so concurrent fetches can't exceed the cap.
+  const slot = await tryConsumeDownload(order.id, MAX_DOWNLOADS_PER_ORDER);
+  if (!slot.ok) {
+    return NextResponse.json(
+      { error: "download_limit_reached" },
+      { status: 410 }
+    );
   }
 
   return NextResponse.redirect(target.toString(), 302);

@@ -325,6 +325,10 @@ export const orders = pgTable(
     // seller's wallet via NWC lookup_invoice on `payment_hash`).
     lnurl_verify_url: text("lnurl_verify_url"),
     redemption_code: text("redemption_code"),
+    // Times the buyer has fetched the file on a `download` offering.
+    // Capped at MAX_DOWNLOADS_PER_ORDER (lib/download-limits.ts) and
+    // bumped atomically by the download proxy. Always 0 on code orders.
+    download_count: integer("download_count").notNull().default(0),
     created_at: timestamp("created_at").notNull().defaultNow(),
     paid_at: timestamp("paid_at"),
     updated_at: timestamp("updated_at").notNull().defaultNow(),
