@@ -11,7 +11,7 @@ import {
   UserSlugSchema,
 } from "@/lib/creator/ar-bank-id";
 
-describe("admin/ar-bank-id/checkAlias", () => {
+describe("creator/ar-bank-id/checkAlias", () => {
   it("accepts a BCRA-shaped alias", () => {
     expect(checkAlias("juan.perez.mp")).toBeNull();
     expect(checkAlias("ABC.123")).toBeNull();
@@ -39,20 +39,25 @@ describe("admin/ar-bank-id/checkAlias", () => {
   });
 });
 
-describe("admin/ar-bank-id/checkCbu", () => {
+describe("creator/ar-bank-id/checkCbu", () => {
   it("accepts a 22-digit CBU", () => {
     expect(checkCbu("0000003100000000000001")).toBeNull();
   });
 
-  it("rejects anything that is not exactly 22 digits", () => {
+  it("accepts a 23-digit CVU (Mercado Pago, Ualá, etc.)", () => {
+    expect(checkCbu("0".repeat(23))).toBeNull();
+    expect(checkCbu("00000031000000000000012")).toBeNull();
+  });
+
+  it("rejects digit counts outside 22–23 and any non-digit", () => {
     expect(checkCbu("123")).toBe("format");
     expect(checkCbu("0".repeat(21))).toBe("format");
-    expect(checkCbu("0".repeat(23))).toBe("format");
+    expect(checkCbu("0".repeat(24))).toBe("format");
     expect(checkCbu("000000310000000000000A")).toBe("format");
   });
 });
 
-describe("admin/ar-bank-id/checkUserSlug", () => {
+describe("creator/ar-bank-id/checkUserSlug", () => {
   it("accepts a clean kebab slug", () => {
     expect(checkUserSlug("juana-perez")).toBeNull();
     expect(checkUserSlug("hello")).toBeNull();
@@ -102,13 +107,18 @@ describe("admin/ar-bank-id/checkUserSlug", () => {
   });
 });
 
-describe("admin/ar-bank-id/classifyPayoutDestination", () => {
+describe("creator/ar-bank-id/classifyPayoutDestination", () => {
   it("returns kind=cbu for a 22-digit string", () => {
     const result = classifyPayoutDestination("0000003100000000000001");
     expect(result).toEqual({
       kind: "cbu",
       value: "0000003100000000000001",
     });
+  });
+
+  it("returns kind=cbu for a 23-digit CVU string", () => {
+    const cvu = "0".repeat(23);
+    expect(classifyPayoutDestination(cvu)).toEqual({ kind: "cbu", value: cvu });
   });
 
   it("returns kind=alias for a BCRA-shaped alias", () => {
@@ -122,7 +132,7 @@ describe("admin/ar-bank-id/classifyPayoutDestination", () => {
   });
 });
 
-describe("admin/ar-bank-id/zod schemas", () => {
+describe("creator/ar-bank-id/zod schemas", () => {
   it("AliasSchema rejects with a stable error code", () => {
     const r = AliasSchema.safeParse("bad alias");
     expect(r.success).toBe(false);

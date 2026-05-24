@@ -2,7 +2,7 @@
   "metadata": {
     "siteName": "CURSATS",
     "siteTitle": "CURSATS — Cursá tu próxima clase con sats.",
-    "description": "Checkout Lightning para profes y creadores de contenido educativo. El comprador paga en sats; vos elegís cobrar sats en tu wallet o pesos en tu CBU.",
+    "description": "Checkout Lightning para profes y creadores de contenido educativo. El comprador paga en sats; vos elegís cobrar sats en tu wallet o pesos en tu CBU/CVU.",
     "keywords": "bitbybit,cursats,checkout lightning,bitcoin,sats,lightning address,wapu,pagos,argentina,educación,clases,profes,creadores,la crypta",
     "ogValueLine": "Cursá tu próxima clase con SATS.",
     "skipToContent": "Saltar al contenido"
@@ -33,7 +33,7 @@
     },
     "hero": {
       "title": "Cursá tu próxima clase con <gradient>SATS</gradient>.",
-      "subtitle": "Comprá clases, talleres y materiales con tu wallet Lightning. El profe elige cómo cobrar: sats en su wallet, o pesos en su CBU.",
+      "subtitle": "Comprá clases, talleres y materiales con tu wallet Lightning. El profe elige cómo cobrar: sats en su wallet, o pesos en su CBU/CVU.",
       "ctaExplore": "Explorar cursos",
       "ctaPublish": "Publicá tu curso"
     },
@@ -57,7 +57,7 @@
       "title": "Compañeros de viaje",
       "subtitle": "Proyectos y comunidades que admiramos,\nconstructores de infraestructura abierta para un futuro más libre.",
       "listLabel": "Aliados de Cursats",
-      "wapuDescription": "Liquidación Lightning a CBU/alias en Argentina.",
+      "wapuDescription": "Liquidación Lightning a CBU/CVU/alias en Argentina.",
       "laCryptaDescription": "Comunidad Bitcoin en Argentina, anfitriona del Hackathon #3.",
       "nostrWotDescription": "Web of Trust para Nostr.",
       "mappingBitcoinDescription": "Encontrá cada lugar del ecosistema Bitcoin.",
@@ -104,7 +104,7 @@
   },
   "howItWorks": {
     "metadataTitle": "Cómo funciona",
-    "metadataDescription": "Cursats usa Lightning para que el comprador pague en sats. El profe elige cómo cobrar: sats directo a su wallet, o pesos al CBU vía Wapu. Te lo contamos paso a paso.",
+    "metadataDescription": "Cursats usa Lightning para que el comprador pague en sats. El profe elige cómo cobrar: sats directo a su wallet, o pesos al CBU/CVU vía Wapu. Te lo contamos paso a paso.",
     "hero": {
       "title": "<gradient>SATS</gradient> para todos. <gradient>PESOS</gradient> para los que los necesitan.",
       "subtitle": "Cursats conecta a quien quiere aprender con quien quiere enseñar. Lightning para pagar; sats o pesos para cobrar — el profe elige. La plataforma se sale del medio."
@@ -125,7 +125,7 @@
       "step1Title": "Iniciás sesión con Nostr",
       "step1Body": "Tu llave Nostr es tu cuenta. Sin emails, sin formularios largos.",
       "step2Title": "Configurás cómo cobrar",
-      "step2Body": "En Settings cargás tu Lightning Address (si ya vivís en sats) o tu CBU/alias para cobrar en pesos vía Wapu. Es el único requisito antes de publicar.",
+      "step2Body": "En Settings cargás tu Lightning Address (si ya vivís en sats) o tu CBU/CVU/alias para cobrar en pesos vía Wapu. Es el único requisito antes de publicar.",
       "step3Title": "Publicás tu curso",
       "step3Body": "Tocás \"Publicá tu curso\", completás el formulario y lo enviás.",
       "step4Title": "Cobrás directo",
@@ -136,7 +136,7 @@
       "lightningTitle": "Lightning",
       "lightningBody": "La capa de pagos sobre Bitcoin. Instantánea, barata, ideal para los montos chicos del día a día. Es siempre lo que paga el comprador, sin importar cómo cobre el profe.",
       "wapuTitle": "Wapu",
-      "wapuBody": "El rail que convierte los sats a pesos y los deposita en el CBU o alias del profe. Pensado para quienes prefieren cobrar en pesos y manejar su plata en el banco de siempre, sin tener que usar una wallet de Bitcoin.",
+      "wapuBody": "El rail que convierte los sats a pesos y los deposita en el CBU/CVU o alias del profe. Pensado para quienes prefieren cobrar en pesos y manejar su plata en el banco de siempre, sin tener que usar una wallet de Bitcoin.",
       "lightningAddressTitle": "Lightning Address",
       "lightningAddressBody": "Una dirección tipo email (vos@blink.sv) donde el profe recibe sats directo en su wallet. Para profes que ya viven en sats, sin pasar por ningún convertidor.",
       "nostrTitle": "Nostr",
@@ -153,11 +153,11 @@
     "metadataDescription": "Lo que ofrece Cursats: dos formas de cobrar (sats o pesos), sin custodia de plataforma, login Nostr opcional, entrega in-app y más.",
     "hero": {
       "title": "Lo que ofrece <brand></brand>",
-      "subtitle": "Pensado para docentes que enseñan en Argentina.\nPesos a tu CBU o sats a tu Lightning, vos elegís."
+      "subtitle": "Pensado para docentes que enseñan en Argentina.\nPesos a tu CBU/CVU o sats a tu Lightning, vos elegís."
     },
     "items": {
       "twoRailsTitle": "Dos formas de cobrar",
-      "twoRailsBody": "El comprador siempre paga en Lightning. El profe elige: pesos al CBU vía Wapu (para los que prefieren su rutina con el banco), o sats directo a su Lightning Address (para los que ya viven en sats).",
+      "twoRailsBody": "El comprador siempre paga en Lightning. El profe elige: pesos al CBU/CVU vía Wapu (para los que prefieren su rutina con el banco), o sats directo a su Lightning Address (para los que ya viven en sats).",
       "noCustodyTitle": "Sin custodia de plataforma",
       "noCustodyBody": "Los sats van directo a la billetera Lightning del profe. En los pagos en ARS, Wapu gestiona los fondos durante el día y los liquida al banco del profe — Cursats nunca los toca.",
       "anonymousByDefaultTitle": "Compra anónima por defecto",
@@ -190,9 +190,9 @@
       "walletQ": "¿Necesito una wallet para comprar?",
       "walletA": "Sí, cualquier wallet Lightning sirve. Mientras pueda escanear una invoice o pegar un código, vas a poder pagar tu curso.",
       "wapuQ": "¿Qué es Wapu?",
-      "wapuA": "Wapu es el rail que convierte los sats del comprador a pesos y los deposita en el CBU o alias del profe. Pensado para quienes prefieren cobrar en pesos y manejar su plata en el banco de siempre, sin tener que usar una wallet de Bitcoin.",
+      "wapuA": "Wapu es el rail que convierte los sats del comprador a pesos y los deposita en el CBU/CVU o alias del profe. Pensado para quienes prefieren cobrar en pesos y manejar su plata en el banco de siempre, sin tener que usar una wallet de Bitcoin.",
       "argentinaQ": "¿Funciona solo en Argentina?",
-      "argentinaA": "El rail Lightning (cobrar en sats a tu wallet) funciona en cualquier lado. El rail Wapu (cobrar pesos al CBU) sólo en Argentina, porque liquida a CBU o alias bancarios argentinos.",
+      "argentinaA": "El rail Lightning (cobrar en sats a tu wallet) funciona en cualquier lado. El rail Wapu (cobrar pesos al CBU/CVU) sólo en Argentina, porque liquida a CBU/CVU o alias bancarios argentinos.",
       "anonymousQ": "¿Tengo que crear una cuenta para comprar?",
       "anonymousA": "No. La compra es anónima por defecto: pagás, recibís el recibo, y eso es todo. La URL del recibo es tu comprobante permanente.",
       "deliveryQ": "¿Cómo recibo lo que compré?",
@@ -200,17 +200,17 @@
       "lostReceiptQ": "¿Y si pierdo el link del recibo?",
       "lostReceiptA": "Si tu Nostr estaba conectado, lo encontrás en \"Mis compras\". Si compraste como anónimo, podés iniciar sesión con Nostr y reclamar el pedido pegando el ID en la página de reclamo.",
       "creatorPayoutQ": "¿Cómo cobro como profe?",
-      "creatorPayoutA": "Elegís cómo cobrar en Configuración: pesos al CBU o alias (vía Wapu), o sats directo a tu Lightning Address. Cada pago se acredita por separado en el destino que elegiste — Cursats nunca toca el dinero.",
+      "creatorPayoutA": "Elegís cómo cobrar en Configuración: pesos al CBU/CVU o alias (vía Wapu), o sats directo a tu Lightning Address. Cada pago se acredita por separado en el destino que elegiste — Cursats nunca toca el dinero.",
       "nostrSignInQ": "¿Qué es Nostr y por qué lo uso para entrar?",
       "nostrSignInA": "Nostr es un protocolo abierto de identidad y mensajería. Tu llave privada es tu cuenta — sin servidores centrales, sin emails. Para los profes es la única forma de crear y gestionar sus cursos.",
       "feesQ": "¿Cobran comisión?",
-      "feesA": "Si cobrás en pesos, Wapu cobra su fee por cada liquidación a CBU. Si cobrás en sats a tu Lightning Address, no pasás por ningún convertidor: pueden aplicar los fees normales de routing de Lightning. La plataforma Cursats no toma un cut adicional en v1."
+      "feesA": "Si cobrás en pesos, Wapu cobra su fee por cada liquidación a CBU/CVU. Si cobrás en sats a tu Lightning Address, no pasás por ningún convertidor: pueden aplicar los fees normales de routing de Lightning. La plataforma Cursats no toma un cut adicional en v1."
     }
   },
   "catalog": {
     "hero": {
       "title": "Cursá tu próxima clase con sats.",
-      "subtitle": "Comprá clases, talleres y materiales con tu wallet Lightning. El profe elige cómo cobrar: sats en su wallet, o pesos en su CBU."
+      "subtitle": "Comprá clases, talleres y materiales con tu wallet Lightning. El profe elige cómo cobrar: sats en su wallet, o pesos en su CBU/CVU."
     },
     "list": {
       "heading": "Explorá cursos",
@@ -294,7 +294,7 @@
     "title": "¡Listo! Tu compra está confirmada.",
     "subtitle": "Guardá esta página: es tu comprobante permanente.",
     "settlement": {
-      "ars": "Liquidado en pesos al CBU/alias del profesor.",
+      "ars": "Liquidado en pesos al CBU/CVU/alias del profesor.",
       "sats": "Liquidado en sats al Lightning Address del profesor."
     },
     "code": {
@@ -360,7 +360,7 @@
     "subtitle": "Definí los detalles para que el curso aparezca en tu storefront.",
     "payoutModal": {
       "title": "Configurá cómo querés cobrar",
-      "intro": "Antes de publicar un curso necesitás un destino de cobro: o un CBU/alias para recibir pesos, o una Lightning Address para recibir sats."
+      "intro": "Antes de publicar un curso necesitás un destino de cobro: o un CBU/CVU/alias para recibir pesos, o una Lightning Address para recibir sats."
     }
   },
   "myCourses": {
@@ -399,7 +399,7 @@
       "sectionBasics": "Datos del curso",
       "sectionBasicsHint": "Cómo aparece el curso en tu storefront y en el explorador.",
       "sectionPricing": "Precio",
-      "sectionPricingHint": "Fijás el precio en la moneda de tu método de cobro: ARS para un CBU/alias, sats para una Lightning Address. Los compradores pagan en sats; en precios en ARS, el monto en sats se calcula al tipo de cambio de Wapu al momento de la compra.",
+      "sectionPricingHint": "Fijás el precio en la moneda de tu método de cobro: ARS para un CBU/CVU/alias, sats para una Lightning Address. Los compradores pagan en sats; en precios en ARS, el monto en sats se calcula al tipo de cambio de Wapu al momento de la compra.",
       "sectionContent": "Contenido y entrega",
       "sectionContentHint": "Elegí cómo entregás el curso al comprador.",
       "sectionCover": "Imagen de portada",
@@ -453,7 +453,7 @@
       "invalidPriceAmount": "El precio tiene que ser un número entero positivo.",
       "invalidCodeCount": "La cantidad de códigos tiene que estar entre 1 y 10.000.",
       "imageRequired": "Subí o pegá una imagen de portada antes de guardar.",
-      "priceCurrencyNoteArs": "Cobrás en pesos (CBU/alias), así que fijás el precio en ARS. El comprador paga el equivalente en sats al tipo de cambio del momento.",
+      "priceCurrencyNoteArs": "Cobrás en pesos (CBU/CVU/alias), así que fijás el precio en ARS. El comprador paga el equivalente en sats al tipo de cambio del momento.",
       "priceCurrencyNoteSats": "Cobrás en sats (Lightning Address), así que fijás el precio en sats. Los recibís directo en tu wallet.",
       "payoutEstimate": "Comisión estimada de Wapu: ~{fee} ARS · Recibís ≈ {net} ARS (estimado, varía con el tipo de cambio al momento de la venta).",
       "priceBelowWapuMin": "Tu neto debe ser de al menos {min} ARS: Wapu no procesa retiros por debajo de ese monto. Subí el precio.",
@@ -552,7 +552,7 @@
         },
         "payoutReleased": {
           "title": "Avisame cuando llegue mi transferencia",
-          "hint": "Te avisamos cuando Wapu libera los pesos a tu CBU/alias."
+          "hint": "Te avisamos cuando Wapu libera los pesos a tu CBU/CVU/alias."
         },
         "payoutFailed": {
           "title": "Avisame si una transferencia falla",
@@ -626,22 +626,20 @@
       "sectionPayout": "Cómo cobrás",
       "sectionPayoutHint": "Elegí en qué moneda recibís tus ventas. Podés cambiar el método más adelante; los datos quedan acá y no aparecen en ningún lado del comprador.",
       "payoutMethod": "Método de cobro",
-      "railArs": "Cobrar en pesos (CBU/alias)",
+      "railArs": "Cobrar en pesos (CBU/CVU/alias)",
       "railArsHint": "Wapu convierte los sats a ARS y deposita en tu cuenta argentina.",
       "railSats": "Cobrar en sats (Lightning Address)",
       "railSatsHint": "Recibís los sats directo en tu wallet, sin pasar por Wapu. Tu proveedor tiene que soportar LUD-21.",
-      "cbu": "CBU",
-      "cbuTooltip": "Clave Bancaria Uniforme — 22 dígitos. Wapu deposita ARS en esta cuenta. Si tenés alias también, podés dejar uno solo.",
+      "cbu": "CBU/CVU",
+      "cbuTooltip": "Número de cuenta bancaria argentina — 22 dígitos si es CBU, 23 si es CVU (Mercado Pago, Ualá, etc.). Wapu deposita ARS en esta cuenta. Si tenés alias también, podés dejar uno solo.",
       "cbuExample": "0000003100099999999999",
       "cbuPlaceholder": "0000003100000000000000",
-      "cbuTooltip": "Clave Bancaria Uniforme — 22 dígitos. Wapu deposita ARS en esta cuenta. Si tenés alias también, podés dejar uno solo.",
-      "cbuExample": "0000003100099999999999",
       "alias": "Alias",
-      "aliasTooltip": "Alias de tu CBU: 6 a 20 caracteres con letras, números, puntos y guiones (sin ñ ni tildes). Solo lo ves vos en esta página; Wapu lo usa para acreditarte los pagos.",
+      "aliasTooltip": "Alias de tu CBU/CVU: 6 a 20 caracteres con letras, números, puntos y guiones (sin ñ ni tildes). Solo lo ves vos en esta página; Wapu lo usa para acreditarte los pagos.",
       "aliasExample": "PROFE.MARIA.BITCOIN",
       "aliasPlaceholder": "MI.ALIAS.MP",
       "aliasInvalid": "El alias debe tener 6 a 20 caracteres con letras, números, puntos y guiones (al menos una letra; sin ñ ni tildes).",
-      "cbuInvalid": "El CBU debe tener exactamente 22 dígitos.",
+      "cbuCvuInvalid": "El CBU/CVU debe tener 22 o 23 dígitos.",
       "transferSpeed": "Velocidad de acreditación",
       "transferSpeedHint": "Elegí qué tan rápido Wapu deposita los pesos en tu cuenta. La opción rápida tiene una comisión más alta.",
       "transferStandard": "Estándar",
@@ -652,9 +650,9 @@
       "saving": "Guardando…",
       "saved": "Configuración guardada.",
       "saveFailed": "No pudimos guardar la configuración. Probá de nuevo.",
-      "destinationRequired": "Tenés que cargar al menos un CBU o un alias.",
+      "destinationRequired": "Tenés que cargar al menos un CBU/CVU o un alias.",
       "signRequiredTitle": "Confirmá el cambio con tu firma",
-      "signRequiredBody": "Cambiar el CBU, alias o Lightning Address requiere una firma adicional con tu signer Nostr.",
+      "signRequiredBody": "Cambiar el CBU/CVU, alias o Lightning Address requiere una firma adicional con tu signer Nostr.",
       "signCancelled": "Cancelaste la firma. Intentá de nuevo cuando estés listo.",
       "signClockSkew": "La hora de tu dispositivo no coincide. Sincronizala y volvé a intentar."
     }
@@ -855,10 +853,7 @@
       "displayNameTooShort": "Necesitamos un nombre de al menos 2 caracteres.",
       "bio": "Bio",
       "bioPlaceholder": "Una o dos líneas sobre lo que enseñás.",
-      "destination": "CBU o alias bancario para cobrar",
-      "destinationPlaceholder": "MI.ALIAS.MP o 22 dígitos del CBU",
       "destinationHint": "Podés dejarlo vacío y cargarlo después desde Configuración. Sin estos datos no podés vender.",
-      "destinationInvalid": "El alias debe tener entre 6 y 20 caracteres (letras, números, puntos o guiones). El CBU son 22 dígitos.",
       "optional": "Opcional",
       "save": "Crear mi tienda",
       "saving": "Creando…",

@@ -12,14 +12,22 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **CVU accounts accepted on the Wapu rail; copy now reads "CBU/CVU".**
+  The payout-destination field accepts a 23-digit CVU (Mercado Pago,
+  Ualá, etc.) alongside a 22-digit CBU, and every user-facing string
+  that said "CBU" alone now reads "CBU/CVU". Validation lives in the
+  shared `CBU_REGEX`/`checkCbu` (`lib/creator/ar-bank-id.ts`), so the
+  create-course payout modal and `/settings` agree. The server error
+  code (`cbu_invalid`), the `cbu` column, and the `cbu_alias` enum are
+  unchanged.
 - **"Go to receipt" + "Buy again" on the course detail page.** When a
   signed-in buyer already has a paid order for the offering they're
   viewing, the page shows a receipt link beside a "Buy again" button
   (for certification renewals or gifting a second code) instead of the
   single buy button. Anonymous visitors and first-time buyers are
   unchanged.
-- **Inline validation for the CBU/alias payout fields.** The payout
-  form now checks CBU (22 digits) and alias (BCRA 6–20 chars of
+- **Inline validation for the CBU/CVU/alias payout fields.** The payout
+  form now checks CBU/CVU (22–23 digits) and alias (BCRA 6–20 chars of
   letters/numbers/dots/hyphens, at least one letter) on blur and on
   submit, showing a specific message under the field instead of only a
   generic failure after a server round-trip. Uses the same validators

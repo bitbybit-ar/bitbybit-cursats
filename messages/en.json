@@ -2,7 +2,7 @@
   "metadata": {
     "siteName": "CURSATS",
     "siteTitle": "CURSATS — Your next class, paid in sats.",
-    "description": "Lightning checkout for teachers and educational creators. Buyers pay in sats; you choose how to get paid — sats to your wallet, or pesos to your CBU.",
+    "description": "Lightning checkout for teachers and educational creators. Buyers pay in sats; you choose how to get paid — sats to your wallet, or pesos to your CBU/CVU.",
     "keywords": "bitbybit,cursats,lightning checkout,bitcoin,sats,lightning address,wapu,payments,argentina,education,classes,teachers,creators,la crypta",
     "ogValueLine": "Your next class, paid in sats.",
     "skipToContent": "Skip to content"
@@ -33,7 +33,7 @@
     },
     "hero": {
       "title": "Buy your next class with <gradient>SATS</gradient>.",
-      "subtitle": "Pay for classes, workshops, and study material with your Lightning wallet. The teacher chooses how to get paid: sats to their wallet, or pesos to their CBU.",
+      "subtitle": "Pay for classes, workshops, and study material with your Lightning wallet. The teacher chooses how to get paid: sats to their wallet, or pesos to their CBU/CVU.",
       "ctaExplore": "Explore courses",
       "ctaPublish": "Publish your course"
     },
@@ -57,7 +57,7 @@
       "title": "Travel companions",
       "subtitle": "Projects and communities we admire,\nbuilders of open infrastructure for a freer future.",
       "listLabel": "Cursats allies",
-      "wapuDescription": "Lightning settlement to CBU/alias in Argentina.",
+      "wapuDescription": "Lightning settlement to CBU/CVU/alias in Argentina.",
       "laCryptaDescription": "Bitcoin community in Argentina, host of Hackathon #3.",
       "nostrWotDescription": "Web of Trust for Nostr.",
       "mappingBitcoinDescription": "Find every place in the Bitcoin ecosystem.",
@@ -104,7 +104,7 @@
   },
   "howItWorks": {
     "metadataTitle": "How it works",
-    "metadataDescription": "Cursats uses Lightning so the buyer pays in sats. The teacher chooses how to get paid: sats straight to their wallet, or pesos to their CBU via Wapu. Here's how it works, step by step.",
+    "metadataDescription": "Cursats uses Lightning so the buyer pays in sats. The teacher chooses how to get paid: sats straight to their wallet, or pesos to their CBU/CVU via Wapu. Here's how it works, step by step.",
     "hero": {
       "title": "<gradient>SATS</gradient> for everyone. <gradient>PESOS</gradient> for those who need them.",
       "subtitle": "Cursats connects people who want to learn with people who want to teach. Lightning for payments; sats or pesos for payouts — the teacher decides. The platform stays out of the way."
@@ -125,7 +125,7 @@
       "step1Title": "Sign in with Nostr",
       "step1Body": "Your Nostr key is your account. No emails, no long forms.",
       "step2Title": "Set up how you get paid",
-      "step2Body": "In Settings you add your Lightning Address (if you already live in sats) or your CBU/alias to get paid in pesos via Wapu. It's the only thing you need before publishing.",
+      "step2Body": "In Settings you add your Lightning Address (if you already live in sats) or your CBU/CVU/alias to get paid in pesos via Wapu. It's the only thing you need before publishing.",
       "step3Title": "Publish your course",
       "step3Body": "Tap \"Publish your course\", fill in the form, and submit.",
       "step4Title": "Get paid directly",
@@ -136,7 +136,7 @@
       "lightningTitle": "Lightning",
       "lightningBody": "The payment layer on top of Bitcoin. Instant, cheap, perfect for the small day-to-day amounts. It's always what the buyer pays with, no matter how the teacher gets paid.",
       "wapuTitle": "Wapu",
-      "wapuBody": "The rail that converts sats to pesos and deposits them in the teacher's CBU or alias. Built for teachers who'd rather get paid in pesos and keep their money in their usual bank, without having to use a Bitcoin wallet.",
+      "wapuBody": "The rail that converts sats to pesos and deposits them in the teacher's CBU/CVU or alias. Built for teachers who'd rather get paid in pesos and keep their money in their usual bank, without having to use a Bitcoin wallet.",
       "lightningAddressTitle": "Lightning Address",
       "lightningAddressBody": "An email-style address (you@blink.sv) where the teacher receives sats straight to their wallet. For teachers who already live in sats, with no converter in the middle.",
       "nostrTitle": "Nostr",
@@ -153,11 +153,11 @@
     "metadataDescription": "What Cursats offers: two ways to get paid (sats or pesos), no platform custody, optional Nostr login, in-app delivery, and more.",
     "hero": {
       "title": "What <brand></brand> offers",
-      "subtitle": "Built for educators teaching from Argentina.\nPesos to your CBU or sats to your Lightning — your call."
+      "subtitle": "Built for educators teaching from Argentina.\nPesos to your CBU/CVU or sats to your Lightning — your call."
     },
     "items": {
       "twoRailsTitle": "Two ways to get paid",
-      "twoRailsBody": "The buyer always pays in Lightning. The teacher chooses: pesos to their CBU via Wapu (for those who want to keep their bank routine), or sats straight to their Lightning Address (for those who already live in sats).",
+      "twoRailsBody": "The buyer always pays in Lightning. The teacher chooses: pesos to their CBU/CVU via Wapu (for those who want to keep their bank routine), or sats straight to their Lightning Address (for those who already live in sats).",
       "noCustodyTitle": "No platform custody",
       "noCustodyBody": "Sats go straight to the teacher's Lightning wallet. For ARS payouts, Wapu manages the funds during the day and settles them to the teacher's bank — Cursats never touches them.",
       "anonymousByDefaultTitle": "Anonymous by default",
@@ -190,9 +190,9 @@
       "walletQ": "Do I need a wallet to buy?",
       "walletA": "Yes, any Lightning wallet works. As long as it can scan an invoice or paste a code, you'll be able to pay for your course.",
       "wapuQ": "What is Wapu?",
-      "wapuA": "Wapu is the rail that converts the buyer's sats to pesos and deposits them in the teacher's CBU or alias. Built for teachers who'd rather get paid in pesos and keep their money in their usual bank, without having to use a Bitcoin wallet.",
+      "wapuA": "Wapu is the rail that converts the buyer's sats to pesos and deposits them in the teacher's CBU/CVU or alias. Built for teachers who'd rather get paid in pesos and keep their money in their usual bank, without having to use a Bitcoin wallet.",
       "argentinaQ": "Does it only work in Argentina?",
-      "argentinaA": "The Lightning rail (getting paid in sats to your wallet) works anywhere. The Wapu rail (getting paid in pesos to a CBU) only works in Argentina, because it settles to Argentine bank CBUs or aliases.",
+      "argentinaA": "The Lightning rail (getting paid in sats to your wallet) works anywhere. The Wapu rail (getting paid in pesos to a CBU/CVU) only works in Argentina, because it settles to Argentine bank CBU/CVU accounts or aliases.",
       "anonymousQ": "Do I need to create an account to buy?",
       "anonymousA": "No. Purchase is anonymous by default: you pay, you get the receipt, that's it. The receipt URL is your permanent proof.",
       "deliveryQ": "How do I get what I bought?",
@@ -200,17 +200,17 @@
       "lostReceiptQ": "What if I lose the receipt link?",
       "lostReceiptA": "If your Nostr was connected, you'll find it under \"My orders\". If you bought anonymously, you can sign in with Nostr and claim the order by pasting the order ID on the claim page.",
       "creatorPayoutQ": "How do I get paid as a teacher?",
-      "creatorPayoutA": "You pick how to get paid in Settings: pesos to a CBU or alias (via Wapu), or sats straight to your Lightning Address. Each payment lands separately at the destination you chose — Cursats never touches the money.",
+      "creatorPayoutA": "You pick how to get paid in Settings: pesos to a CBU/CVU or alias (via Wapu), or sats straight to your Lightning Address. Each payment lands separately at the destination you chose — Cursats never touches the money.",
       "nostrSignInQ": "What is Nostr and why do I use it to sign in?",
       "nostrSignInA": "Nostr is an open identity and messaging protocol. Your private key is your account — no central servers, no email. For teachers, it's the only way to create and manage your courses.",
       "feesQ": "Are there fees?",
-      "feesA": "If you get paid in pesos, Wapu charges its settlement fee on each CBU payout. If you get paid in sats to your Lightning Address, you skip the converter entirely: only the standard Lightning routing fees may apply. The Cursats platform itself doesn't take an additional cut in v1."
+      "feesA": "If you get paid in pesos, Wapu charges its settlement fee on each CBU/CVU payout. If you get paid in sats to your Lightning Address, you skip the converter entirely: only the standard Lightning routing fees may apply. The Cursats platform itself doesn't take an additional cut in v1."
     }
   },
   "catalog": {
     "hero": {
       "title": "Buy your next class with sats.",
-      "subtitle": "Pay for classes, workshops, and study material with your Lightning wallet. The teacher chooses how to get paid: sats to their wallet, or pesos to their CBU."
+      "subtitle": "Pay for classes, workshops, and study material with your Lightning wallet. The teacher chooses how to get paid: sats to their wallet, or pesos to their CBU/CVU."
     },
     "list": {
       "heading": "Explore courses",
@@ -294,7 +294,7 @@
     "title": "All set! Your purchase is confirmed.",
     "subtitle": "Save this page: it's your permanent receipt.",
     "settlement": {
-      "ars": "Settled in pesos to the teacher's CBU/alias.",
+      "ars": "Settled in pesos to the teacher's CBU/CVU/alias.",
       "sats": "Settled in sats to the teacher's Lightning Address."
     },
     "code": {
@@ -360,7 +360,7 @@
     "subtitle": "Set the details so the course shows up in your storefront.",
     "payoutModal": {
       "title": "Set up how you want to get paid",
-      "intro": "Before publishing a course you need a payout destination: either a CBU/alias to receive Argentine pesos, or a Lightning Address to receive sats."
+      "intro": "Before publishing a course you need a payout destination: either a CBU/CVU/alias to receive Argentine pesos, or a Lightning Address to receive sats."
     }
   },
   "myCourses": {
@@ -399,7 +399,7 @@
       "sectionBasics": "Course basics",
       "sectionBasicsHint": "How the course shows up on your storefront and in the explorer.",
       "sectionPricing": "Pricing",
-      "sectionPricingHint": "You set the price in the currency of your payout method — ARS for a CBU/alias, sats for a Lightning Address. Buyers pay in sats; on ARS prices the sats amount is calculated at Wapu's exchange rate at the moment of purchase.",
+      "sectionPricingHint": "You set the price in the currency of your payout method — ARS for a CBU/CVU/alias, sats for a Lightning Address. Buyers pay in sats; on ARS prices the sats amount is calculated at Wapu's exchange rate at the moment of purchase.",
       "sectionContent": "Content & delivery",
       "sectionContentHint": "Pick how you deliver the course to the buyer.",
       "sectionCover": "Cover image",
@@ -453,7 +453,7 @@
       "invalidPriceAmount": "Price must be a positive integer.",
       "invalidCodeCount": "Code count must be between 1 and 10,000.",
       "imageRequired": "Upload or paste a cover image before saving.",
-      "priceCurrencyNoteArs": "You get paid in pesos (CBU/alias), so you set the price in ARS. The buyer pays the sats equivalent at the exchange rate of the moment.",
+      "priceCurrencyNoteArs": "You get paid in pesos (CBU/CVU/alias), so you set the price in ARS. The buyer pays the sats equivalent at the exchange rate of the moment.",
       "priceCurrencyNoteSats": "You get paid in sats (Lightning Address), so you set the price in sats. They land directly in your wallet.",
       "payoutEstimate": "Estimated Wapu fee: ~{fee} ARS · You receive ≈ {net} ARS (estimate; varies with the exchange rate at sale time).",
       "priceBelowWapuMin": "Your net payout must be at least {min} ARS — Wapu won't process withdrawals below that. Raise the price.",
@@ -552,7 +552,7 @@
         },
         "payoutReleased": {
           "title": "Tell me when my payout lands",
-          "hint": "We ping you once Wapu releases the pesos to your CBU/alias."
+          "hint": "We ping you once Wapu releases the pesos to your CBU/CVU/alias."
         },
         "payoutFailed": {
           "title": "Tell me if a payout fails",
@@ -626,22 +626,20 @@
       "sectionPayout": "How you get paid",
       "sectionPayoutHint": "Pick the currency you receive your sales in. You can switch later. The details stay here and never show up anywhere on the buyer side.",
       "payoutMethod": "Payout method",
-      "railArs": "Get paid in pesos (CBU/alias)",
+      "railArs": "Get paid in pesos (CBU/CVU/alias)",
       "railArsHint": "Wapu converts the sats to ARS and deposits to your Argentine bank.",
       "railSats": "Get paid in sats (Lightning Address)",
       "railSatsHint": "Sats land directly in your wallet, no Wapu in between. Your provider must support LUD-21.",
-      "cbu": "CBU",
-      "cbuTooltip": "Argentine bank routing number — 22 digits. Wapu deposits ARS into this account. If you also have an alias, you only need one of the two.",
+      "cbu": "CBU/CVU",
+      "cbuTooltip": "Argentine bank account number — 22 digits for a CBU, 23 for a CVU (Mercado Pago, Ualá, etc.). Wapu deposits ARS into this account. If you also have an alias, you only need one of the two.",
       "cbuExample": "0000003100099999999999",
       "cbuPlaceholder": "0000003100000000000000",
-      "cbuTooltip": "Argentine bank routing number — 22 digits. Wapu deposits ARS into this account. If you also have an alias, you only need one of the two.",
-      "cbuExample": "0000003100099999999999",
       "alias": "Alias",
-      "aliasTooltip": "Human-readable alias for your CBU: 6–20 characters using letters, numbers, dots and hyphens (no ñ or accents). Only you see this page; Wapu uses the value to route the deposit.",
+      "aliasTooltip": "Human-readable alias for your CBU/CVU: 6–20 characters using letters, numbers, dots and hyphens (no ñ or accents). Only you see this page; Wapu uses the value to route the deposit.",
       "aliasExample": "TEACHER.MARIA.BITCOIN",
       "aliasPlaceholder": "MY.ALIAS.MP",
       "aliasInvalid": "Alias must be 6–20 characters using letters, numbers, dots and hyphens (at least one letter; no ñ or accents).",
-      "cbuInvalid": "CBU must be exactly 22 digits.",
+      "cbuCvuInvalid": "CBU/CVU must be 22 or 23 digits.",
       "transferSpeed": "Payout speed",
       "transferSpeedHint": "Pick how fast Wapu deposits the pesos into your account. The fast option carries a higher fee.",
       "transferStandard": "Standard",
@@ -652,9 +650,9 @@
       "saving": "Saving…",
       "saved": "Settings saved.",
       "saveFailed": "Couldn't save settings. Try again.",
-      "destinationRequired": "You need at least a CBU or an alias.",
+      "destinationRequired": "You need at least a CBU/CVU or an alias.",
       "signRequiredTitle": "Confirm the change with your signature",
-      "signRequiredBody": "Changing the CBU, alias or Lightning Address requires an additional signature from your Nostr signer.",
+      "signRequiredBody": "Changing the CBU/CVU, alias or Lightning Address requires an additional signature from your Nostr signer.",
       "signCancelled": "You cancelled the signature. Try again when you're ready.",
       "signClockSkew": "Your device clock is out of sync. Sync it and try again."
     }
@@ -855,10 +853,7 @@
       "displayNameTooShort": "Display name needs at least 2 characters.",
       "bio": "Bio",
       "bioPlaceholder": "A line or two about what you teach.",
-      "destination": "Bank alias or CBU for payouts",
-      "destinationPlaceholder": "MY.ALIAS.MP or 22-digit CBU",
       "destinationHint": "Optional now. Add it from Settings before your first sale — without it, checkout will reject buyers.",
-      "destinationInvalid": "Alias is 6–20 characters (letters, numbers, dots, hyphens). CBU is exactly 22 digits.",
       "optional": "Optional",
       "save": "Create my store",
       "saving": "Creating…",
