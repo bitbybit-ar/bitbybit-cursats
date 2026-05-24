@@ -4,8 +4,15 @@ import {
   slugifyDisplayName,
   hasPayoutConfigured,
   expectedPriceCurrency,
+  kind0RefreshPatch,
+  UpdateUserProfileSchema,
 } from "@/lib/creator/users";
 import type { User } from "@/lib/creator/users";
+import type { Kind0Profile } from "@/lib/nostr/profile";
+
+// 8-hex-prefixed pubkey so the placeholder name is deterministic.
+const PUBKEY = "abc12345" + "f".repeat(56);
+const PLACEHOLDER_NAME = "user-abc12345";
 
 // Minimal User stub that satisfies hasPayoutConfigured's reads. The
 // helper only inspects four columns; the rest are filler so the cast
@@ -22,6 +29,7 @@ function makeUser(overrides: Partial<User>): User {
     cbu: null,
     alias: null,
     lightning_address: null,
+    nostr_lightning_address: null,
     payout_method: "cbu_alias",
     features_autorenewal: false,
     locale: "es",
@@ -171,5 +179,114 @@ describe("expectedPriceCurrency", () => {
     expect(
       expectedPriceCurrency(makeUser({ payout_method: "lightning_address" }))
     ).toBe("sats");
+  });
+});
+
+describe("kind0RefreshPatch", () => {
+  const fullProfile: Kind0Profile = {
+    display_name: "Profe Bitcoin",
+    picture: "https://example.com/a.png",
+    banner: "https://example.com/b.png",
+    about: "I teach sats",
+    lud16: "profe@primal.net",
+  };
+
+  it("refreshes display_name only while it equals the placeholder", () => {
+    const patch = kind0RefreshPatch(
+      makeUser({ pubkey: PUBKEY, display_name: PLACEHOLDER_NAME }),
+      fullProfile
+    );
+    expect(patch.display_name).toBe("Profe Bitcoin");
+  });
+
+  it("never clobbers a real/edited display_name", () => {
+    const patch = kind0RefreshPatch(
+      makeUser({ pubkey: PUBKEY, display_name: "My Real Name" }),
+      fullProfile
+    );
+    expect(patch.display_name).toBeUndefined();
+  });
+
+  it("falls back to kind:0 `name` when `display_name` is absent", () => {
+    const patch = kind0RefreshPatch(
+      makeUser({ pubkey: PUBKEY, display_name: PLACEHOLDER_NAME }),
+      { name: "shorthand" }
+    );
+    expect(patch.display_name).toBe("shorthand");
+  });
+
+  it("fills empty avatar/banner/bio/nostr-address from kind:0", () => {
+    const patch = kind0RefreshPatch(
+      makeUser({ pubkey: PUBKEY, display_name: PLACEHOLDER_NAME }),
+      fullProfile
+    );
+    expect(patch.avatar_url).toBe("https://example.com/a.png");
+    expect(patch.banner_url).toBe("https://example.com/b.png");
+    expect(patch.bio).toBe("I teach sats");
+    // The public Nostr address is filled even though primal.net has no
+    // LUD-21 — no validation runs on this field (ADR 0030).
+    expect(patch.nostr_lightning_address).toBe("profe@primal.net");
+  });
+
+  it("preserves fields the user has already set", () => {
+    const patch = kind0RefreshPatch(
+      makeUser({
+        pubkey: PUBKEY,
+        display_name: "My Real Name",
+        avatar_url: "https://mine/a.png",
+        banner_url: "https://mine/b.png",
+        bio: "my bio",
+        nostr_lightning_address: "me@alby.com",
+      }),
+      fullProfile
+    );
+    expect(patch).toEqual({});
+  });
+
+  it("treats whitespace-only existing values as empty", () => {
+    const patch = kind0RefreshPatch(
+      makeUser({ pubkey: PUBKEY, display_name: PLACEHOLDER_NAME, bio: "   " }),
+      { about: "real bio" }
+    );
+    expect(patch.bio).toBe("real bio");
+  });
+
+  it("returns an empty patch when kind:0 carries nothing useful", () => {
+    const patch = kind0RefreshPatch(
+      makeUser({ pubkey: PUBKEY, display_name: PLACEHOLDER_NAME }),
+      {}
+    );
+    expect(patch).toEqual({});
+  });
+
+  it("never proposes a slug change", () => {
+    const patch = kind0RefreshPatch(
+      makeUser({ pubkey: PUBKEY, display_name: PLACEHOLDER_NAME }),
+      fullProfile
+    );
+    expect(patch).not.toHaveProperty("slug");
+  });
+});
+
+describe("UpdateUserProfileSchema — nostr_lightning_address", () => {
+  it("accepts a well-formed public Nostr address (no LUD-21 check)", () => {
+    const parsed = UpdateUserProfileSchema.safeParse({
+      nostr_lightning_address: "profe@primal.net",
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("accepts null (clearing the field)", () => {
+    const parsed = UpdateUserProfileSchema.safeParse({
+      nostr_lightning_address: null,
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("rejects a malformed address (format check still applies)", () => {
+    const parsed = UpdateUserProfileSchema.safeParse({
+      nostr_lightning_address: "not-an-address",
+    });
+    expect(parsed.success).toBe(false);
   });
 });

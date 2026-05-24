@@ -23,7 +23,11 @@ interface ProfileHeaderProps {
   avatarUrl: string | null;
   bannerUrl: string | null;
   bio: string | null;
-  /** Lightning address from the seller's settings row (DB). */
+  /**
+   * The seller's public Nostr Lightning Address (`nostr_lightning_address`,
+   * the kind:0 lud16) from the DB — used for the zap button + LN QR.
+   * Falls back to the live kind:0 lud16 below when the row has none.
+   */
   lightningAddress: string | null;
 }
 

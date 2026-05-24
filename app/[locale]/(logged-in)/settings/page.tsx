@@ -56,14 +56,20 @@ export default async function SettingsPage({
   const initialBio = user.bio ?? profile.about ?? "";
   const initialAvatarUrl = user.avatar_url ?? profile.picture ?? "";
   const initialBannerUrl = user.banner_url ?? profile.banner ?? "";
-  const initialLightningAddress = user.lightning_address ?? profile.lud16 ?? "";
+  // Profile tab: the public Nostr lud16, falling back to kind:0 when
+  // the row has none yet (ADR 0030).
+  const initialNostrLightningAddress =
+    user.nostr_lightning_address ?? profile.lud16 ?? "";
+  // Payout tab: the LUD-21-validated settlement address. No kind:0
+  // fallback — payout must never silently adopt an unvalidated address.
+  const payoutLightningAddress = user.lightning_address ?? "";
 
   const prefilledFromNostr = Boolean(
     fromNostrDisplayName ||
     (!user.bio && profile.about) ||
     (!user.avatar_url && profile.picture) ||
     (!user.banner_url && profile.banner) ||
-    (!user.lightning_address && profile.lud16)
+    (!user.nostr_lightning_address && profile.lud16)
   );
 
   return (
@@ -85,7 +91,7 @@ export default async function SettingsPage({
               initialBio={initialBio}
               initialAvatarUrl={initialAvatarUrl}
               initialBannerUrl={initialBannerUrl}
-              initialLightningAddress={initialLightningAddress}
+              initialNostrLightningAddress={initialNostrLightningAddress}
               prefilledFromNostr={prefilledFromNostr}
             />
           ) : null}
@@ -95,7 +101,7 @@ export default async function SettingsPage({
               initialAlias={user.alias ?? ""}
               initialPayoutMethod={user.payout_method}
               initialTransferSpeed={user.transfer_speed}
-              currentLightningAddress={initialLightningAddress}
+              currentLightningAddress={payoutLightningAddress}
               nwcConnected={Boolean(user.nwc_uri)}
             />
           ) : null}

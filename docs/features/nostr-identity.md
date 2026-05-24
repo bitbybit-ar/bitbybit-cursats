@@ -1,7 +1,7 @@
 # Nostr identity
 
 > **Status:** Active
-> **Last updated:** 2026-05-22
+> **Last updated:** 2026-05-24
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | Kind:0 seeding, Re-sign on payment-destination fields | Documented `refreshUserFromKind0` topping up placeholder/empty fields at every sign-in, added `lud16` → `nostr_lightning_address` seeding, and noted the public Nostr address is exempt from the re-sign list. | ADR 0030 + issue #30 — sign-in now syncs the display name and the public LN address is split from the payout one. |
 | 2026-05-22 | Identity tiers, Platform admin moderation, What we do not do | Collapsed the identity tiers from three to two (dropped the anonymous-plus-Nostr-DM tier), removed the platform-admin moderation section, and dropped the server-signed-DM mention. | The server Nostr-DM channel and the `PLATFORM_ADMIN_PUBKEYS` moderation lever were removed as dead code. |
 | 2026-05-21 | — | Initial version. | Hackathon documentation pass — explain the three identity tiers, the sign-in surface, the lazy user-row materialisation, and the re-sign discipline on payment-destination fields. |
 
@@ -118,24 +119,37 @@ just looks up their existing row.
 
 When a new user row is created, the server tries to fetch the
 user's **kind:0 metadata** (their public Nostr profile) from a
-default set of public relays. Three fields are absorbed:
+default set of public relays. These fields are absorbed:
 
 - `name` or `display_name` → seeded into `users.display_name`,
   and (if the auto-generated slug is still `user-<…>`) used as
   the basis for a friendlier slug.
 - `picture` → seeded into `users.avatar_url`.
+- `banner` → seeded into `users.banner_url`.
 - `about` → seeded into `users.bio`.
+- `lud16` → seeded into `users.nostr_lightning_address` (the
+  public Nostr Lightning Address; ADR 0030).
 
-This is **seed-once, then re-sync on demand.** The auto-seed
-happens only at row creation. After that, the user's Postgres
-copy is authoritative — a later edit to kind:0 in their main
-Nostr client does not silently overwrite their Cursats profile.
-A user who *wants* to pull their latest kind:0 can trigger it
-explicitly (the "sync from Nostr" action,
+This is **seed-on-create, then top up placeholders/empties at every
+sign-in.** The full seed happens at row creation. After that,
+`refreshUserFromKind0` (`lib/creator/users.ts`) runs on each sign-in
+and refreshes only fields the user hasn't set: `display_name` *while
+it still equals the `user-<…>` placeholder*, and any still-empty
+`avatar_url` / `banner_url` / `bio` / `nostr_lightning_address`. It
+never overwrites a value the user has edited, and never changes the
+`slug` (that would break their storefront URL). This is what fixes
+the placeholder-display-name bug (issue #30): a row first created
+during a slow-relay sign-in no longer stays `user-<…>` forever.
+
+Beyond those placeholder/empty fills, the user's Postgres copy is
+authoritative — a later edit to kind:0 in their main Nostr client
+does not silently overwrite a Cursats field they've already set. A
+user who *wants* to pull their latest kind:0 into every field can
+trigger it explicitly (the "sync from Nostr" action,
 `app/api/profile/sync-from-nostr/route.ts`, backed by
 `lib/nostr/profile.ts`). Edits made in `/settings` are stored in
-Postgres; Cursats does not silently mirror them back to the
-user's kind:0 profile.
+Postgres; Cursats does not silently mirror them back to the user's
+kind:0 profile.
 
 Separately, on the **buyer side**, the navbar avatar uses
 `useNostrProfile` (`lib/hooks/useNostrProfile.ts`) to fetch the
@@ -156,8 +170,13 @@ control where money goes:
 
 - `users.cbu` (Argentine bank account)
 - `users.alias` (Argentine bank alias)
-- `users.lightning_address`
+- `users.lightning_address` (the **payout** LN address)
+- `users.nwc_uri` (the NWC payout connection)
 - `users.payout_method` (the rail dispatch field)
+
+`users.nostr_lightning_address` is deliberately **not** in this
+list — it is the public Nostr `lud16`, not a payout destination, so
+editing it on the Profile tab needs no re-sign (ADR 0030).
 
 The PATCH handler (`app/api/settings/route.ts`, with the payload
 helper in `lib/creator/sign-settings-payload.ts`) refuses to write

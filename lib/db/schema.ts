@@ -123,8 +123,18 @@ export const users = pgTable(
     alias: text("alias"),
     // Lightning Address used when payout_method = 'lightning_address'.
     // Format: local-part@domain. Validated at write time to also
-    // resolve a working LNURL-pay endpoint with LUD-21 support.
+    // resolve a working LNURL-pay endpoint with LUD-21 support. This is
+    // the *payout* destination; the *public* lud16 shown on the
+    // storefront lives in `nostr_lightning_address` below.
     lightning_address: varchar("lightning_address", { length: 128 }),
+    // Public Nostr Lightning Address (kind:0 `lud16`). Edited on the
+    // Profile tab, synced from / published to Nostr, and used for the
+    // storefront zap button + QR. Any LUD-16 address is accepted — it
+    // carries NO LUD-21 requirement (that constraint applies only to
+    // the payout `lightning_address` above). ADR 0030. Null when unset.
+    nostr_lightning_address: varchar("nostr_lightning_address", {
+      length: 128,
+    }),
     // NWC connection URI used when payout_method = 'lightning_nwc'
     // (ADR 0029). A `nostr+walletconnect://` string — a wallet
     // credential, so it is stored AES-256-GCM-ENCRYPTED at rest

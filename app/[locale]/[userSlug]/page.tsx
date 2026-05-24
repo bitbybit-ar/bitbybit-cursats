@@ -43,7 +43,7 @@ export default async function SellerStorePage({ params }: Props) {
         avatarUrl={seller.avatar_url}
         bannerUrl={seller.banner_url}
         bio={seller.bio}
-        lightningAddress={seller.lightning_address}
+        lightningAddress={seller.nostr_lightning_address}
       />
 
       <Section className={styles.offeringsSection}>
