@@ -4,6 +4,7 @@ import { sql, eq } from "drizzle-orm";
 import { testDb, cleanDb, seedUser } from "../setup";
 import { offerings, orders } from "@/lib/db/schema";
 import {
+  pollWapuDeposit,
   openSellerWithdrawal,
   pollWapuWithdrawal,
   runWapuSettlements,
@@ -34,7 +35,14 @@ const ACTOR = "f".repeat(64);
  * and reports a configurable transaction status. Only the three methods
  * the settlement path calls are implemented.
  */
-function makeFakeWapu(opts: { txStatus?: WapuTxStatus } = {}) {
+function makeFakeWapu(
+  opts: {
+    txStatus?: WapuTxStatus;
+    /** Currency of the polled transaction; "USDT" for a deposit credit. */
+    paymentCurrency?: string;
+    paymentAmount?: number;
+  } = {}
+) {
   const withdrawals: CreateWithdrawalRequest[] = [];
   let counter = 0;
   const client = {
@@ -54,8 +62,8 @@ function makeFakeWapu(opts: { txStatus?: WapuTxStatus } = {}) {
         transaction_id,
         status: opts.txStatus ?? "Pending",
         type: "withdrawal",
-        payment_amount: 0,
-        payment_currency: "ARS",
+        payment_amount: opts.paymentAmount ?? 0,
+        payment_currency: opts.paymentCurrency ?? "ARS",
         currency_taken: "USDT",
         total_amount_taken: 0,
         fee_taken: 0,
@@ -241,5 +249,79 @@ describe("pollWapuWithdrawal", () => {
 
     const row = await reload(order.id);
     expect(row.payout_status).toBe("failed");
+  });
+});
+
+describe("pollWapuDeposit", () => {
+  // A pending wapu_ars order with the deposit tx stamped — the shape the
+  // buyer's checkout poller and the cron both hand to pollWapuDeposit.
+  const pendingDeposit = {
+    status: "pending" as const,
+    paid_at: null,
+    wapu_deposit_tx_id: "dep_1",
+  };
+
+  it("confirms a deposit: marks paid, draws a code, and opens the withdrawal", async () => {
+    const { withdrawals, client } = makeFakeWapu({
+      txStatus: "Completed",
+      paymentCurrency: "USDT",
+      paymentAmount: 25,
+    });
+    _setWapuClientForTests(client);
+    const { order } = await seedPaidOrder(pendingDeposit);
+
+    const result = await pollWapuDeposit(order);
+
+    expect(result).toBe("paid");
+    const row = await reload(order.id);
+    expect(row.status).toBe("paid");
+    expect(row.paid_at).not.toBeNull();
+    expect(row.redemption_code).toBe("TEST-AAAA"); // the only seeded code
+    // The buyer-paid event chains straight into the seller payout leg.
+    expect(withdrawals).toHaveLength(1);
+    expect(row.wapu_withdrawal_tx_id).toBe("wd_1");
+    expect(row.payout_status).toBe("pending");
+  });
+
+  it("marks the order failed when the deposit is Rejected", async () => {
+    const { withdrawals, client } = makeFakeWapu({ txStatus: "Rejected" });
+    _setWapuClientForTests(client);
+    const { order } = await seedPaidOrder(pendingDeposit);
+
+    const result = await pollWapuDeposit(order);
+
+    expect(result).toBe("failed");
+    expect((await reload(order.id)).status).toBe("failed");
+    expect(withdrawals).toHaveLength(0);
+  });
+
+  it("leaves the order pending while the deposit is unconfirmed", async () => {
+    const { withdrawals, client } = makeFakeWapu({ txStatus: "Pending" });
+    _setWapuClientForTests(client);
+    const { order } = await seedPaidOrder(pendingDeposit);
+
+    const result = await pollWapuDeposit(order);
+
+    expect(result).toBe("pending");
+    expect((await reload(order.id)).status).toBe("pending");
+    expect(withdrawals).toHaveLength(0);
+  });
+
+  it("is idempotent: a second poll of the same row does not re-draw or re-open", async () => {
+    const { withdrawals, client } = makeFakeWapu({
+      txStatus: "Completed",
+      paymentCurrency: "USDT",
+      paymentAmount: 25,
+    });
+    _setWapuClientForTests(client);
+    const { order } = await seedPaidOrder(pendingDeposit);
+
+    // Both the buyer poller and the cron can hand the same (stale) pending
+    // row to pollWapuDeposit; markOrderPaid's guard must absorb the second.
+    await pollWapuDeposit(order);
+    await pollWapuDeposit(order);
+
+    expect(withdrawals).toHaveLength(1);
+    expect((await reload(order.id)).redemption_code).toBe("TEST-AAAA");
   });
 });

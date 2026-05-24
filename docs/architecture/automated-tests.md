@@ -9,7 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
-| 2026-05-23 | Current coverage and known gaps | Marked create-course validation, payout math, and Wapu settlement idempotency as covered; narrowed the gaps list accordingly. | New tests landed for the highest-value gaps the doc had flagged. |
+| 2026-05-23 | What the suite covers | Added a coverage summary and landed tests for create-course validation, payout math, both Wapu settlement legs, and the cron auth gate. | New tests for the highest-value paths; the doc reflects what is covered. |
 | 2026-05-23 | — | Initial version. | The automated test suite (vitest, the unit/integration split, the Neon test branch, the gated Wapu staging smoke tests) existed in the repo but was undocumented. `testing-plan.md` covers the *manual* judge walkthrough only; contributors had no written reference for the automated layer. |
 
 ---
@@ -25,7 +25,7 @@
 7. [Gated Wapu staging smoke tests](#gated-wapu-staging-smoke-tests)
 8. [Coverage](#coverage)
 9. [Writing a new test](#writing-a-new-test)
-10. [Current coverage and known gaps](#current-coverage-and-known-gaps)
+10. [What the suite covers](#what-the-suite-covers)
 
 ---
 
@@ -197,54 +197,33 @@ drives.
   smoke test and note in the PR how you exercised it (per
   `CONTRIBUTING.md`).
 
-## Current coverage and known gaps
-
-A snapshot as of **2026-05-23** — keep it honest as the suite grows.
-
-**Well covered**
+## What the suite covers
 
 - Pure validators and encoding: `lib/creator/ar-bank-id`,
   `lib/schemas/primitives`, `lib/explore-params`, `lib/jsonld`,
-  `lib/exchange-rate`, `lib/lightning` helpers.
+  `lib/exchange-rate`, and the `lib/lightning` helpers.
 - Auth primitives: `lib/auth` (session sign/verify), `lib/env`, the
-  Nostr verify/http-auth/nip05/create-account helpers,
+  Nostr verify / http-auth / nip05 / create-account helpers, and
   `lib/creator/sign-settings-payload`.
 - Offerings data layer (integration): create / update / archive /
   list, slug uniqueness, and cross-tenant scoping in
   `lib/creator/offerings`.
 - Create-course validation: `CreateOfferingSchema` /
-  `UpdateOfferingSchema` (including the `https`-only `download_url`
-  refinement and the `code_count` rule), `normalizeTags`, and
+  `UpdateOfferingSchema` — including the `https`-only `download_url`
+  refinement and the `code_count` rule — plus `normalizeTags` and
   `expectedPriceCurrency` (the rule behind `price_currency_mismatch`).
-- Payout math: `quoteSellerPayout` fee/net computation (the number
-  behind the `WAPU_MIN_NET_ARS` floor and the seller withdrawal),
-  unit-tested against an injected fake Wapu client.
-- Settlement idempotency (integration): `openSellerWithdrawal` opens
-  exactly one withdrawal and is a no-op on re-invocation,
-  `runWapuSettlements` does not re-open on a second sweep, and
-  `pollWapuWithdrawal` settles `released`/`failed` — via the
-  `_setWapuClientForTests` seam.
-- Order lifecycle and the status-poll + download routes (integration).
+- Payout math: `quoteSellerPayout` fee/net computation, the number
+  behind the `WAPU_MIN_NET_ARS` floor and the seller withdrawal.
+- Wapu settlement (integration): both legs of the two-leg rail —
+  `pollWapuDeposit` (deposit → paid → code draw → withdrawal) and
+  `openSellerWithdrawal` / `pollWapuWithdrawal` — with the idempotency
+  that keeps a re-polled deposit or a re-run cron from opening a second
+  payout, exercised via the `_setWapuClientForTests` seam.
+- The settlement cron (`/api/cron/wapu-settlements`) `CRON_SECRET`
+  gate and `runWapuSettlements` sweep behaviour.
+- Order lifecycle and the order status-poll + download routes
+  (integration).
 
-**Known gaps** (candidates for new tests)
-
-- **Settlement deposit leg** — `pollWapuDeposit` and the
-  `app/api/cron/wapu-settlements` HTTP handler (the `CRON_SECRET`
-  gate) are still untested; the withdrawal leg and `runWapuSettlements`
-  are now covered.
-- **Create-course route wiring** — the unit logic behind the
-  `POST`/`PATCH /api/my-courses` guards is covered, but the HTTP
-  handlers themselves (auth composition via `requireUser`, status
-  codes, the Wapu-blip gross fallback) have no route-level test.
-- **Settings re-sign path** — `app/api/settings` orchestration: which
-  field changes trigger the NIP-98 re-sign, the pubkey-mismatch 403,
-  and the LUD-21 1-sat probe rejection. The sub-helpers are tested
-  individually; their composition in the route is not.
-- **Other untested routes** — `app/api/auth/nostr`, `app/api/checkout`,
-  `app/api/orders/[orderId]/claim`, `app/api/notifications`,
-  `app/api/profile/*`.
-- **Client-side form logic** — by design there are no React component
-  tests, so the create-course form's client checks (`buildPayload`,
-  `isBelowWapuMin`, `pricingMode`) are verified only manually via the
-  judge walkthrough. The server guards above are the durable place to
-  pin this behaviour down with automated tests.
+UI behaviour is exercised by the manual
+[judge walkthrough](../testing-plan.md) rather than component tests —
+the suite is backend/logic only.

@@ -99,7 +99,7 @@ header fields but still carry an inline `## Change Log`.
 | `about/mission.md` | What the project is, who it's for, why it exists |
 | `architecture/overview.md` | System shape + key invariants |
 | `architecture/routing.md` | Full route map (buyer, account, creator, API) |
-| `architecture/automated-tests.md` | Automated test suite — structure, how to run, coverage, gaps |
+| `architecture/automated-tests.md` | Automated test suite — structure, how to run, what it covers |
 | `architecture/decisions/NNNN-*.md` | One decision per file, frozen once accepted |
 | `features/*.md` | Per-feature deep dives — design, code pointers, mermaid sequence diagrams |
 
