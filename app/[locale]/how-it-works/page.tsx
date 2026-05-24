@@ -4,7 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Section } from "@/components/ui/section";
 import { Polaroid } from "@/components/ui/polaroid";
 import { Button } from "@/components/ui/button";
-import { alternatesFor } from "@/lib/seo";
+import { buildPageMetadata } from "@/lib/seo";
 import { JourneySteps } from "@/components/how-it-works/journey-steps";
 import { IntroHero } from "@/components/how-it-works/intro-hero";
 import { Reveal } from "@/components/common/reveal";
@@ -32,11 +32,12 @@ export const dynamic = "force-static";
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "howItWorks" });
-  return {
+  return buildPageMetadata({
+    locale,
+    path: "/how-it-works",
     title: t("metadataTitle"),
     description: t("metadataDescription"),
-    alternates: alternatesFor(locale, "/how-it-works"),
-  };
+  });
 }
 
 export default async function HowItWorksPage({ params }: Props) {
@@ -114,26 +115,28 @@ export default async function HowItWorksPage({ params }: Props) {
               viewportMargin="-20% 0px"
               delay={0.2}
             >
-            {glossary.map((item) => (
-              <Polaroid
-                key={item.title}
-                rotation={item.rotation}
-                frame={
-                  <span className={`${styles.glossaryLogo} ${item.frameTone}`}>
-                    <Image
-                      src={item.logo}
-                      alt={item.title}
-                      width={128}
-                      height={128}
-                      className={styles.glossaryLogoImg}
-                    />
-                  </span>
-                }
-              >
-                <h3>{item.title}</h3>
-                <p>{item.body}</p>
-              </Polaroid>
-            ))}
+              {glossary.map((item) => (
+                <Polaroid
+                  key={item.title}
+                  rotation={item.rotation}
+                  frame={
+                    <span
+                      className={`${styles.glossaryLogo} ${item.frameTone}`}
+                    >
+                      <Image
+                        src={item.logo}
+                        alt={item.title}
+                        width={128}
+                        height={128}
+                        className={styles.glossaryLogoImg}
+                      />
+                    </span>
+                  }
+                >
+                  <h3>{item.title}</h3>
+                  <p>{item.body}</p>
+                </Polaroid>
+              ))}
             </RevealPolaroids>
           </div>
         </Section>

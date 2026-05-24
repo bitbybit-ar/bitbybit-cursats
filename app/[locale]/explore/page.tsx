@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Container } from "@/components/ui/container";
 import { OfferingCard } from "@/components/catalog/offering-card";
@@ -13,6 +14,7 @@ import {
 } from "@/lib/explore-params";
 import { Controls } from "@/components/catalog/explore-controls";
 import { Pager } from "@/components/catalog/explore-pager";
+import { buildPageMetadata } from "@/lib/seo";
 import styles from "./page.module.scss";
 
 type Props = {
@@ -34,6 +36,17 @@ type Props = {
 // page back to the canonical, unpersonalised view — buyers who
 // reach for a knob have a deliberate query in mind.
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "catalog" });
+  return buildPageMetadata({
+    locale,
+    path: "/explore",
+    title: t("metadataTitle"),
+    description: t("metadataDescription"),
+  });
+}
 
 // Rail size on /explore is 4 (wider grid than the 3-up rail on
 // /purchases). Logged-in users with no signal still see the

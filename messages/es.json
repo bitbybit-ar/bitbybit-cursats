@@ -2,7 +2,7 @@
   "metadata": {
     "siteName": "CURSATS",
     "siteTitle": "CURSATS — Cursá tu próxima clase con sats.",
-    "description": "Checkout Lightning para profes y creadores de contenido educativo. El comprador paga en sats; vos elegís cobrar sats en tu wallet o pesos en tu CBU/CVU.",
+    "description": "Checkout Lightning para profes. El comprador paga en sats; vos elegís cobrar sats en tu wallet o pesos en tu CBU/CVU.",
     "keywords": "bitbybit,cursats,checkout lightning,bitcoin,sats,lightning address,wapu,pagos,argentina,educación,clases,profes,creadores,la crypta",
     "ogValueLine": "Cursá tu próxima clase con SATS.",
     "skipToContent": "Saltar al contenido"
@@ -208,6 +208,8 @@
     }
   },
   "catalog": {
+    "metadataTitle": "Explorá cursos",
+    "metadataDescription": "Explorá clases, talleres y materiales de profes — pagá en sats por la red Lightning.",
     "hero": {
       "title": "Cursá tu próxima clase con sats.",
       "subtitle": "Comprá clases, talleres y materiales con tu wallet Lightning. El profe elige cómo cobrar: sats en su wallet, o pesos en su CBU/CVU."

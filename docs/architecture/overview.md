@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | SEO surface | Redrew the OG image as one lockup (bigger stacked block mark beside a single giant `CURSATS` wordmark, no second small lockup) rendered in the brand display face (Nunito, vendored WOFF read via `fs`); added the shared `buildPageMetadata` helper in `lib/seo.ts` so every page carries the brand card under its own title/description (course pages and creator stores lead with their own image, brand card as fallback), and shortened the `metadata.description` so WhatsApp stops truncating it mid-sentence. `og.png` re-baked from the es route as the fallback. | The card duplicated the wordmark (small lockup + hero) and used Satori's fallback sans; nested pages either showed no card image or reused the home page's title/description because the `opengraph-image` file convention doesn't propagate to nested segments; the description was being cut off at "you choose how to get". |
 | 2026-05-24 | Security | CSP moved from a static `next.config.ts` header to a per-request build in `proxy.ts` (`lib/csp.ts`): production `script-src` is now `'self' 'nonce-…' 'strict-dynamic'` with no `'unsafe-inline'`, the nonce stamped on Next's bootstrap scripts plus the inline JSON-LD and theme scripts; other security headers stay static. | Defense in depth (issue #32): removing `script-src 'unsafe-inline'` ensures an injected inline `<script>` can't execute even if a future HTML sink slips past the `react/no-danger` guard. |
 | 2026-05-23 | Stack, Table of Contents, Payment flow | Corrected the exchange-rate source from Yadio to Wapu's `/exchange_rates` (ADR 0027 superseded 0022); fixed the staging API base to `be-stage.wapu.app` (`staging.wapu.app` is the web environment, not the API host); dropped the stale "server-side signing for outgoing DMs" from the Nostr line (no server signing key ships; in-app delivery per ADR 0006). Reconciled the Table of Contents with the body: removed the stale "Auto-renewal flow (optional)", "Notifications & delivery", "Configuration model", and "What is intentionally not here" entries (none exist as sections — notifications now lives as an H3 under Payment flow) and repointed the in-body delivery link to `#in-app-notifications`. | The Stack section still named Yadio, mislabeled the staging API base, and described a server-side DM signer that was removed; the TOC linked four sections that no longer exist as headings, and an in-body link pointed at the dead anchor. |
 | 2026-05-22 | Identity model, Payment flow, Notifications & delivery, Configuration model, Security, Stack, Routing | Removed the Nostr-DM delivery channel and the paste-your-npub buyer tier (no server signing key ships); made both rails poll-driven (no Wapu webhooks) with a daily settlement cron + on-demand `/api/orders/sync`; dropped `NOSTR_NSEC`, `PLATFORM_ADMIN_PUBKEYS`, and NWC from the config table, security list, and identity model. | The server Nostr-DM, platform-admin moderation, and NWC/auto-renewal env vars were removed as dead code, and the Wapu rebuild (ADR 0025) made the rail poll-driven; the overview still described webhooks, DMs, and those env vars. |
@@ -225,26 +226,44 @@ Routes inventory and request shapes live in
 
 - Per-locale `generateMetadata` in `app/[locale]/layout.tsx`
   produces title, description, keywords, OG, Twitter, robots,
-  canonical, and `hreflang` alternates. The canonical and
-  alternates use the helper at `lib/seo.ts`.
+  canonical, and `hreflang` alternates for the home page. Every
+  other page builds its metadata through `buildPageMetadata` in
+  `lib/seo.ts`, so each route carries the brand social card (the
+  localized `opengraph-image` route, with `og.png` as a fallback
+  `og:image`) under its **own** per-page title and description.
+  Course pages and creator stores pass an optional `image` (the
+  course image / store banner) that leads the `og:image` list, with
+  the brand card kept after it as a fallback. The helper exists
+  because the `opengraph-image`
+  file convention does not propagate to nested route segments, and
+  a page that sets its own `openGraph` block otherwise drops the
+  inherited image — so without it, nested pages either showed no
+  card image or reused the home page's title/description. The
+  canonical and alternates use the same `lib/seo.ts` helpers.
 - `Organization` and `WebSite` JSON-LD are injected in the
   `<head>` from the layout. The `Organization` block sets
   `parentOrganization` to BitByBit so search engines associate
   Cursats with the wider org.
 - Dynamic OG image rendered per locale via `next/og` at
-  `app/[locale]/opengraph-image.tsx`. It is brand-led: the
-  vertically stacked block mark plus the `CURSATS` wordmark (the
-  same blue/lime/pink hues as `<LogoBlocks />` / `<Wordmark />`),
-  a giant wordmark hero, and one short value line from
-  `messages/{locale}.json` (`metadata.ogValueLine`). That value
-  line is the brand slogan ("Cursá tu próxima clase con sats" /
-  "Your next class, paid in sats"), which also doubles as the link
-  title (`metadata.siteTitle`); the long product description stays
-  out of the image and lives only in the link description.
-  `public/og.png` is a baked copy of the same design,
-  referenced first in the metadata for crawlers that miss the
-  file-convention endpoint (notably WhatsApp); regenerate it from
-  the same layout whenever the route's design changes.
+  `app/[locale]/opengraph-image.tsx`. It is brand-led and reads as
+  a single lockup: the vertically stacked block mark sitting beside
+  one giant `CURSATS` wordmark (the same blue/lime/pink hues as
+  `<LogoBlocks />` / `<Wordmark />`) — there is no second small
+  lockup; the hero *is* the logo. One short value line sits below
+  from `messages/{locale}.json` (`metadata.ogValueLine`). The
+  wordmark renders in the brand display face (Nunito): the WOFF
+  files are vendored under `app/[locale]/_fonts/` and read into
+  Satori with `fs` at request time (Satori can read neither the
+  SCSS tokens nor WOFF2). That value line is the brand slogan
+  ("Cursá tu próxima clase con sats" / "Your next class, paid in
+  sats"), which also doubles as the link title
+  (`metadata.siteTitle`); the long product description stays out of
+  the image and lives only in the link description. `public/og.png`
+  is a baked twin of the **default-locale (es)** route, used as the
+  fallback `og:image` for crawlers that can't render the
+  file-convention endpoint; regenerate it (`curl
+  …/opengraph-image > public/og.png`) whenever the route's design
+  changes.
 - `app/sitemap.ts` lists `/es` and `/en` with hreflang alternates.
 - `app/robots.ts` allows everything except `/api/` and `/_next/`.
 - `app/manifest.ts` declares the standalone PWA shell with

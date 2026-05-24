@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Container } from "@/components/ui/container";
 import { FaqList } from "@/components/faq/faq-list";
-import { alternatesFor } from "@/lib/seo";
+import { buildPageMetadata } from "@/lib/seo";
 import styles from "./page.module.scss";
 
 const CURSATS_REPO_URL = "https://github.com/bitbybit-ar/bitbybit-cursats";
@@ -16,11 +16,12 @@ export const dynamic = "force-static";
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "faq" });
-  return {
+  return buildPageMetadata({
+    locale,
+    path: "/faq",
     title: t("metadataTitle"),
     description: t("metadataDescription"),
-    alternates: alternatesFor(locale, "/faq"),
-  };
+  });
 }
 
 export default async function FaqPage({ params }: Props) {
