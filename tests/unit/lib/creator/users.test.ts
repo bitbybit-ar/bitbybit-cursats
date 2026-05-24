@@ -1,6 +1,10 @@
 // @vitest-environment node
 import { describe, it, expect } from "vitest";
-import { slugifyDisplayName, hasPayoutConfigured } from "@/lib/creator/users";
+import {
+  slugifyDisplayName,
+  hasPayoutConfigured,
+  expectedPriceCurrency,
+} from "@/lib/creator/users";
 import type { User } from "@/lib/creator/users";
 
 // Minimal User stub that satisfies hasPayoutConfigured's reads. The
@@ -153,5 +157,19 @@ describe("hasPayoutConfigured", () => {
         })
       )
     ).toBe(true);
+  });
+});
+
+describe("expectedPriceCurrency", () => {
+  it("prices a cbu_alias (Wapu) seller in ARS", () => {
+    expect(expectedPriceCurrency(makeUser({ payout_method: "cbu_alias" }))).toBe(
+      "ars"
+    );
+  });
+
+  it("prices a lightning_address seller in sats", () => {
+    expect(
+      expectedPriceCurrency(makeUser({ payout_method: "lightning_address" }))
+    ).toBe("sats");
   });
 });

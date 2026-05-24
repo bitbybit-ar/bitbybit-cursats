@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-23 | Current coverage and known gaps | Marked create-course validation, payout math, and Wapu settlement idempotency as covered; narrowed the gaps list accordingly. | New tests landed for the highest-value gaps the doc had flagged. |
 | 2026-05-23 | — | Initial version. | The automated test suite (vitest, the unit/integration split, the Neon test branch, the gated Wapu staging smoke tests) existed in the repo but was undocumented. `testing-plan.md` covers the *manual* judge walkthrough only; contributors had no written reference for the automated layer. |
 
 ---
@@ -211,22 +212,30 @@ A snapshot as of **2026-05-23** — keep it honest as the suite grows.
 - Offerings data layer (integration): create / update / archive /
   list, slug uniqueness, and cross-tenant scoping in
   `lib/creator/offerings`.
+- Create-course validation: `CreateOfferingSchema` /
+  `UpdateOfferingSchema` (including the `https`-only `download_url`
+  refinement and the `code_count` rule), `normalizeTags`, and
+  `expectedPriceCurrency` (the rule behind `price_currency_mismatch`).
+- Payout math: `quoteSellerPayout` fee/net computation (the number
+  behind the `WAPU_MIN_NET_ARS` floor and the seller withdrawal),
+  unit-tested against an injected fake Wapu client.
+- Settlement idempotency (integration): `openSellerWithdrawal` opens
+  exactly one withdrawal and is a no-op on re-invocation,
+  `runWapuSettlements` does not re-open on a second sweep, and
+  `pollWapuWithdrawal` settles `released`/`failed` — via the
+  `_setWapuClientForTests` seam.
 - Order lifecycle and the status-poll + download routes (integration).
 
 **Known gaps** (candidates for new tests)
 
-- **Settlement orchestration** — `lib/wapu-settlement.ts`
-  (`pollWapuDeposit`, `openSellerWithdrawal`, `pollWapuWithdrawal`,
-  `runWapuSettlements`) and `app/api/cron/wapu-settlements` have no
-  deterministic test. Only `quoteSellerPayout` is touched, and only
-  by the gated staging smoke test. The idempotency that prevents a
-  double withdrawal is asserted only by code comments.
-- **Create-course server guards** — the
-  `price_currency_mismatch` (`expectedPriceCurrency`) and
-  `price_below_wapu_minimum` (`WAPU_MIN_NET_ARS` net floor) checks in
-  `POST`/`PATCH /api/my-courses`, plus the `CreateOfferingSchema`
-  parse (including the `https`-only `download_url` refinement and the
-  `code_count` rule) and `normalizeTags`.
+- **Settlement deposit leg** — `pollWapuDeposit` and the
+  `app/api/cron/wapu-settlements` HTTP handler (the `CRON_SECRET`
+  gate) are still untested; the withdrawal leg and `runWapuSettlements`
+  are now covered.
+- **Create-course route wiring** — the unit logic behind the
+  `POST`/`PATCH /api/my-courses` guards is covered, but the HTTP
+  handlers themselves (auth composition via `requireUser`, status
+  codes, the Wapu-blip gross fallback) have no route-level test.
 - **Settings re-sign path** — `app/api/settings` orchestration: which
   field changes trigger the NIP-98 re-sign, the pubkey-mismatch 403,
   and the LUD-21 1-sat probe rejection. The sub-helpers are tested
