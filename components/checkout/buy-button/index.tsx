@@ -6,9 +6,15 @@ import { useRouter } from "@/i18n/routing";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { BoltIcon } from "@/components/icons";
+import styles from "./buy-button.module.scss";
 
 interface BuyButtonProps {
   offeringId: string;
+  /**
+   * Set when the signed-in buyer already has a paid order for this
+   * offering. Renders a "Go to receipt" link beside "Buy again".
+   */
+  existingOrderId?: string;
   /** True when the offering has no available codes left. */
   soldOut?: boolean;
 }
@@ -17,7 +23,11 @@ interface CheckoutResponse {
   order_id: string;
 }
 
-export function BuyButton({ offeringId, soldOut = false }: BuyButtonProps) {
+export function BuyButton({
+  offeringId,
+  existingOrderId,
+  soldOut = false,
+}: BuyButtonProps) {
   const t = useTranslations("offering");
   const tErrors = useTranslations("errors");
   const router = useRouter();
@@ -82,17 +92,41 @@ export function BuyButton({ offeringId, soldOut = false }: BuyButtonProps) {
     }
   }
 
-  return (
+  const buyAgain = (
     <Button
       variant="accent"
       size="lg"
       fullWidth
       onClick={handleClick}
       disabled={isPending || soldOut}
+      className={existingOrderId ? styles.action : undefined}
     >
       <BoltIcon size={20} />
-      {soldOut ? t("soldOut") : isPending ? t("buying") : t("buy")}
+      {soldOut
+        ? t("soldOut")
+        : isPending
+          ? t("buying")
+          : existingOrderId
+            ? t("buyAgain")
+            : t("buy")}
     </Button>
+  );
+
+  if (!existingOrderId) return buyAgain;
+
+  return (
+    <div className={styles.actions}>
+      <Button
+        href={`/receipt/${existingOrderId}`}
+        variant="outline"
+        size="lg"
+        fullWidth
+        className={styles.action}
+      >
+        {t("goToReceipt")}
+      </Button>
+      {buyAgain}
+    </div>
   );
 }
 

@@ -347,6 +347,33 @@ export async function getOrder(orderId: string) {
 }
 
 /**
+ * Most recent *paid* order for a given buyer + offering, or null.
+ * Powers the course detail page's "Go to receipt" / "Buy again"
+ * split (issue #35): a signed-in buyer who already owns the offering
+ * gets a receipt link alongside the repeat-purchase button. Pending
+ * and failed orders are ignored — a receipt only exists once paid.
+ */
+export async function getOrderByPubkeyAndOffering(
+  pubkey: string,
+  offeringId: string
+): Promise<typeof orders.$inferSelect | null> {
+  const db = getDb();
+  const [row] = await db
+    .select()
+    .from(orders)
+    .where(
+      and(
+        eq(orders.pubkey, pubkey),
+        eq(orders.offering_id, offeringId),
+        eq(orders.status, "paid")
+      )
+    )
+    .orderBy(desc(orders.created_at))
+    .limit(1);
+  return row ?? null;
+}
+
+/**
  * History query for /[locale]/purchases. Cursor is the
  * `created_at` of the last row from the previous page; pass null
  * for the first page.

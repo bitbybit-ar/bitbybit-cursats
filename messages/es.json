@@ -258,6 +258,8 @@
     },
     "buy": "Comprar con sats",
     "buying": "Generando invoice…",
+    "buyAgain": "Comprar de nuevo",
+    "goToReceipt": "Ver recibo",
     "soldOut": "Sin cupos disponibles",
     "soldOutBadge": "Sin cupos",
     "rail": {

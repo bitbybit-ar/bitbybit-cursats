@@ -1,3 +1,22 @@
-// Visuals come from the shared Button component; this file exists
-// to satisfy the index.tsx + module.scss convention and to host any
-// future buy-button-only tweaks.
+// Visuals come from the shared Button component; this file hosts the
+// buy-button-only layout for the owned-offering case (issue #35).
+// "Buy again" and "Go to receipt" stack full-width on mobile and sit
+// side by side (50/50) from tablet up.
+@use "@/styles/spacing" as *;
+@use "@/styles/media-mixins" as *;
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-12;
+}
+
+@include tabletAndUp {
+  .actions {
+    flex-direction: row;
+  }
+
+  .action {
+    flex: 1;
+  }
+}

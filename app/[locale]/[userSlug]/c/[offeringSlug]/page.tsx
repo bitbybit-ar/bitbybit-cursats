@@ -14,6 +14,8 @@ import {
   KeyIcon,
 } from "@/components/icons";
 import { getOfferingByUserAndSlug } from "@/lib/offerings";
+import { getOrderByPubkeyAndOffering } from "@/lib/orders";
+import { getSession } from "@/lib/auth";
 import { alternatesFor } from "@/lib/seo";
 import styles from "./page.module.scss";
 
@@ -47,6 +49,14 @@ export default async function OfferingPage({ params }: Props) {
   const row = await getOfferingByUserAndSlug(userSlug, offeringSlug);
   if (!row) notFound();
   const { offering, seller } = row;
+
+  // A signed-in buyer who already owns this offering sees a receipt
+  // link alongside the buy button (issue #35). Anonymous visitors and
+  // first-time buyers skip the lookup and see the single button.
+  const session = await getSession();
+  const existingOrder = session
+    ? await getOrderByPubkeyAndOffering(session.pubkey, offering.id)
+    : null;
 
   const t = await getTranslations("offering");
 
@@ -107,6 +117,7 @@ export default async function OfferingPage({ params }: Props) {
 
           <BuyButton
             offeringId={offering.id}
+            existingOrderId={existingOrder?.id}
             soldOut={
               offering.type === "code" &&
               (offering.code_pool?.length ?? 0) === 0

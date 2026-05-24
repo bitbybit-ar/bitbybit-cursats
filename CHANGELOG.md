@@ -12,6 +12,12 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **"Go to receipt" + "Buy again" on the course detail page.** When a
+  signed-in buyer already has a paid order for the offering they're
+  viewing, the page shows a receipt link beside a "Buy again" button
+  (for certification renewals or gifting a second code) instead of the
+  single buy button. Anonymous visitors and first-time buyers are
+  unchanged.
 - **Inline validation for the CBU/alias payout fields.** The payout
   form now checks CBU (22 digits) and alias (BCRA 6–20 chars of
   letters/numbers/dots/hyphens, at least one letter) on blur and on
