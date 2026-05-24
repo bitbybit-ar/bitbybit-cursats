@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | Rail dispatch, Direct-sats rail, Polling, Pointers | Documented NWC (NIP-47) as the second input method of the `direct_lightning` rail: third `payout_method` value + dispatch-table row, NWC invoice/confirmation variant on the sats-rail sequence, generalized the "LUD-21 mandatory" key points to "LUD-21 or NWC", and added the `lib/nwc.ts` pointer. | ADR 0029 — sellers whose wallet lacks LUD-21 receive via NWC, confirmed by `lookup_invoice` instead of the `verify` URL. |
 | 2026-05-24 | Wapu rail | Corrected the "deployment never holds the buyer's sats / same call" bullet to match the two-leg flow and the diagram: the deposit credits USDT to a Cursats-controlled Wapu wallet (leg 1) and the seller payout is a separate withdrawal (leg 2), so the rail is custodial in transit. | The bullet still described the pre-ADR-0025 direct-payment model and contradicted its own leg-1/leg-2 sequence diagram. |
 | 2026-05-23 | Wapu rail, Why the rails feel identical, Polling, prose/diagrams | Rewrote the residual webhook language for the wapu_ars rail to the poll-driven model (deposit poll is the source of truth); switched Spanish UI labels in prose, code blocks, and diagrams to the English `messages/en.json` strings. | Docs must match the implemented poll-driven rail (ADR 0025) and the English-only UI judges test against. |
 | 2026-05-22 | Sequence diagrams, Confirmation table, Polling, Pointers | Switched the wapu_ars flow to poll-driven (no webhook): deposit-poll sequence + confirmation source, settlement cron/sync pointers; removed the optional-Nostr-DM step. | The Wapu rebuild (ADR 0025) made the rail poll-driven and the server Nostr-DM channel was removed as dead code. |
@@ -22,7 +23,7 @@
 2. [The buyer journey at a glance](#the-buyer-journey-at-a-glance)
 3. [Rail dispatch — `users.payout_method`](#rail-dispatch--userspayout_method)
 4. [Wapu rail (`wapu_ars`)](#wapu-rail-wapu_ars)
-5. [Lightning rail (`direct_lightning`)](#lightning-rail-direct_lightning)
+5. [Direct-sats rail (`direct_lightning`)](#direct-sats-rail-direct_lightning)
 6. [Why the rails feel identical to the buyer](#why-the-rails-feel-identical-to-the-buyer)
 7. [Polling, timeouts, and the no-double-spend invariant](#polling-timeouts-and-the-no-double-spend-invariant)
 8. [Where to look in the code](#where-to-look-in-the-code)
@@ -56,28 +57,35 @@ dispatch happens server-side on the seller's stored
 ## Rail dispatch — `users.payout_method`
 
 Every offering belongs to a user, and every user has exactly one
-of two values in `users.payout_method` (default `cbu_alias`):
+of three values in `users.payout_method` (default `cbu_alias`):
 
 - `cbu_alias` — sats in, ARS out to the seller's CBU/alias
 - `lightning_address` — sats in, sats out to the seller's
-  Lightning Address
+  Lightning Address (LUD-21)
+- `lightning_nwc` — sats in, sats out to the seller's wallet over
+  an NWC connection (NIP-47)
 
 The checkout API (`POST /api/checkout` → `createOrder` in
 `lib/orders.ts`) reads the value on order creation, picks the
 right invoice-creation path, and stamps `orders.rail` with the
-corresponding rail value:
+corresponding rail value. Both sats methods map to the one
+`direct_lightning` rail (NWC is an input method, not a third rail);
+the order also records which sats sub-method it used:
 
 | `users.payout_method` | `orders.rail` | Confirmation source |
 |---|---|---|
 | `cbu_alias` | `wapu_ars` | Wapu deposit poll |
-| `lightning_address` | `direct_lightning` | LUD-21 verify poll |
+| `lightning_address` | `direct_lightning` | LUD-21 `verify` poll |
+| `lightning_nwc` | `direct_lightning` | NWC `lookup_invoice` poll |
 
-Once stamped, the rail is immutable for that order — a seller who
-changes their payout method mid-flight does not retroactively
-redirect open invoices.
+Once stamped, the rail and sub-method are immutable for that order
+— a seller who changes their payout method mid-flight does not
+retroactively redirect open invoices.
 
-Decisions in ADR
-[0015-sats-settlement-rail](../architecture/decisions/0015-sats-settlement-rail.md).
+Decisions in ADRs
+[0015-sats-settlement-rail](../architecture/decisions/0015-sats-settlement-rail.md)
+and
+[0029-nwc-sats-rail-input-method](../architecture/decisions/0029-nwc-sats-rail-input-method.md).
 
 ## Wapu rail (`wapu_ars`)
 
@@ -138,7 +146,14 @@ Wapu API contract is documented in
 publishes formal docs; the staging environment at
 `https://staging.wapu.app` accepts fake money for testing.
 
-## Lightning rail (`direct_lightning`)
+## Direct-sats rail (`direct_lightning`)
+
+This rail has two input methods, set by the seller in `/settings`
+and stamped on the order at creation: a **Lightning Address**
+(LUD-21) or an **NWC** connection (NIP-47). The buyer flow is
+identical; only the invoice source and the confirmation call
+differ. The sequence below shows the Lightning-Address method; the
+NWC variant is noted under it.
 
 ```mermaid
 sequenceDiagram
@@ -163,25 +178,39 @@ sequenceDiagram
   App-->>Buyer: Redirect → /receipt/[orderId]
 ```
 
+**NWC variant.** Replace the LNURL provider with an NWC channel to
+the seller's wallet over a Nostr relay: order creation calls
+`make_invoice` (instead of the LNURL-pay callback) to mint the
+BOLT11, and the poll calls `lookup_invoice` (instead of the
+`verify` URL) until the invoice reads settled. Same QR, same
+buyer experience, same `markOrderPaid` effects — the sats still
+land straight in the seller's wallet. The wrapper in `lib/nwc.ts`
+mirrors the `lib/lightning.ts` interface so the checkout and poll
+paths stay uniform.
+
 Key points:
 
-- **No converter in the middle.** The sats land directly in the
-  seller's Lightning wallet via their LNURL provider; the
-  deployment never custodies funds, not even briefly.
-- **LUD-21 is mandatory on this rail.** The seller's LNURL
-  provider must return a `verify` URL on its pay callback;
-  without it, the platform has no server-side way to confirm
-  payment. Settings rejects providers that don't advertise it
-  (see [settings-and-payouts](./settings-and-payouts.md) for the
-  1-sat probe that gates this).
-- **Polling, not webhooks.** Lightning Address providers don't
-  push events to merchants. The client poll on
+- **No converter in the middle.** With either method the sats land
+  directly in the seller's wallet — via their LNURL provider or
+  their NWC-connected wallet; the deployment never custodies funds,
+  not even briefly.
+- **Server-side confirmation is mandatory on this rail.** The
+  Lightning-Address method requires a LUD-21 `verify` URL; the NWC
+  method uses `lookup_invoice`. Without one or the other the
+  platform has no way to confirm payment, so Settings rejects a
+  Lightning Address with no `verify` URL and validates an NWC
+  connection with a probe before saving (see
+  [settings-and-payouts](./settings-and-payouts.md)).
+- **Polling, not webhooks.** Neither LNURL providers nor NWC
+  wallets push events to merchants. The client poll on
   `/checkout/[orderId]` triggers the server to re-poll the
-  verify URL; the server stamps `paid_at` only when verify
-  returns `{ settled: true }`.
+  `verify` URL or `lookup_invoice`; the server stamps `paid_at`
+  only when the call reports the invoice settled. NWC orders poll
+  at a slower cadence (`poll_after_ms`) because each poll opens a
+  fresh relay connection.
 - **This rail never touches Wapu.** Confirmation is the LUD-21
-  verify poll only; nothing on the Wapu side can flip a
-  Lightning-rail order to paid.
+  verify poll or the NWC `lookup_invoice` poll only; nothing on the
+  Wapu side can flip a direct-sats order to paid.
 
 ## Why the rails feel identical to the buyer
 
@@ -194,9 +223,10 @@ Both rails share the same buyer surface:
 | After paying | "Waiting for your payment…" → redirect to receipt |
 | Receipt page | Redemption code or download URL, plus order summary |
 
-Differences live entirely below the UI: the invoice provider
-(Wapu vs LNURL), which transaction the server polls to confirm
-(the Wapu deposit vs the LUD-21 verify URL), and where the sats
+Differences live entirely below the UI: the invoice source (Wapu,
+the seller's LNURL provider, or the seller's wallet over NWC),
+which call the server polls to confirm (the Wapu deposit, the
+LUD-21 `verify` URL, or NWC `lookup_invoice`), and where the sats
 end up (Wapu's converter vs the seller's wallet). The buyer does
 not need to know — and is never asked.
 
@@ -210,8 +240,8 @@ dispatch.
 - **Checkout-page polling is a UX nicety, not the trigger.** The
   page polls `/api/orders/[orderId]` to know when to advance; the
   *source of truth* is either the Wapu deposit transaction (rail =
-  `wapu_ars`) or the LUD-21 verify URL (rail = `direct_lightning`).
-  If the
+  `wapu_ars`) or, on `direct_lightning`, the LUD-21 `verify` URL or
+  NWC `lookup_invoice` per the order's sub-method. If the
   buyer closes the tab mid-payment, the rail still confirms the
   order the next time the order is touched.
 - **Invoices expire.** Lightning invoices carry a finite
@@ -222,7 +252,8 @@ dispatch.
   one-way into a terminal state (`paid`, `failed`, or `refunded` —
   there is no `expired` status). Once `paid`, `markOrderPaid`
   short-circuits on both rails (the Wapu deposit poller and the
-  LUD-21 verify poller); no second payment can flip state again,
+  direct-lightning poller, whether it confirmed via LUD-21 verify
+  or NWC `lookup_invoice`); no second payment can flip state again,
   and no second redemption code is drawn from the pool.
 - **Receipt URLs are opaque.** The `orderId` in the URL is a
   ≥128-bit unguessable identifier (see
@@ -234,11 +265,12 @@ dispatch.
 | What | Where |
 |---|---|
 | Order creation | `app/api/checkout/route.ts` → `createOrder` in `lib/orders.ts` |
-| Order status poll (Wapu deposit + LUD-21 verify) | `app/api/orders/[orderId]/route.ts` |
+| Order status poll (Wapu deposit + LUD-21 verify + NWC lookup) | `app/api/orders/[orderId]/route.ts` |
 | Settlement orchestration (poll deposit, open + poll withdrawal) | `lib/wapu-settlement.ts` |
 | Settlement cron + seller sync | `app/api/cron/wapu-settlements/route.ts`, `app/api/orders/sync/route.ts` |
 | Wapu API client | `lib/wapu.ts` |
 | Lightning invoice mint + LUD-21 verify | `lib/lightning.ts` (LNURL helper in `lib/nostr/lnurl.ts`) |
+| NWC invoice mint + lookup (NIP-47) | `lib/nwc.ts` (`@getalby/sdk` `NWCClient`); URI encryption in `lib/crypto.ts` |
 | Rail dispatch + state machine | `lib/orders.ts` (reads `users.payout_method`, stamps `orders.rail`) |
 | Code draw on payment | `lib/orders.ts:drawAndAssignCode` |
 | Exchange rate (display only) | `lib/exchange-rate.ts:getSatsPerArs()` |
