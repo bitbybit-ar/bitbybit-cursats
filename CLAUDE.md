@@ -141,7 +141,7 @@ repo's copy is intentionally identical and should stay in sync.
   URL on its LNURL-pay callback or we cannot confirm payment
   server-side; the settings PATCH mints a 1-sat probe invoice on
   set/change and rejects providers without LUD-21. Most popular AR
-  wallets (Wallet of Satoshi, Primal, Strike) fail LUD-21 — recommend
+  wallets (Primal, Strike) fail LUD-21 — recommend
   Alby or Blink for the LN-address method, and steer everyone else to
   NWC. Setting `nwc_uri` is validated with a probe `get_info` +
   `make_invoice`/`lookup_invoice`; we only use receive/lookup, so the

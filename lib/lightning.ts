@@ -17,13 +17,14 @@ import { bech32 } from "@scure/base";
  *     `_setLightningClientForTests(new MockLightningClient())`. Not
  *     reachable through the factory and not used by `npm run dev`.
  *
- * LUD-21 (`verify` URL) is required. We refuse to mint an invoice
- * against a Lightning Address whose LNURL-pay endpoint does not
- * advertise LUD-21, because without `verify` we have no server-side
- * way to confirm the BOLT11 was paid — the seller's wallet is the
- * only thing that knows, and the seller did not give us NWC
- * credentials. Almost every modern provider (WoS, Strike, Alby Hub,
- * LNbits, ZBD, Primal) supports LUD-21.
+ * LUD-21 (`verify` URL) is required for this rail. We refuse to mint
+ * an invoice against a Lightning Address whose LNURL-pay endpoint does
+ * not advertise LUD-21, because without `verify` we have no
+ * server-side way to confirm the BOLT11 was paid — the seller's wallet
+ * is the only thing that knows. LUD-21 support is uneven: Alby, Blink,
+ * Coinos, and LNbits advertise it; Strike, ZBD, and Primal do not.
+ * Sellers whose wallet lacks LUD-21 use the NWC input method instead
+ * (`lib/nwc.ts`, ADR 0029).
  */
 
 // --- Public types ------------------------------------------------
