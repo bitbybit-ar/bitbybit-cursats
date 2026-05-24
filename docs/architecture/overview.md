@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | Offering types | Replaced the `download` type's "short-lived signed URL" description with the proxy's actual behavior: it serves the file behind a per-order fetch cap and post-payment expiry window (`lib/download-limits.ts`). | The download proxy gained access limits; the prior "signed URL" phrasing never matched the implementation. |
 | 2026-05-24 | Creator surfaces | Dropped the "read-only in v1" qualifier from the `/orders` route row and relabeled the access-model bullet from "Read-only" to "No mutations" (the substance — orders/payments/buyers are immutable views — is unchanged). | The "read-only in v1" wording was surfaced to sellers as a meaningless UI hint and removed product-wide; the docs are aligned with that copy cleanup. |
 | 2026-05-24 | SEO surface | Redrew the OG image as one lockup (bigger stacked block mark beside a single giant `CURSATS` wordmark, no second small lockup) rendered in the brand display face (Nunito, vendored WOFF read via `fs`); added the shared `buildPageMetadata` helper in `lib/seo.ts` so every page carries the brand card under its own title/description (course pages and creator stores lead with their own image, brand card as fallback), and shortened the `metadata.description` so WhatsApp stops truncating it mid-sentence. `og.png` re-baked from the es route as the fallback. | The card duplicated the wordmark (small lockup + hero) and used Satori's fallback sans; nested pages either showed no card image or reused the home page's title/description because the `opengraph-image` file convention doesn't propagate to nested segments; the description was being cut off at "you choose how to get". |
 | 2026-05-24 | Security | CSP moved from a static `next.config.ts` header to a per-request build in `proxy.ts` (`lib/csp.ts`): production `script-src` is now `'self' 'nonce-…' 'strict-dynamic'` with no `'unsafe-inline'`, the nonce stamped on Next's bootstrap scripts plus the inline JSON-LD and theme scripts; other security headers stay static. | Defense in depth (issue #32): removing `script-src 'unsafe-inline'` ensures an injected inline `<script>` can't execute even if a future HTML sink slips past the `react/no-danger` guard. |
@@ -306,9 +307,11 @@ Every offering in a seller's catalog is one of two types:
 1. **`code`** — buyer pays, the receipt page shows a redemption
    code. The buyer shows the code to the seller in person. Used for
    single classes, lesson packs, monthly bonos.
-2. **`download`** — buyer pays, the receipt page shows a
-   short-lived signed URL pointing at a private file. Used for
-   PDF method books, sheet music, recorded course material.
+2. **`download`** — buyer pays, the receipt page shows a download
+   button served by a proxy (`/api/downloads/[orderId]`) that keeps
+   the private file behind a per-order fetch cap and a post-payment
+   expiry window (`lib/download-limits.ts`). Used for PDF method
+   books, sheet music, recorded course material.
 
 Both share: catalog → invoice (Wapu or LNURL-pay) → confirmation
 (poll the Wapu deposit or the LUD-21 verify URL) → receipt page.

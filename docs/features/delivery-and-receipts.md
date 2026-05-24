@@ -1,7 +1,7 @@
 # Delivery and receipts
 
 > **Status:** Active
-> **Last updated:** 2026-05-23
+> **Last updated:** 2026-05-24
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | Receipt page, Download proxy | Documented the download access bounds: a paid download order may fetch the file up to five times within 30 days of payment, enforced by the proxy, with the receipt card surfacing the remaining count and expiry date. | The proxy now enforces a per-order fetch cap and a post-payment window (`lib/download-limits.ts`); the doc must describe that bound instead of stating downloads are unlimited and never expire. |
 | 2026-05-23 | By design | Reframed the scope section (formerly "What we deliberately do not do") as "By design", leading each point with the strength (receipt-only delivery, secret-by-construction receipts, no email). | The "what we don't do" framing read as incompleteness, but each item is a deliberate design strength — the section should sell it, not apologize for it. |
 | 2026-05-23 | Receipt page, Download proxy | Switched the Spanish "Descargar" label to "Download file" and reframed the proxy access model in present tense (what it does, not what is deferred). | Docs must match the English-only UI and read as a complete, shipped system. |
 | 2026-05-22 | — | Removed the Nostr-DM channel and the outgoing-signing-identity section: delivery is now the in-app receipt page only. | The server-side Nostr signing key (`NOSTR_NSEC`) and DM code were removed; the receipt page was always the system of record. |
@@ -64,15 +65,18 @@ What renders depends on the offering type:
 - A "Download file" button pointing at the download proxy,
   `/api/downloads/[orderId]`.
 - The offering title, seller display name, and the date paid.
-- A small note explaining the file is available from the receipt
-  page.
+- A line showing how many downloads remain and the date the link
+  stays available; once the allowance is spent, a note that the
+  link is no longer active.
 
 Both versions also surface the order's basic details (rail,
 amount in sats and ARS) and a "Connect a Nostr identity to also
 get this in your Nostr client" CTA if the buyer paid anonymously.
 
-The receipt URL works forever. There is no "your receipt expired"
-failure mode.
+Viewing the receipt works forever — the page itself never expires.
+For `download` offerings the *file download* is additionally bound
+to a window and a fetch cap; see
+[The download proxy](#the-download-proxy).
 
 ## The download proxy
 
@@ -95,21 +99,32 @@ What the proxy does:
    not a `download` type. The 404 (rather than 422) on
    wrong-type deliberately avoids revealing whether an order id
    exists for the wrong offering type.
-4. Otherwise streams the file, keeping the seller's source URL
+4. Refuses with **410** once the buyer has spent their download
+   allowance — either the post-payment window has elapsed
+   (`link_expired`) or the per-order fetch cap has been reached
+   (`download_limit_reached`). The download counter is bumped
+   atomically and only after every other check passes, so a
+   refused request never consumes one of the buyer's downloads.
+5. Otherwise streams the file, keeping the seller's source URL
    out of the public DOM.
 
-Access is keyed entirely on order status, so the proxy behaves
-predictably for the buyer:
+Access is scoped so that a paid order grants a bounded, predictable
+right to the file (both values live in `lib/download-limits.ts`):
 
-- **The link lives as long as the order is `paid`.** There is no
-  expiry clock; a buyer who bought a method book can re-download
-  it whenever they need it.
-- **There is no per-order download cap.** The same paid order can
-  fetch the file as many times as the buyer wants — across
-  devices, after a lost file, or to a new phone.
+- **The link is live for 30 days after payment**
+  (`DOWNLOAD_ACCESS_WINDOW_DAYS`). That covers a buyer who comes
+  back for a method book a few weeks later, while stopping a shared
+  receipt link from being useful indefinitely.
+- **A paid order may fetch the file up to five times**
+  (`MAX_DOWNLOADS_PER_ORDER`). Enough to re-download across devices
+  or recover a lost file, capped so one purchase is not an open
+  mirror.
 
-The receipt URL (`orderId`) is the persistent access key for both
-the receipt page and the proxy.
+The receipt page's download card shows how many downloads remain
+and the date the link expires; once the allowance is spent, it
+explains the link is no longer active. The receipt page itself
+stays available at its `orderId` URL — the bounds above apply to
+the file download, not to viewing the receipt.
 
 ## The claim flow
 

@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | Two primitives, By design | Noted the per-order download access bound (five fetches / 30 days) on the `download` primitive, and retitled the "Unlimited downloads" by-design point to "Unlimited sales" so it reads as the inventory strength it describes, not as unlimited per-buyer downloads. | The download proxy now caps per-order fetches and expires the link (`lib/download-limits.ts`); the doc must not imply a buyer gets unlimited downloads. |
 | 2026-05-24 | Two primitives, Pricing | Noted that the sats pricing currency applies to both sats-rail methods (`lightning_address` and `lightning_nwc`), and generalized the "LUD-21 poller" lifecycle aside to the direct-lightning poller. | ADR 0029 — NWC is a second sats-rail input method and prices in sats exactly like the Lightning Address. |
 | 2026-05-23 | By design | Reframed the scope section (formerly "What we deliberately do not do") as "By design", leading each point with the strength (unlimited downloads, one-offering-per-thing simplicity). | The "what we don't do" framing read as incompleteness, but each item is a deliberate design strength — the section should sell it, not apologize for it. |
 | 2026-05-23 | Pricing, Two primitives, TOC | Renamed the pricing section to "currency follows the rail" and rewrote it for ADR 0026 (no per-course picker); switched the display-rate source from Yadio to Wapu `/exchange_rates`; replaced the Spanish "Descargar" label with "Download file" and reframed the redemption-UI / proxy-hardening notes in present tense. | Docs must match the implemented currency-follows-rail pricing (ADR 0026), the Wapu rate source (ADR 0027), and the English-only UI. |
@@ -68,7 +69,12 @@ buyer's phone at the next class and marks it off on their side.
 The buyer pays, lands on the receipt page, and sees a
 **Download file** button pointing at a download proxy
 (`/api/downloads/[orderId]`) that streams the private file the
-seller uploaded to `offerings.download_url`. Used for:
+seller uploaded to `offerings.download_url`. Each paid order may
+fetch the file up to five times within 30 days of payment
+(`lib/download-limits.ts`); the receipt card shows the remaining
+count and expiry date. See
+[delivery-and-receipts](./delivery-and-receipts.md#the-download-proxy).
+Used for:
 
 - PDF method books
 - Sheet music
@@ -262,10 +268,12 @@ to delete rows.
 
 ## By design
 
-- **Unlimited downloads, bounded codes.** A `download` offering
+- **Unlimited sales, bounded codes.** A `download` offering
   sells any number of times; a `code` offering is bounded by its
   minted pool and sells out when the pool empties (mint more to
-  re-open). No variant- or SKU-style inventory counts.
+  re-open). No variant- or SKU-style inventory counts. (Each
+  individual sale's *file access* is itself bounded — see the
+  download section above.)
 - **One offering per thing.** "Clase de 30 min" and "Clase de 60
   min" are two offerings, not two variants of one — there is no
   variant matrix to manage.
