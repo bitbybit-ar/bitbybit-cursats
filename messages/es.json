@@ -138,7 +138,7 @@
       "wapuTitle": "Wapu",
       "wapuBody": "El rail que convierte los sats a pesos y los deposita en el CBU o alias del profe. Pensado para quienes prefieren cobrar en pesos y manejar su plata en el banco de siempre, sin tener que usar una wallet de Bitcoin.",
       "lightningAddressTitle": "Lightning Address",
-      "lightningAddressBody": "Una dirección tipo email (vos@walletofsatoshi.com) donde el profe recibe sats directo en su wallet. Para profes que ya viven en sats, sin pasar por ningún convertidor.",
+      "lightningAddressBody": "Una dirección tipo email (vos@blink.sv) donde el profe recibe sats directo en su wallet. Para profes que ya viven en sats, sin pasar por ningún convertidor.",
       "nostrTitle": "Nostr",
       "nostrBody": "Protocolo abierto de identidad y mensajería. Tu llave es tu cuenta — para los profes es obligatorio (es la única forma de crear y gestionar tus cursos), para los compradores es opcional."
     },
@@ -150,7 +150,7 @@
   },
   "features": {
     "metadataTitle": "Features",
-    "metadataDescription": "Lo que ofrece Cursats: dos formas de cobrar (sats o pesos), sin custodia, login Nostr opcional, entrega in-app y más.",
+    "metadataDescription": "Lo que ofrece Cursats: dos formas de cobrar (sats o pesos), sin custodia de plataforma, login Nostr opcional, entrega in-app y más.",
     "hero": {
       "title": "Lo que ofrece <brand></brand>",
       "subtitle": "Pensado para docentes que enseñan en Argentina.\nPesos a tu CBU o sats a tu Lightning, vos elegís."
@@ -158,8 +158,8 @@
     "items": {
       "twoRailsTitle": "Dos formas de cobrar",
       "twoRailsBody": "El comprador siempre paga en Lightning. El profe elige: pesos al CBU vía Wapu (para los que prefieren su rutina con el banco), o sats directo a su Lightning Address (para los que ya viven en sats).",
-      "noCustodyTitle": "Sin custodia",
-      "noCustodyBody": "Cada pago va directo al destino que eligió el profe — al CBU vía Wapu, o a su Lightning Address. La plataforma nunca tiene los fondos en sus manos.",
+      "noCustodyTitle": "Sin custodia de plataforma",
+      "noCustodyBody": "Los sats van directo a la billetera Lightning del profe. En los pagos en ARS, Wapu gestiona los fondos durante el día y los liquida al banco del profe — Cursats nunca los toca.",
       "anonymousByDefaultTitle": "Compra anónima por defecto",
       "anonymousByDefaultBody": "El comprador llega, paga y se va con un código o descarga. Sin formularios, sin emails, sin cuentas obligatorias.",
       "optionalNostrLoginTitle": "Login Nostr opcional",
@@ -612,14 +612,14 @@
       "bannerUrlInvalid": "Ingresá una URL válida o dejala vacía.",
       "lightningAddress": "Lightning Address",
       "lightningAddressTooltip": "Dirección Lightning en formato usuario@dominio. Si elegís cobrar en sats, los compradores te pagan acá. Tu proveedor tiene que soportar LUD-21.",
-      "lightningAddressExample": "vos@walletofsatoshi.com",
-      "lightningAddressPlaceholder": "vos@walletofsatoshi.com",
+      "lightningAddressExample": "vos@blink.sv",
+      "lightningAddressPlaceholder": "vos@blink.sv",
       "lightningAddressFromNostr": "Tomamos esta dirección de tu perfil de Nostr (lud16). Verificala y guardala si querés conservarla.",
       "lightningAddressRequired": "Cargá una Lightning Address para cobrar en sats.",
-      "lightningAddressInvalid": "Esa Lightning Address no responde o no soporta LUD-21. Probá con WoS, Strike, Alby Hub, LNbits, ZBD o Primal.",
-      "lightningAddressInvalidFormat": "El formato no es válido. Esperamos usuario@dominio, por ejemplo vos@walletofsatoshi.com.",
+      "lightningAddressInvalid": "Esa Lightning Address no responde o no soporta LUD-21. Probá con una wallet con LUD-21 como Alby o Blink.",
+      "lightningAddressInvalidFormat": "El formato no es válido. Esperamos usuario@dominio, por ejemplo vos@blink.sv.",
       "lightningAddressUnreachable": "No pudimos contactar a tu proveedor Lightning. Revisá la dirección y probá de nuevo en un momento.",
-      "lightningAddressNoLud21": "Tu proveedor no soporta LUD-21 y sin eso no podemos verificar tus cobros. Probá con WoS, Strike, Alby Hub, LNbits, ZBD o Primal.",
+      "lightningAddressNoLud21": "Tu proveedor no soporta LUD-21 y sin eso no podemos verificar tus cobros. Probá con una wallet con LUD-21 como Alby o Blink.",
       "lightningAddressMalformed": "Tu proveedor devolvió una respuesta inválida. Probá con otro proveedor compatible con LUD-21.",
       "sectionPayout": "Cómo cobrás",
       "sectionPayoutHint": "Elegí en qué moneda recibís tus ventas. Podés cambiar el método más adelante; los datos quedan acá y no aparecen en ningún lado del comprador.",
