@@ -15,7 +15,7 @@ import { ThemeProvider } from "@/lib/contexts/theme-context";
 import { SignerProviderClient } from "@/components/auth/signer-provider-client";
 import type { SessionUser } from "@/lib/contexts/signer-context";
 import { getSession } from "@/lib/auth";
-import { getUserByPubkey } from "@/lib/admin/users";
+import { getUserByPubkey } from "@/lib/creator/users";
 import { ToastProvider } from "@/components/ui/toast";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";

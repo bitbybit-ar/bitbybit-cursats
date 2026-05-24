@@ -24,7 +24,7 @@ const SESSION_DURATION = `${SESSION_INACTIVITY_MINUTES}m` as const;
  * - There is no user id, display name, or avatar embedded in the
  *   JWT — the pubkey IS the identity (ADR 0007). The `users` row
  *   (ADR 0016) is looked up at request time via
- *   `lib/admin/users.getUserByPubkey`, so deactivating a user
+ *   `lib/creator/users.getUserByPubkey`, so deactivating a user
  *   revokes their access immediately without waiting for the JWT
  *   to expire.
  */

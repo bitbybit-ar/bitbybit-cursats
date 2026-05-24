@@ -5,7 +5,7 @@ import {
   buildSettingsAuthEvent,
   hashSettingsBody,
   SETTINGS_ACTION_TAG,
-} from "@/lib/admin/sign-settings-payload";
+} from "@/lib/creator/sign-settings-payload";
 
 function findTag(tags: string[][], name: string): string | undefined {
   return tags.find((t) => t[0] === name)?.[1];

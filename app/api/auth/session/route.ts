@@ -3,7 +3,7 @@ import {
   readSessionCookieAndVerify,
   SESSION_COOKIE_NAME,
 } from "@/lib/auth";
-import { getUserByPubkey } from "@/lib/admin/users";
+import { getUserByPubkey } from "@/lib/creator/users";
 
 export async function GET(): Promise<NextResponse> {
   const { hasCookie, session } = await readSessionCookieAndVerify();

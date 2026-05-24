@@ -7,7 +7,7 @@ import {
   LightningMintError,
   type LightningMintErrorCode,
 } from "@/lib/lightning";
-import { pickPayoutAlias } from "@/lib/admin/users";
+import { pickPayoutAlias } from "@/lib/creator/users";
 import { convertPrice } from "@/lib/exchange-rate";
 
 export interface CreateOrderInput {

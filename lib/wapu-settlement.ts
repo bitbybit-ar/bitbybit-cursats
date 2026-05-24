@@ -16,7 +16,7 @@ import {
   drawAndAssignCode,
 } from "@/lib/orders";
 import { getOfferingById } from "@/lib/offerings";
-import { getUserById, pickPayoutAlias } from "@/lib/admin/users";
+import { getUserById, pickPayoutAlias } from "@/lib/creator/users";
 import { emitNotification } from "@/lib/notifications";
 
 type OrderRow = typeof orders.$inferSelect;

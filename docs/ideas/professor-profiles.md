@@ -59,7 +59,7 @@ person, not a shop.
   curated, not exhaustive, and the user has to make a real
   choice about which five matter.
 - Badge eligibility rules (which badges a merchant *can* pick)
-  live in `lib/admin/badges.ts` once it exists; v1 might just
+  live in `lib/creator/badges.ts` once it exists; v1 might just
   be a hardcoded list with manual issue-and-revoke from the
   platform admin surface.
 - The header design should not use the polaroid pattern from

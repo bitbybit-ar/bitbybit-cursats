@@ -91,7 +91,7 @@ mints a session JWT, and sets it as an httpOnly cookie.
 
 There is no separate "create your account" step. The first
 successful sign-in for a given pubkey calls
-`ensureUserForPubkey` (in `lib/admin/users.ts`) which:
+`ensureUserForPubkey` (in `lib/creator/users.ts`) which:
 
 1. Looks up `users` by pubkey.
 2. If absent, inserts a row with:
@@ -106,8 +106,8 @@ successful sign-in for a given pubkey calls
 
 `ensureUserForPubkey` is called from three places: the sign-in
 route (`app/api/auth/nostr/route.ts`), the API-route gate
-`requireUser` (`lib/admin/require-user.ts`), and the page-side
-gate `requirePanelUser` (`lib/admin/panel-context.ts`). The gate
+`requireUser` (`lib/creator/require-user.ts`), and the page-side
+gate `requirePageUser` (`lib/creator/page-context.ts`). The gate
 either renders the page (user is active) or 404s (the
 `users.active` flag is false).
 
@@ -160,7 +160,7 @@ control where money goes:
 - `users.payout_method` (the rail dispatch field)
 
 The PATCH handler (`app/api/settings/route.ts`, with the payload
-helper in `lib/admin/sign-settings-payload.ts`) refuses to write
+helper in `lib/creator/sign-settings-payload.ts`) refuses to write
 any of these unless the request carries a freshly signed Nostr
 event proving the *same* pubkey re-asserted intent at save time.
 A stolen cookie alone is not enough — the attacker would also

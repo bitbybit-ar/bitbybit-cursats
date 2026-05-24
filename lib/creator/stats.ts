@@ -2,7 +2,7 @@ import { and, count, desc, eq, gte, sql } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { orders, offerings } from "@/lib/db/schema";
 
-export interface AdminOverviewStats {
+export interface CreatorOverviewStats {
   /** Total ARS settled this calendar month (paid orders only). */
   revenueArsMtd: number;
   /** Count of orders in `pending` state right now. */
@@ -26,9 +26,9 @@ export interface RecentOrderRow {
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-export async function getAdminOverview(
+export async function getCreatorOverview(
   userId: string
-): Promise<AdminOverviewStats> {
+): Promise<CreatorOverviewStats> {
   const db = getDb();
 
   const monthStart = new Date();

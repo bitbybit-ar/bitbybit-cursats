@@ -4,9 +4,9 @@ import { Link } from "@/i18n/routing";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowRightIcon } from "@/components/icons";
-import { listAllOfferings, listArchivedOfferings } from "@/lib/admin/offerings";
-import { salesCountByOffering } from "@/lib/admin/orders";
-import { requirePanelUser } from "@/lib/admin/panel-context";
+import { listAllOfferings, listArchivedOfferings } from "@/lib/creator/offerings";
+import { salesCountByOffering } from "@/lib/creator/orders";
+import { requirePageUser } from "@/lib/creator/page-context";
 import styles from "./page.module.scss";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +32,7 @@ export default async function PanelOfferingsPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const { user } = await requirePanelUser();
+  const { user } = await requirePageUser();
   const [active, archived, salesByOffering] = await Promise.all([
     listAllOfferings(user.id),
     listArchivedOfferings(user.id),

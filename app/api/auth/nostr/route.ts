@@ -11,7 +11,7 @@ import {
 } from "@/lib/schemas/auth";
 import { SESSION_INACTIVITY_MINUTES } from "@/lib/auth-constants";
 import { fetchKind0Profile } from "@/lib/nostr/profile";
-import { ensureUserForPubkey } from "@/lib/admin/users";
+import { ensureUserForPubkey } from "@/lib/creator/users";
 
 /**
  * NIP-98 (HTTP Auth) login.

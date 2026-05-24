@@ -16,7 +16,7 @@ import {
   type PayoutSavedValues,
 } from "@/components/courses/payout-setup-modal";
 import { useSignerContext } from "@/lib/contexts/signer-context";
-import { MAX_TAGS_PER_OFFERING, type Offering } from "@/lib/admin/offerings";
+import { MAX_TAGS_PER_OFFERING, type Offering } from "@/lib/creator/offerings";
 import { WAPU_MIN_NET_ARS } from "@/lib/wapu-limits";
 import styles from "./offering-form.module.scss";
 
@@ -67,7 +67,7 @@ interface OfferingPayload {
  * Slug auto-derivation from the title field. Lowercase, strip
  * diacritics, collapse non-alphanumerics to single hyphens, cap at
  * 80 characters to match the column length. Matches the regex
- * pattern enforced by `lib/admin/offerings.ts:SlugSchema`.
+ * pattern enforced by `lib/creator/offerings.ts:SlugSchema`.
  */
 function slugify(title: string): string {
   return title
@@ -84,7 +84,7 @@ function slugify(title: string): string {
 
 /**
  * Same shape as `slugify` but capped at 32 to match the per-tag
- * length enforced by `TagSchema` in `lib/admin/offerings.ts`. Used
+ * length enforced by `TagSchema` in `lib/creator/offerings.ts`. Used
  * to normalise a raw chip-input value before it joins the tag list.
  */
 function normalizeTagInput(raw: string): string {

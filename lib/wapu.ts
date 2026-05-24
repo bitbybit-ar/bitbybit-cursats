@@ -330,6 +330,16 @@ export function _resetWapuClientForTests(): void {
 }
 
 /**
+ * Inject a client for tests so settlement/quote logic can run against a
+ * deterministic fake instead of hitting Wapu. Mirror of
+ * `_setLightningClientForTests`. Test-only — production never calls this,
+ * so the "no silent mock" guarantee on `getWapuClient` still holds.
+ */
+export function _setWapuClientForTests(client: WapuClient): void {
+  cached = client;
+}
+
+/**
  * Returns the live Wapu client, built from WAPU_API_KEY +
  * WAPU_PAY_APU_HOST. Throws when either is missing — in EVERY
  * environment, dev included. There is deliberately no mock: a missing

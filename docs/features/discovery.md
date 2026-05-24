@@ -82,7 +82,7 @@ locale prefix when the locale is the default Spanish (so a
 seller can promote `cursats.bitbybit.com.ar/pianoba` on paper or
 in WhatsApp without it feeling like a URL designed by lawyers).
 
-The reserved-slug list in `lib/admin/ar-bank-id.ts` prevents
+The reserved-slug list in `lib/creator/ar-bank-id.ts` prevents
 users from claiming any top-level route name (`c`, `m`,
 `explore`, `settings`, etc.), so the storefront URL can sit
 flat at the root without ever colliding with an app route.

@@ -4,13 +4,13 @@ import { sql, eq } from "drizzle-orm";
 import { testDb, cleanDb, seedUser } from "../../setup";
 import { adminAuditLog } from "@/lib/db/schema";
 import {
-  createOfferingForAdmin,
-  updateOfferingForAdmin,
-  archiveOfferingForAdmin,
+  createOfferingForCreator,
+  updateOfferingForCreator,
+  archiveOfferingForCreator,
   listAllOfferings,
   listArchivedOfferings,
-  getOfferingForAdmin,
-} from "@/lib/admin/offerings";
+  getOfferingForCreator,
+} from "@/lib/creator/offerings";
 
 const ACTOR = "a".repeat(64);
 
@@ -32,10 +32,10 @@ beforeEach(async () => {
   await cleanDb();
 });
 
-describe("admin/offerings/createOfferingForAdmin", () => {
+describe("admin/offerings/createOfferingForCreator", () => {
   it("inserts a code offering with a server-minted pool and writes an audit row", async () => {
     const user = await seedUser({ pubkey: ACTOR });
-    const result = await createOfferingForAdmin(
+    const result = await createOfferingForCreator(
       user.id,
       {
         slug: "intro-bitcoin",
@@ -70,7 +70,7 @@ describe("admin/offerings/createOfferingForAdmin", () => {
 
   it("rejects a duplicate slug within one user with slug_taken", async () => {
     const user = await seedUser({ pubkey: ACTOR });
-    await createOfferingForAdmin(
+    await createOfferingForCreator(
       user.id,
       {
         slug: "dupe",
@@ -85,7 +85,7 @@ describe("admin/offerings/createOfferingForAdmin", () => {
       },
       ACTOR
     );
-    const second = await createOfferingForAdmin(
+    const second = await createOfferingForCreator(
       user.id,
       {
         slug: "dupe",
@@ -114,7 +114,7 @@ describe("admin/offerings/createOfferingForAdmin", () => {
       pubkey: "b".repeat(64),
       slug: "merch-b",
     });
-    const fromA = await createOfferingForAdmin(
+    const fromA = await createOfferingForCreator(
       a.id,
       {
         slug: "shared-slug",
@@ -129,7 +129,7 @@ describe("admin/offerings/createOfferingForAdmin", () => {
       },
       a.pubkey
     );
-    const fromB = await createOfferingForAdmin(
+    const fromB = await createOfferingForCreator(
       b.id,
       {
         slug: "shared-slug",
@@ -149,10 +149,10 @@ describe("admin/offerings/createOfferingForAdmin", () => {
   });
 });
 
-describe("admin/offerings/updateOfferingForAdmin", () => {
+describe("admin/offerings/updateOfferingForCreator", () => {
   it("updates editable fields and writes an audit row with the changed keys", async () => {
     const user = await seedUser({ pubkey: ACTOR });
-    const created = await createOfferingForAdmin(
+    const created = await createOfferingForCreator(
       user.id,
       {
         slug: "to-edit",
@@ -169,7 +169,7 @@ describe("admin/offerings/updateOfferingForAdmin", () => {
     );
     if (!created.ok) throw new Error("seed failed");
 
-    const updated = await updateOfferingForAdmin(
+    const updated = await updateOfferingForCreator(
       user.id,
       created.offering.id,
       { title: "New title", price_amount: 1500, price_currency: "ars" },
@@ -192,7 +192,7 @@ describe("admin/offerings/updateOfferingForAdmin", () => {
 
   it("returns not_found for an unknown id", async () => {
     const user = await seedUser({ pubkey: ACTOR });
-    const res = await updateOfferingForAdmin(
+    const res = await updateOfferingForCreator(
       user.id,
       "00000000-0000-0000-0000-000000000000",
       { title: "X" },
@@ -212,7 +212,7 @@ describe("admin/offerings/updateOfferingForAdmin", () => {
       pubkey: "b".repeat(64),
       slug: "intruder",
     });
-    const created = await createOfferingForAdmin(
+    const created = await createOfferingForCreator(
       owner.id,
       {
         slug: "private",
@@ -229,7 +229,7 @@ describe("admin/offerings/updateOfferingForAdmin", () => {
     );
     if (!created.ok) throw new Error("seed failed");
 
-    const res = await updateOfferingForAdmin(
+    const res = await updateOfferingForCreator(
       intruder.id,
       created.offering.id,
       { title: "Hijacked" },
@@ -242,7 +242,7 @@ describe("admin/offerings/updateOfferingForAdmin", () => {
 
   it("rejects a slug change that conflicts with another offering on the same user", async () => {
     const user = await seedUser({ pubkey: ACTOR });
-    const a = await createOfferingForAdmin(
+    const a = await createOfferingForCreator(
       user.id,
       {
         slug: "a-slug",
@@ -257,7 +257,7 @@ describe("admin/offerings/updateOfferingForAdmin", () => {
       },
       ACTOR
     );
-    const b = await createOfferingForAdmin(
+    const b = await createOfferingForCreator(
       user.id,
       {
         slug: "b-slug",
@@ -274,7 +274,7 @@ describe("admin/offerings/updateOfferingForAdmin", () => {
     );
     if (!a.ok || !b.ok) throw new Error("seed failed");
 
-    const result = await updateOfferingForAdmin(
+    const result = await updateOfferingForCreator(
       user.id,
       b.offering.id,
       { slug: "a-slug" },
@@ -286,10 +286,10 @@ describe("admin/offerings/updateOfferingForAdmin", () => {
   });
 });
 
-describe("admin/offerings/archiveOfferingForAdmin", () => {
+describe("admin/offerings/archiveOfferingForCreator", () => {
   it("sets archived_at and writes an audit row", async () => {
     const user = await seedUser({ pubkey: ACTOR });
-    const created = await createOfferingForAdmin(
+    const created = await createOfferingForCreator(
       user.id,
       {
         slug: "to-archive",
@@ -306,7 +306,7 @@ describe("admin/offerings/archiveOfferingForAdmin", () => {
     );
     if (!created.ok) throw new Error("seed failed");
 
-    const result = await archiveOfferingForAdmin(
+    const result = await archiveOfferingForCreator(
       user.id,
       created.offering.id,
       ACTOR
@@ -328,7 +328,7 @@ describe("admin/offerings/archiveOfferingForAdmin", () => {
 
   it("refuses to archive an already-archived offering", async () => {
     const user = await seedUser({ pubkey: ACTOR });
-    const created = await createOfferingForAdmin(
+    const created = await createOfferingForCreator(
       user.id,
       {
         slug: "already",
@@ -344,9 +344,9 @@ describe("admin/offerings/archiveOfferingForAdmin", () => {
       ACTOR
     );
     if (!created.ok) throw new Error("seed failed");
-    await archiveOfferingForAdmin(user.id, created.offering.id, ACTOR);
+    await archiveOfferingForCreator(user.id, created.offering.id, ACTOR);
 
-    const second = await archiveOfferingForAdmin(
+    const second = await archiveOfferingForCreator(
       user.id,
       created.offering.id,
       ACTOR
@@ -360,7 +360,7 @@ describe("admin/offerings/archiveOfferingForAdmin", () => {
 describe("admin/offerings/list helpers", () => {
   it("listAllOfferings returns active rows for the user, newest-first", async () => {
     const user = await seedUser({ pubkey: ACTOR });
-    const a = await createOfferingForAdmin(
+    const a = await createOfferingForCreator(
       user.id,
       {
         slug: "a",
@@ -375,7 +375,7 @@ describe("admin/offerings/list helpers", () => {
       },
       ACTOR
     );
-    const b = await createOfferingForAdmin(
+    const b = await createOfferingForCreator(
       user.id,
       {
         slug: "b",
@@ -406,7 +406,7 @@ describe("admin/offerings/list helpers", () => {
       pubkey: "b".repeat(64),
       slug: "merch-b",
     });
-    await createOfferingForAdmin(
+    await createOfferingForCreator(
       a.id,
       {
         slug: "from-a",
@@ -421,7 +421,7 @@ describe("admin/offerings/list helpers", () => {
       },
       a.pubkey
     );
-    await createOfferingForAdmin(
+    await createOfferingForCreator(
       b.id,
       {
         slug: "from-b",
@@ -441,9 +441,9 @@ describe("admin/offerings/list helpers", () => {
     expect(seenByA[0].slug).toBe("from-a");
   });
 
-  it("getOfferingForAdmin returns archived rows (panel needs them)", async () => {
+  it("getOfferingForCreator returns archived rows (panel needs them)", async () => {
     const user = await seedUser({ pubkey: ACTOR });
-    const created = await createOfferingForAdmin(
+    const created = await createOfferingForCreator(
       user.id,
       {
         slug: "fetched",
@@ -459,9 +459,9 @@ describe("admin/offerings/list helpers", () => {
       ACTOR
     );
     if (!created.ok) throw new Error("seed failed");
-    await archiveOfferingForAdmin(user.id, created.offering.id, ACTOR);
+    await archiveOfferingForCreator(user.id, created.offering.id, ACTOR);
 
-    const found = await getOfferingForAdmin(user.id, "fetched");
+    const found = await getOfferingForCreator(user.id, "fetched");
     expect(found?.id).toBe(created.offering.id);
     expect(found?.archived_at).not.toBeNull();
   });

@@ -6,9 +6,9 @@ import { offerings } from "@/lib/db/schema";
 import { writeAuditLog } from "./audit";
 
 /**
- * Admin-side reads + mutations for the offerings catalog.
+ * Creator-side reads + mutations for the offerings catalog.
  * Public reads live in `lib/offerings.ts`; this module owns the
- * shapes the panel needs (including archived rows) plus the
+ * shapes the creator pages need (including archived rows) plus the
  * write paths, which always pair the DB change with an audit-log
  * row.
  *
@@ -209,7 +209,7 @@ export async function listArchivedOfferings(
     .orderBy(desc(offerings.archived_at));
 }
 
-export async function getOfferingForAdmin(
+export async function getOfferingForCreator(
   userId: string,
   slug: string
 ): Promise<Offering | null> {
@@ -227,7 +227,7 @@ export async function getOfferingForAdmin(
  * Used by API routes that take a path id and must reject if the
  * caller's session is not the offering's owner.
  */
-export async function getOfferingForAdminById(
+export async function getOfferingForCreatorById(
   userId: string,
   id: string
 ): Promise<Offering | null> {
@@ -244,7 +244,7 @@ export type CreateOfferingResult =
   | { ok: true; offering: Offering }
   | { ok: false; reason: "slug_taken" };
 
-export async function createOfferingForAdmin(
+export async function createOfferingForCreator(
   userId: string,
   input: CreateOfferingInput,
   actorPubkey: string
@@ -311,7 +311,7 @@ export type UpdateOfferingResult =
   | { ok: false; reason: "not_found" }
   | { ok: false; reason: "slug_taken" };
 
-export async function updateOfferingForAdmin(
+export async function updateOfferingForCreator(
   userId: string,
   id: string,
   patch: UpdateOfferingInput,
@@ -319,7 +319,7 @@ export async function updateOfferingForAdmin(
 ): Promise<UpdateOfferingResult> {
   const db = getDb();
 
-  const existing = await getOfferingForAdminById(userId, id);
+  const existing = await getOfferingForCreatorById(userId, id);
   if (!existing) return { ok: false, reason: "not_found" };
 
   if (patch.slug && patch.slug !== existing.slug) {
@@ -385,14 +385,14 @@ export type ArchiveOfferingResult =
   | { ok: false; reason: "not_found" }
   | { ok: false; reason: "already_archived" };
 
-export async function archiveOfferingForAdmin(
+export async function archiveOfferingForCreator(
   userId: string,
   id: string,
   actorPubkey: string
 ): Promise<ArchiveOfferingResult> {
   const db = getDb();
 
-  const existing = await getOfferingForAdminById(userId, id);
+  const existing = await getOfferingForCreatorById(userId, id);
   if (!existing) return { ok: false, reason: "not_found" };
   if (existing.archived_at !== null) {
     return { ok: false, reason: "already_archived" };
@@ -442,7 +442,7 @@ export async function mintCodesForOffering(
   }
 
   const db = getDb();
-  const existing = await getOfferingForAdminById(userId, id);
+  const existing = await getOfferingForCreatorById(userId, id);
   if (!existing) return { ok: false, reason: "not_found" };
   if (existing.type !== "code") return { ok: false, reason: "wrong_type" };
 

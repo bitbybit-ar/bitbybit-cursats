@@ -1,14 +1,14 @@
 import { defineConfig } from "vitest/config";
-import react from "@vitejs/plugin-react";
 import path from "path";
 
 export default defineConfig({
-  plugins: [react()],
   test: {
-    environment: "jsdom",
+    // The suite is backend/logic only — no React component tests — so
+    // the environment is plain Node. Server modules (db, Wapu/Lightning
+    // clients) run on their native code path with no DOM shim.
+    environment: "node",
     globals: true,
-    setupFiles: ["./tests/setup.ts"],
-    include: ["tests/**/*.test.{ts,tsx}"],
+    include: ["tests/**/*.test.ts"],
     pool: "threads",
     // Run test files one at a time. The integration suite shares a
     // single Neon test branch and each file TRUNCATEs the tables in
@@ -22,7 +22,7 @@ export default defineConfig({
     testTimeout: 15000,
     coverage: {
       reporter: ["text", "lcov"],
-      include: ["app/api/**", "components/**", "lib/**"],
+      include: ["app/api/**", "lib/**"],
     },
   },
   resolve: {

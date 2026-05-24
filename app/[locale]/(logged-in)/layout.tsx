@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
  *      they want visible section banding — the layout does not
  *      assume one.
  *
- * Each page still calls `requirePanelUser()` (or `requireUser()`
+ * Each page still calls `requirePageUser()` (or `requireUser()`
  * on the API side) to scope its DB queries to the user's row —
  * the layout intentionally does not propagate that down via
  * context to keep the data path uniform with the API routes.

@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-23 | Structure, What to write in each doc | Added `architecture/automated-tests.md` to the structure tree and the doc table. | A new doc describing the automated vitest suite was added; the structural index must list it. |
 | 2026-05-23 | Structure | Pruned the structure tree: removed the retired judge front-door doc (deleted from the repo; its submission framing now lives in `SUBMISSION.md`). | The structure index must not list a doc that no longer exists. |
 | 2026-05-21 | Structure, What to write in each doc | Added the ordered `testing-plan.md` walkthrough and the new `features/` subfolder with the eight per-feature deep dives. Updated the "What to write in each doc" table accordingly. | Hackathon documentation pass — the docs tree gained a feature-doc layer that did not previously exist; the structural index needed to reflect it so contributors can find the new files. |
 | 2026-05-12 | What this folder is, Structure | Rebranded "BitByBit Cursá" to "BitByBit Cursats" throughout. | Brand rename per ADR 0018 — portmanteau of *cursá* (the voseo verb) and *sats*. |
@@ -33,6 +34,7 @@ docs/
 ├── architecture/
 │   ├── overview.md           ← system shape + key invariants
 │   ├── routing.md            ← full route map
+│   ├── automated-tests.md    ← vitest unit + integration suite
 │   └── decisions/            ← Architecture Decision Records (ADRs)
 │       ├── 0001-record-architecture-decisions.md
 │       ├── …                 ← NNNN-*.md per decision
@@ -97,6 +99,7 @@ header fields but still carry an inline `## Change Log`.
 | `about/mission.md` | What the project is, who it's for, why it exists |
 | `architecture/overview.md` | System shape + key invariants |
 | `architecture/routing.md` | Full route map (buyer, account, creator, API) |
+| `architecture/automated-tests.md` | Automated test suite — structure, how to run, what it covers |
 | `architecture/decisions/NNNN-*.md` | One decision per file, frozen once accepted |
 | `features/*.md` | Per-feature deep dives — design, code pointers, mermaid sequence diagrams |
 

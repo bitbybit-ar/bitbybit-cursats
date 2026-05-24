@@ -9,7 +9,7 @@ import {
   AliasSchema,
   CbuSchema,
   UserSlugSchema,
-} from "@/lib/admin/ar-bank-id";
+} from "@/lib/creator/ar-bank-id";
 
 describe("admin/ar-bank-id/checkAlias", () => {
   it("accepts a BCRA-shaped alias", () => {

@@ -10,7 +10,7 @@ import { useSignerContext } from "@/lib/contexts/signer-context";
 import {
   buildSettingsAuthEvent,
   hashSettingsBody,
-} from "@/lib/admin/sign-settings-payload";
+} from "@/lib/creator/sign-settings-payload";
 import { isSignerCancellation } from "@/lib/nostr/auth-errors";
 import styles from "./danger-zone-form.module.scss";
 

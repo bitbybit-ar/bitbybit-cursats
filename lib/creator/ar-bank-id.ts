@@ -1,6 +1,6 @@
 /**
  * Validators for the Argentine identifiers a user types into the
- * panel (when they sell): bank alias, CBU, and the marketplace's
+ * creator surfaces (when they sell): bank alias, CBU, and the marketplace's
  * URL slug.
  *
  * Sources for the alias rule:
@@ -48,7 +48,7 @@ export type SlugError = "format" | "length" | "reserved";
 
 /**
  * Slugs a user cannot claim. Public so callers that GENERATE
- * candidate slugs (e.g. lib/admin/users.ts when seeding from
+ * candidate slugs (e.g. lib/creator/users.ts when seeding from
  * kind:0 metadata) can avoid producing one that the validator
  * would later reject. A duplicated copy in the users module
  * would drift on every URL rename — single source of truth here.
