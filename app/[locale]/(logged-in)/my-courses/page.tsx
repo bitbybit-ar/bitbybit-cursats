@@ -4,7 +4,10 @@ import { Link } from "@/i18n/routing";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowRightIcon } from "@/components/icons";
-import { listAllOfferings, listArchivedOfferings } from "@/lib/creator/offerings";
+import {
+  listAllOfferings,
+  listArchivedOfferings,
+} from "@/lib/creator/offerings";
 import { salesCountByOffering } from "@/lib/creator/orders";
 import { requirePageUser } from "@/lib/creator/page-context";
 import styles from "./page.module.scss";
@@ -52,9 +55,14 @@ export default async function PanelOfferingsPage({
           <h1 className={styles.title}>{t("title")}</h1>
           <p className={styles.subtitle}>{t("subtitle")}</p>
         </div>
-        <Button href="/create-course" variant="primary">
-          {t("createCta")}
-        </Button>
+        <div className={styles.headerActions}>
+          <Button href="/orders" variant="secondary">
+            {t("ordersCta")}
+          </Button>
+          <Button href="/create-course" variant="primary">
+            {t("createCta")}
+          </Button>
+        </div>
       </header>
 
       <section>

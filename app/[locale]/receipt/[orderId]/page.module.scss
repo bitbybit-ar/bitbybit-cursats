@@ -54,6 +54,17 @@
   font-size: $font-size-md;
   font-weight: $font-weight-semibold;
   color: $color-text-primary;
+  text-decoration: none;
+  transition: color 0.15s ease;
+
+  // Only meaningful when rendered as a link (course page available).
+  &:hover {
+    color: $color-primary;
+  }
+}
+
+.buyAgain {
+  align-self: center;
 }
 
 .settlement {

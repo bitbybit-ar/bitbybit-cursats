@@ -4,12 +4,14 @@ import { Link } from "@/i18n/routing";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { CheckIcon, ArrowLeftIcon } from "@/components/icons";
 import { ReceiptCode } from "@/components/receipt/receipt-code";
 import { ReceiptDownload } from "@/components/receipt/receipt-download";
 import { NostrPromptCard } from "@/components/receipt/nostr-prompt-card";
 import { getOrder } from "@/lib/orders";
 import { getOfferingById } from "@/lib/offerings";
+import { getUserById } from "@/lib/creator/users";
 import styles from "./page.module.scss";
 
 type Props = {
@@ -26,6 +28,11 @@ export default async function ReceiptPage({ params }: Props) {
   if (!order) notFound();
 
   const offering = await getOfferingById(order.offering_id);
+  // Seller lookup powers the course link + "Buy again" CTA. Both fall
+  // back to plain text when the offering or seller can't be resolved.
+  const seller = offering ? await getUserById(offering.user_id) : null;
+  const courseHref =
+    seller && offering ? `/${seller.slug}/c/${offering.slug}` : null;
   const t = await getTranslations("receipt");
 
   if (order.status !== "paid") {
@@ -63,7 +70,13 @@ export default async function ReceiptPage({ params }: Props) {
           </header>
 
           {offering ? (
-            <p className={styles.offeringName}>{offering.title}</p>
+            courseHref ? (
+              <Link href={courseHref} className={styles.offeringName}>
+                {offering.title}
+              </Link>
+            ) : (
+              <p className={styles.offeringName}>{offering.title}</p>
+            )
           ) : null}
 
           <p className={styles.settlement}>
@@ -86,6 +99,16 @@ export default async function ReceiptPage({ params }: Props) {
           ) : null}
 
           {order.pubkey === null ? <NostrPromptCard orderId={orderId} /> : null}
+
+          {courseHref ? (
+            <Button
+              href={courseHref}
+              variant="secondary"
+              className={styles.buyAgain}
+            >
+              {t("buyAgain")}
+            </Button>
+          ) : null}
         </article>
       </Container>
     </Section>

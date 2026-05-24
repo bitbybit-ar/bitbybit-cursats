@@ -276,6 +276,7 @@
 }
 
 .status {
+  display: inline-block;
   font-size: $font-size-xs;
   font-weight: $font-weight-semibold;
   text-transform: uppercase;
@@ -284,11 +285,17 @@
   border-radius: $border-radius-sm;
   background: $color-bg-2;
   color: $color-text-secondary;
+  text-decoration: none;
 
   @include mobile {
     grid-area: status;
     justify-self: end;
   }
+}
+
+// When the badge links to the receipt (paid orders) give it a hover cue.
+a.status:hover {
+  opacity: 0.85;
 }
 
 .status-paid {

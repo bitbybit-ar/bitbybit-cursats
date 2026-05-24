@@ -293,6 +293,7 @@
   "receipt": {
     "title": "All set! Your purchase is confirmed.",
     "subtitle": "Save this page: it's your permanent receipt.",
+    "buyAgain": "Buy again",
     "settlement": {
       "ars": "Settled in pesos to the teacher's CBU/CVU/alias.",
       "sats": "Settled in sats to the teacher's Lightning Address."
@@ -370,6 +371,7 @@
     "title": "My courses",
     "subtitle": "Catalog of courses and materials you sell.",
     "createCta": "New course",
+    "ordersCta": "Orders",
     "activeHeading": "Active",
     "archivedHeading": "Archived",
     "emptyActive": "You haven't created any courses yet.",
@@ -488,6 +490,8 @@
     "unknownOffering": "Unknown offering",
     "filteredBy": "Showing orders for {course}.",
     "clearFilter": "Show all orders",
+    "filterLabel": "Filter by status",
+    "noMatches": "No orders match these filters.",
     "sync": "Sync orders",
     "syncing": "Syncing…",
     "syncDone": "Orders synced with Wapu.",
@@ -702,13 +706,23 @@
     "searchLabel": "Search your purchases",
     "searchPlaceholder": "Search by title or teacher",
     "noMatches": "No purchases match these filters.",
-    "openCourse": "Open course",
     "viewReceipt": "View receipt",
     "viewListing": "Course page",
     "continueCheckout": "Continue checkout"
   },
   "orderStatus": {
     "pending": "Pending",
+    "paid": "Paid",
+    "failed": "Failed",
+    "refunded": "Refunded"
+  },
+  "orderLabel": {
+    "all": "All",
+    "pendingPayment": "Pending payment",
+    "withdrawalPending": "Withdrawal pending",
+    "settling": "Settling",
+    "settled": "Settled",
+    "settlementFailed": "Settlement failed",
     "paid": "Paid",
     "failed": "Failed",
     "refunded": "Refunded"

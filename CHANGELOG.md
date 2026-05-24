@@ -12,6 +12,19 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Filter and paginate your order list.** `/orders` now has a status
+  filter that distinguishes a buyer who hasn't paid ("Pending payment")
+  from a Wapu payout still in flight ("Withdrawal pending" / "Settling")
+  and a completed one ("Settled"), plus pagination for long histories.
+  Both the filter and paging are applied server-side and reflected in
+  the URL, so a filtered view is shareable. The order detail badge uses
+  the same richer labels.
+- **Buy a course again from its receipt.** The receipt page's course
+  title is now a link to the course page, and a "Buy again" button lets
+  you purchase it again (for a renewal or a gift).
+- **"Orders" button on My courses.** A prominent Orders button now sits
+  beside "New course" in the My courses header, so your sales list is
+  one click away. The per-course "View sales" links still work.
 - **Your Nostr Lightning Address is now separate from your payout
   address.** The Profile tab's Lightning Address is your public Nostr
   `lud16` — shown on your storefront's zap button and synced with your
@@ -102,6 +115,13 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Seller notifications now open the order.** Clicking a
+  sale-received or payout notification opens that order's detail page
+  (buyer "order paid" notifications still open the receipt).
+- **Condensed the actions on a paid purchase.** A paid purchase now
+  shows a single "Course page" button, and its "paid" status badge is
+  itself a link to the receipt (the redundant "Open course" button was
+  removed). Pending and failed purchases are unchanged.
 - **Corrected the suggested Lightning wallets.** The sats-rail
   validation messages and the address placeholder/examples previously
   pointed at wallets that do **not** expose a LUD-21 `verify` URL
