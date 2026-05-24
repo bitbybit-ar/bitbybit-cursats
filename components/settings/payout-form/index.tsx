@@ -106,6 +106,21 @@ function emptyToNull(value: string): string | null {
   return trimmed.length === 0 ? null : trimmed;
 }
 
+// Field-level validators reused by the blur handlers and submit. They
+// run the same BCRA checks as the server (checkCbu/checkAlias) and
+// return the `settings.form` message key to show inline, or null when
+// the field is empty (emptiness is handled by `destinationRequired`)
+// or valid.
+function cbuFieldError(value: string): string | null {
+  if (value.trim() && checkCbu(value) !== null) return "cbuInvalid";
+  return null;
+}
+
+function aliasFieldError(value: string): string | null {
+  if (value.trim() && checkAlias(value) !== null) return "aliasInvalid";
+  return null;
+}
+
 export function PayoutForm({
   initialCbu,
   initialAlias,
@@ -126,6 +141,11 @@ export function PayoutForm({
     useState<PayoutMethod>(initialPayoutMethod);
   const [cbu, setCbu] = useState(initialCbu);
   const [alias, setAlias] = useState(initialAlias);
+  // Inline format errors for the ARS-rail fields. Each holds a
+  // `settings.form` message key (or null). Set on blur and on submit,
+  // cleared as the user edits the field.
+  const [cbuError, setCbuError] = useState<string | null>(null);
+  const [aliasError, setAliasError] = useState<string | null>(null);
   // The LN address is the sats payout destination, editable here (and
   // also on the Profile tab as the Nostr lud16 — both write the same
   // field). Seeded from the saved value.
@@ -148,16 +168,16 @@ export function PayoutForm({
         showToast(t("destinationRequired"), "error");
         return;
       }
-      // CBU is 22 digits flat.
-      if (cbu.trim() && checkCbu(cbu) !== null) {
-        showToast(t("cbuInvalid"), "error");
-        return;
-      }
-      // Alias: BCRA rule — 6–20 chars of [A-Za-z0-9.-], at least one
-      // letter, no ñ/accents. Case-insensitive on the rail, so we don't
-      // touch case.
-      if (alias.trim() && checkAlias(alias) !== null) {
-        showToast(t("aliasInvalid"), "error");
+      // CBU is 22 digits flat; alias follows the BCRA rule — 6–20 chars
+      // of [A-Za-z0-9.-], at least one letter, no ñ/accents. Surface the
+      // failure both inline (below the field) and as a toast.
+      const nextCbuError = cbuFieldError(cbu);
+      const nextAliasError = aliasFieldError(alias);
+      setCbuError(nextCbuError);
+      setAliasError(nextAliasError);
+      const firstError = nextCbuError ?? nextAliasError;
+      if (firstError) {
+        showToast(t(firstError), "error");
         return;
       }
     }
@@ -289,7 +309,11 @@ export function PayoutForm({
               name="payout_method"
               value="cbu_alias"
               checked={payoutMethod === "cbu_alias"}
-              onChange={() => setPayoutMethod("cbu_alias")}
+              onChange={() => {
+                setPayoutMethod("cbu_alias");
+                setCbuError(null);
+                setAliasError(null);
+              }}
             />
             <span>
               <strong>{t("railArs")}</strong>
@@ -304,7 +328,11 @@ export function PayoutForm({
               name="payout_method"
               value="lightning_address"
               checked={payoutMethod === "lightning_address"}
-              onChange={() => setPayoutMethod("lightning_address")}
+              onChange={() => {
+                setPayoutMethod("lightning_address");
+                setCbuError(null);
+                setAliasError(null);
+              }}
             />
             <span>
               <strong>{t("railSats")}</strong>
@@ -329,13 +357,26 @@ export function PayoutForm({
                   id="cbu"
                   type="text"
                   inputMode="numeric"
-                  className={styles.input}
+                  className={`${styles.input} ${cbuError ? styles.inputError : ""}`}
                   value={cbu}
-                  onChange={(e) => setCbu(e.target.value)}
+                  onChange={(e) => {
+                    setCbu(e.target.value);
+                    // Clear the error while the user corrects it; we
+                    // re-check on blur and on submit.
+                    if (cbuError) setCbuError(null);
+                  }}
+                  onBlur={(e) => setCbuError(cbuFieldError(e.target.value))}
                   placeholder={t("cbuPlaceholder")}
                   autoComplete="off"
                   spellCheck={false}
+                  aria-invalid={cbuError ? true : undefined}
+                  aria-describedby={cbuError ? "cbu-error" : undefined}
                 />
+                {cbuError ? (
+                  <p id="cbu-error" className={styles.fieldError} role="alert">
+                    {t(cbuError)}
+                  </p>
+                ) : null}
               </div>
 
               <div className={styles.field}>
@@ -350,15 +391,30 @@ export function PayoutForm({
                 <input
                   id="alias"
                   type="text"
-                  className={styles.input}
+                  className={`${styles.input} ${aliasError ? styles.inputError : ""}`}
                   value={alias}
-                  onChange={(e) => setAlias(e.target.value)}
+                  onChange={(e) => {
+                    setAlias(e.target.value);
+                    if (aliasError) setAliasError(null);
+                  }}
+                  onBlur={(e) => setAliasError(aliasFieldError(e.target.value))}
                   placeholder={t("aliasPlaceholder")}
                   maxLength={20}
                   autoComplete="off"
                   autoCapitalize="none"
                   spellCheck={false}
+                  aria-invalid={aliasError ? true : undefined}
+                  aria-describedby={aliasError ? "alias-error" : undefined}
                 />
+                {aliasError ? (
+                  <p
+                    id="alias-error"
+                    className={styles.fieldError}
+                    role="alert"
+                  >
+                    {t(aliasError)}
+                  </p>
+                ) : null}
               </div>
             </div>
 

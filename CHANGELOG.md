@@ -12,6 +12,14 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Inline validation for the CBU/alias payout fields.** The payout
+  form now checks CBU (22 digits) and alias (BCRA 6–20 chars of
+  letters/numbers/dots/hyphens, at least one letter) on blur and on
+  submit, showing a specific message under the field instead of only a
+  generic failure after a server round-trip. Uses the same validators
+  as the server (`checkCbu`/`checkAlias`) so client and server agree,
+  and applies in the create-course payout-setup modal too (same
+  embedded form).
 - **Payout speed setting for the Wapu rail.** Sellers paying out to a
   CBU/alias choose **Standard** (`fiat_transfer`, lower fee) or
   **Fast** (`fast_fiat_transfer`, higher fee) in `/settings`. Stored
