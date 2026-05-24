@@ -1,7 +1,7 @@
 # Architecture overview
 
 > **Status:** Active
-> **Last updated:** 2026-05-23
+> **Last updated:** 2026-05-24
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | Security | CSP moved from a static `next.config.ts` header to a per-request build in `proxy.ts` (`lib/csp.ts`): production `script-src` is now `'self' 'nonce-…' 'strict-dynamic'` with no `'unsafe-inline'`, the nonce stamped on Next's bootstrap scripts plus the inline JSON-LD and theme scripts; other security headers stay static. | Defense in depth (issue #32): removing `script-src 'unsafe-inline'` ensures an injected inline `<script>` can't execute even if a future HTML sink slips past the `react/no-danger` guard. |
 | 2026-05-23 | Stack, Table of Contents, Payment flow | Corrected the exchange-rate source from Yadio to Wapu's `/exchange_rates` (ADR 0027 superseded 0022); fixed the staging API base to `be-stage.wapu.app` (`staging.wapu.app` is the web environment, not the API host); dropped the stale "server-side signing for outgoing DMs" from the Nostr line (no server signing key ships; in-app delivery per ADR 0006). Reconciled the Table of Contents with the body: removed the stale "Auto-renewal flow (optional)", "Notifications & delivery", "Configuration model", and "What is intentionally not here" entries (none exist as sections — notifications now lives as an H3 under Payment flow) and repointed the in-body delivery link to `#in-app-notifications`. | The Stack section still named Yadio, mislabeled the staging API base, and described a server-side DM signer that was removed; the TOC linked four sections that no longer exist as headings, and an in-body link pointed at the dead anchor. |
 | 2026-05-22 | Identity model, Payment flow, Notifications & delivery, Configuration model, Security, Stack, Routing | Removed the Nostr-DM delivery channel and the paste-your-npub buyer tier (no server signing key ships); made both rails poll-driven (no Wapu webhooks) with a daily settlement cron + on-demand `/api/orders/sync`; dropped `NOSTR_NSEC`, `PLATFORM_ADMIN_PUBKEYS`, and NWC from the config table, security list, and identity model. | The server Nostr-DM, platform-admin moderation, and NWC/auto-renewal env vars were removed as dead code, and the Wapu rebuild (ADR 0025) made the rail poll-driven; the overview still described webhooks, DMs, and those env vars. |
 | 2026-05-22 | SEO surface | Rewrote the OG image description: it is now brand-led (block mark + `CURSATS` wordmark + giant wordmark hero + one `ogValueLine`) instead of a burned-in headline/tagline, and `og.png` is a baked twin of the route. Swapped the `ogHeadline`/`ogTagline` key reference for `ogValueLine`. | The social card duplicated its own headline/tagline in the link title and description, and its logo read "BitByBit Cursats" with horizontal off-brand blocks; the redesign fixes the mark and removes the repetition. |
@@ -400,8 +401,15 @@ settles. These reach signed-in users only.
   timestamp, actor pubkey, route, action, payload diff (secrets
   redacted). Read-only forever; there is no UI to delete rows.
 - All external links use `target="_blank" rel="noopener noreferrer"`.
-- CSP set in `next.config.ts` headers — `default-src 'self'`,
-  scripts from self, images from `https:` and `data:`. Fonts
-  from `fonts.gstatic.com` and styles from `fonts.googleapis.com`
-  are allowed for `next/font/google`. The Wapu invoice QR is
-  generated client-side; no third-party QR service is loaded.
+- CSP is built per request in `proxy.ts` (`lib/csp.ts`) so it can
+  carry a unique nonce — `default-src 'self'`; production scripts are
+  `'self' 'nonce-…' 'strict-dynamic'` (no `'unsafe-inline'`, so an
+  injected inline `<script>` is refused), with the nonce stamped on
+  Next's bootstrap scripts and the inline JSON-LD + theme scripts;
+  development keeps `'unsafe-inline' 'unsafe-eval'` for fast-refresh.
+  Images from `https:` and `data:`; fonts from `fonts.gstatic.com` and
+  styles from `fonts.googleapis.com` are allowed for
+  `next/font/google`. The other security headers (HSTS, X-Frame-
+  Options, nosniff, …) stay static in `next.config.ts`. The Wapu
+  invoice QR is generated client-side; no third-party QR service is
+  loaded.
