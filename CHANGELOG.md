@@ -212,6 +212,13 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   drop only the UI" posture was replaced with an outright drop.
   Re-introducing autorenewal will need a fresh migration.
 
+### Fixed
+
+- **Toasts pause their auto-dismiss on hover.** Hovering a toast now
+  clears its 3-second dismiss timer and re-arms it on mouse-out, so a
+  message you are reading no longer slides away mid-read
+  (`components/ui/toast/index.tsx`).
+
 ### Security
 
 - **Download proxy restricted to https.** The offering schema's
