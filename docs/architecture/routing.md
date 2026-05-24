@@ -1,7 +1,7 @@
 # Routing
 
 > **Status:** Active
-> **Last updated:** 2026-05-23
+> **Last updated:** 2026-05-24
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | Sign-in | Linked the `/sign-in` row to the new [authentication](../features/authentication.md) feature doc and noted the mobile `nostrconnect://` deep link. | Sign-in mechanics were split out of `nostr-identity.md` into a dedicated authentication doc; the route map should point at it. |
 | 2026-05-23 | Conventions, Special files, Legacy redirects (removed), What is intentionally not routed | Removed the legacy URL redirects entirely (ADR 0028): deleted the three redirect tables (`/panel/*`, ADR-0014-era Spanish slugs, public Spanish→English) and the `proxy.ts` redirect code. The body now documents only the implemented route map; old paths 404. The reserved-slug list still blocks those names. Also reconciled the Table of Contents with the body: removed the stale "Subscriber (auto-renewal)" entry (no such section; autorenewal deferred per ADR 0020). Removed the "What is intentionally not routed" section and its TOC entry, and corrected the storefront slug note (auto-assigned at sign-in, not renamed in `/settings`). | Pre-launch with no external links to old slugs — the 308 layer guarded bookmarks that do not exist. Per the docs standard, the historical mappings stay here in the Change Log, not the body; the TOC also still linked a subscriber section that no longer exists. |
 | 2026-05-22 | Subscriber, API | Removed the reserved NWC routes (`/api/nwc/*`, `/subscription` "manage NWC connection") from the deferred-subscriber tables; the recurring-charge mechanism is now left undecided for a future ADR. Noted that `/api/cron/wapu-settlements` is the shipped payout cron. | `NWC_CONNECTION_URL` and the NWC code were removed; the doc still reserved NWC-named routes. |
 | 2026-05-21 | Buyer flow, Account, Subscriber, API | Scrubbed `features_autorenewal` references; checkout, settings, and subscriber sections now state autorenewal is deferred per ADR 0020 and point at migration `0009_drop_features_autorenewal.sql`. | The column and its plumbing were removed; the doc was still describing the dormant-but-deployed posture the original ADR 0020 walked back. |
@@ -117,7 +118,7 @@ Anonymous purchases stay supported (ADR
 
 | Route | Purpose | Notes |
 |---|---|---|
-| `/[locale]/sign-in` | Nostr sign-in | NIP-07 / nsec / NIP-46. Module ported from bitbybit-arena. |
+| `/[locale]/sign-in` | Nostr sign-in | NIP-07 / nsec / NIP-46 (mobile leads with a `nostrconnect://` deep link). Module ported from bitbybit-arena. See [authentication](../features/authentication.md). |
 | `/[locale]/claim/[orderId]` | Claim a past anonymous order | Logged-in buyer pastes the `orderId` from a prior anonymous purchase to attach it to their pubkey. |
 
 ### Buyer-side

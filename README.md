@@ -146,6 +146,7 @@ Feature-level deep dives in [`docs/features/`](./docs/features/):
 - [Checkout flow](./docs/features/checkout-flow.md)
 - [Settlement rails](./docs/features/settlement-rails.md)
 - [Nostr identity](./docs/features/nostr-identity.md)
+- [Authentication](./docs/features/authentication.md)
 - [Offerings catalog](./docs/features/offerings-catalog.md)
 - [Delivery and receipts](./docs/features/delivery-and-receipts.md)
 - [Notifications](./docs/features/notifications.md)
