@@ -1,7 +1,7 @@
 # Checkout flow
 
 > **Status:** Active
-> **Last updated:** 2026-05-23
+> **Last updated:** 2026-05-24
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | Wapu rail | Corrected the "deployment never holds the buyer's sats / same call" bullet to match the two-leg flow and the diagram: the deposit credits USDT to a Cursats-controlled Wapu wallet (leg 1) and the seller payout is a separate withdrawal (leg 2), so the rail is custodial in transit. | The bullet still described the pre-ADR-0025 direct-payment model and contradicted its own leg-1/leg-2 sequence diagram. |
 | 2026-05-23 | Wapu rail, Why the rails feel identical, Polling, prose/diagrams | Rewrote the residual webhook language for the wapu_ars rail to the poll-driven model (deposit poll is the source of truth); switched Spanish UI labels in prose, code blocks, and diagrams to the English `messages/en.json` strings. | Docs must match the implemented poll-driven rail (ADR 0025) and the English-only UI judges test against. |
 | 2026-05-22 | Sequence diagrams, Confirmation table, Polling, Pointers | Switched the wapu_ars flow to poll-driven (no webhook): deposit-poll sequence + confirmation source, settlement cron/sync pointers; removed the optional-Nostr-DM step. | The Wapu rebuild (ADR 0025) made the rail poll-driven and the server Nostr-DM channel was removed as dead code. |
 | 2026-05-21 | — | Initial version. | Hackathon documentation pass — feature-level deep dive on the buyer flow, with sequence diagrams for both payout rails. |
@@ -108,10 +109,13 @@ sequenceDiagram
 
 Key points:
 
-- **Wapu creates the invoice.** The deployment never holds the
-  buyer's sats; Wapu's deposit endpoint mints the BOLT11 directly
-  against the platform-account flow with the seller's payout
-  destination attached on the same call.
+- **Wapu creates the invoice; the deposit lands in a Cursats
+  wallet.** Wapu's deposit endpoint (leg 1) mints the BOLT11; when
+  the buyer pays, the funds are credited as USDT to a
+  **Cursats-controlled Wapu wallet**, not directly to the seller.
+  The seller's ARS payout is a separate withdrawal (leg 2, below),
+  so on this rail Cursats holds the funds in transit — it is
+  custodial, unlike `direct_lightning`.
 - **The deposit poll is the source of truth.** There is no
   webhook. The checkout page polls `GET /api/orders/[orderId]`,
   which runs `pollWapuDeposit` (`lib/wapu-settlement.ts`) against
@@ -125,10 +129,9 @@ Key points:
 - **The seller payout is a separate, poll-driven leg.** Once the
   deposit confirms, the same request opens the ARS withdrawal
   (leg 2); the cron `/api/cron/wapu-settlements` (and the on-demand
-  `/api/orders/sync`) polls that withdrawal to completion. Cursats
-  never sees ARS — the conversion and bank push happen inside Wapu,
-  and the seller receives pesos in their CBU/alias the same
-  business day.
+  `/api/orders/sync`) polls that withdrawal to completion. The conversion to ARS and
+  the bank push happen inside Wapu, and the seller receives pesos
+  in their CBU/alias the same business day.
 
 Wapu API contract is documented in
 [`wapu-cli`](https://github.com/wapu-app/wapu-cli) until Wapu

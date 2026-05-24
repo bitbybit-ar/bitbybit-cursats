@@ -1,7 +1,7 @@
 # Mission
 
 > **Status:** Active
-> **Last updated:** 2026-05-22
+> **Last updated:** 2026-05-24
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | Body, What we don't do | Scoped the no-custody claim to the sats rail; spelled out that the Wapu (pesos) rail receives the buyer's payment into a Cursats-controlled account and settles to the seller's bank in a second leg, so Wapu and Cursats are intermediaries that briefly hold the funds. Repointed the custody bullet's ADR refs to 0015 and 0025. | The old copy said the platform "never custodies funds either way", which is false for the `wapu_ars` rail under the two-leg flow (ADR 0025) — a trust/legal risk surfaced by a docs + copy audit. |
 | 2026-05-22 | Body, What we value, What we don't do | Removed the Nostr-DM delivery mentions (the receipt page is now the only channel) and reworded the experimental-feature value bullet away from NWC. | The server Nostr-DM channel and `NWC_CONNECTION_URL` were removed as dead code. |
 | 2026-05-21 | Body | Rewrote the opening paragraph to anchor the mission in two concrete Argentine teacher archetypes — the piano teacher reaching international students (Bitcoin in, pesos out) and the tango professor charging digital nomads (Bitcoin in, Bitcoin out). Different phrasing from the README's "Where this came from" so the two read as complementary. | Hackathon documentation pass — the opening previously stated the dual-rail stance abstractly. Pairing it with two concrete characters makes the underserved audience legible at a glance and threads into the README story without duplicating it. |
 | 2026-05-12 | —, A note on the name | Rebranded references from "Cursá" to "Cursats" and rewrote "A note on the name" as the portmanteau etymology (*cursá* + *sats*). Updated example URLs to `cursats.bitbybit.com.ar`. | Brand rename per ADR 0018 — the wordmark now surfaces the sats positioning while preserving the voseo verb in body copy. |
@@ -50,9 +51,12 @@ payout rail in Settings (CBU/alias for pesos, Lightning Address
 for sats), and is selling within minutes. No fork, no Vercel
 project, no env wiring. Her store lives at
 `cursats.bitbybit.com.ar/<her-slug>`. The buyer scans a QR; if
-she chose Wapu, the ARS lands in her CBU; if she chose Lightning
-Address, the sats land in her wallet. The platform never
-custodies funds either way. A permanent in-app receipt page
+she chose Lightning Address, the sats land straight in her wallet
+and Cursats never holds them. If she chose Wapu, the payment is
+received through Wapu into a Cursats-controlled account and then
+settled to her CBU the same business day — on that rail Wapu and
+Cursats act as intermediaries that briefly hold the funds before
+they reach her bank. A permanent in-app receipt page
 delivers the redemption code or download URL.
 
 Sovereignty is preserved as the *self-hosting* path: anyone who
@@ -86,15 +90,16 @@ how those sats come out.
 
 ## What we don't do
 
-- Custody. Both rails route directly to the seller — Wapu's
-  direct-payment puts ARS in their CBU/alias; the Lightning
-  Address rail puts sats in their wallet. The platform never
-  holds buyer sats or seller funds in either case. Decisions in
-  ADRs
-  [0002](../architecture/decisions/0002-settlement-via-wapu.md),
-  [0012](../architecture/decisions/0012-multi-tenant-marketplace.md),
+- Custody of sats. The Lightning Address rail routes sats
+  straight to the seller's wallet; Cursats never holds them. The
+  Wapu (pesos) rail is different by design: the buyer's payment is
+  received through Wapu into a Cursats-controlled account and
+  settled to the seller's CBU/alias the same business day, so on
+  that rail Wapu and Cursats are intermediaries that briefly hold
+  the funds before payout. Decisions in ADRs
+  [0015](../architecture/decisions/0015-sats-settlement-rail.md)
   and
-  [0015](../architecture/decisions/0015-sats-settlement-rail.md).
+  [0025](../architecture/decisions/0025-wapu-poll-driven-two-leg-rail.md).
 - Generic e-commerce features (stock, variants, shipping,
   tax-by-destination). Decision in ADR
   [0003-educator-vertical](../architecture/decisions/0003-educator-vertical.md).

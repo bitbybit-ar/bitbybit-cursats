@@ -107,7 +107,7 @@
     "metadataDescription": "Cursats uses Lightning so the buyer pays in sats. The teacher chooses how to get paid: sats straight to their wallet, or pesos to their CBU/CVU via Wapu. Here's how it works, step by step.",
     "hero": {
       "title": "<gradient>SATS</gradient> for everyone. <gradient>PESOS</gradient> for those who need them.",
-      "subtitle": "Cursats connects people who want to learn with people who want to teach. Lightning for payments; sats or pesos for payouts — the teacher decides. The platform stays out of the way."
+      "subtitle": "Cursats connects people who want to learn with people who want to teach. Lightning for payments; sats or pesos for payouts — the teacher decides."
     },
     "buyers": {
       "title": "If you're buying a course",
@@ -128,8 +128,8 @@
       "step2Body": "In Settings you add your Lightning Address (if you already live in sats) or your CBU/CVU/alias to get paid in pesos via Wapu. It's the only thing you need before publishing.",
       "step3Title": "Publish your course",
       "step3Body": "Tap \"Publish your course\", fill in the form, and submit.",
-      "step4Title": "Get paid directly",
-      "step4Body": "When someone buys it and pays with Lightning, the money goes straight to where you set it up — the platform never touches it."
+      "step4Title": "Get paid your way",
+      "step4Body": "When someone buys, you get paid where you set it up: sats straight to your wallet, or pesos to your CBU/CVU via Wapu."
     },
     "glossary": {
       "title": "Who's who",
@@ -150,7 +150,7 @@
   },
   "features": {
     "metadataTitle": "Features",
-    "metadataDescription": "What Cursats offers: two ways to get paid (sats or pesos), no platform custody, optional Nostr login, in-app delivery, and more.",
+    "metadataDescription": "What Cursats offers: two ways to get paid (sats or pesos), non-custodial sats, optional Nostr login, in-app delivery, and more.",
     "hero": {
       "title": "What <brand></brand> offers",
       "subtitle": "Built for educators teaching from Argentina.\nPesos to your CBU/CVU or sats to your Lightning — your call."
@@ -158,8 +158,8 @@
     "items": {
       "twoRailsTitle": "Two ways to get paid",
       "twoRailsBody": "The buyer always pays in Lightning. The teacher chooses: pesos to their CBU/CVU via Wapu (for those who want to keep their bank routine), or sats straight to their Lightning Address (for those who already live in sats).",
-      "noCustodyTitle": "No platform custody",
-      "noCustodyBody": "Sats go straight to the teacher's Lightning wallet. For ARS payouts, Wapu manages the funds during the day and settles them to the teacher's bank — Cursats never touches them.",
+      "noCustodyTitle": "Non-custodial sats",
+      "noCustodyBody": "If you get paid in sats, they land straight in your Lightning wallet — Cursats never touches them. If you get paid in pesos, the payment comes in through Wapu and settles to your CBU/CVU the same business day; on that rail Wapu and Cursats act as intermediaries until the money reaches your bank.",
       "anonymousByDefaultTitle": "Anonymous by default",
       "anonymousByDefaultBody": "The buyer arrives, pays, and leaves with a code or download. No forms, no emails, no required accounts.",
       "optionalNostrLoginTitle": "Optional Nostr login",
@@ -200,7 +200,7 @@
       "lostReceiptQ": "What if I lose the receipt link?",
       "lostReceiptA": "If your Nostr was connected, you'll find it under \"My orders\". If you bought anonymously, you can sign in with Nostr and claim the order by pasting the order ID on the claim page.",
       "creatorPayoutQ": "How do I get paid as a teacher?",
-      "creatorPayoutA": "You pick how to get paid in Settings: pesos to a CBU/CVU or alias (via Wapu), or sats straight to your Lightning Address. Each payment lands separately at the destination you chose — Cursats never touches the money.",
+      "creatorPayoutA": "You pick how to get paid in Settings: pesos to a CBU/CVU or alias (via Wapu), or sats straight to your Lightning Address. If you get paid in sats, they land straight in your wallet and Cursats never touches them. If you get paid in pesos, the payment goes through Wapu and settles to your account the same business day — on that rail Wapu and Cursats are intermediaries until the money reaches your bank.",
       "nostrSignInQ": "What is Nostr and why do I use it to sign in?",
       "nostrSignInA": "Nostr is an open identity and messaging protocol. Your private key is your account — no central servers, no email. For teachers, it's the only way to create and manage your courses.",
       "feesQ": "Are there fees?",

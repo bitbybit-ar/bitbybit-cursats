@@ -115,6 +115,14 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **"No custody" copy now scoped to the sats rail.** The
+  how-it-works, features, and FAQ pages no longer claim the platform
+  "never touches" the money on every rail. That is true only when a
+  seller gets paid in sats (the payment lands directly in their
+  wallet). On the pesos rail the buyer's payment is received through
+  Wapu into a Cursats-controlled account and settled to the seller's
+  CBU/CVU in a second leg, so Wapu and Cursats are intermediaries that
+  briefly hold the funds — the copy now says so plainly.
 - **Seller notifications now open the order.** Clicking a
   sale-received or payout notification opens that order's detail page
   (buyer "order paid" notifications still open the receipt).
