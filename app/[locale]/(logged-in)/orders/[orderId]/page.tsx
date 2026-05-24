@@ -143,8 +143,6 @@ export default async function PanelOrderDetailPage({
           ) : null}
         </dl>
       </Card>
-
-      <p className={styles.readonlyHint}>{t("readOnlyHint")}</p>
     </>
   );
 }

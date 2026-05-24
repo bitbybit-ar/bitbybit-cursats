@@ -486,7 +486,7 @@
   "orders": {
     "metadataTitle": "Pedidos",
     "title": "Pedidos",
-    "subtitle": "Historial de ventas de tu storefront. Solo lectura en v1.",
+    "subtitle": "Historial de ventas de tu storefront.",
     "empty": "Todavía no hay ventas.",
     "anonymous": "Anónimo",
     "unknownOffering": "Oferta desconocida",
@@ -515,8 +515,7 @@
       "wapuDepositTxId": "ID de depósito Wapu",
       "wapuWithdrawalTxId": "ID de retiro Wapu",
       "payoutStatus": "Estado del pago al vendedor",
-      "unknownOffering": "Oferta desconocida",
-      "readOnlyHint": "Los pedidos son de solo lectura en v1: ni reembolsos, ni reenvíos, ni marcado manual de entrega."
+      "unknownOffering": "Oferta desconocida"
     }
   },
   "settings": {

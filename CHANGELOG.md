@@ -115,6 +115,11 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Dropped the "Read-only in v1" wording from the Orders pages.** The
+  orders list subtitle no longer ends with "Read-only in v1." and the
+  order-detail "Orders are read-only in v1…" hint is gone — the qualifier
+  carried no useful meaning for sellers. Orders, payments, and buyers
+  remain non-mutable views; only the copy was removed.
 - **"No custody" copy now scoped to the sats rail.** The
   how-it-works, features, and FAQ pages no longer claim the platform
   "never touches" the money on every rail. That is true only when a
@@ -1231,14 +1236,14 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   `@vercel/blob` dep was dropped from `package.json` and the
   unused `/api/admin/upload` row was removed from
   `docs/architecture/routing.md`.
-- Read-only orders list at `/[locale]/panel/pedidos` and
+- Orders list at `/[locale]/panel/pedidos` and
   detail at `/[locale]/panel/pedidos/[orderId]`. The list
   shows the 50 most recent rows with status pills + pubkey
   preview + anonymous flag. The detail surfaces every
   order field including `payment_hash` and the Wapu invoice
   / settlement references for support purposes; cross-links
   to the offering edit page and the buyer detail page.
-- Read-only students list at `/[locale]/panel/estudiantes`
+- Students list at `/[locale]/panel/estudiantes`
   and detail at `/[locale]/panel/estudiantes/[pubkey]`. List
   aggregates `orders` by pubkey via raw SQL (`COUNT`,
   `SUM FILTER`, `MAX`) — anonymous orders excluded; detail
@@ -1248,8 +1253,8 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 - `lib/admin/orders.ts` with three reads —
   `listAdminOrders`, `getAdminOrderDetail`, `listAdminStudents`,
   `getAdminStudentDetail` — all returning shapes the panel
-  pages consume directly. No mutations: orders/buyers stay
-  read-only in v1 per ADR 0008.
+  pages consume directly. No mutations: orders/buyers are views
+  per ADR 0008.
 - New i18n sub-namespaces under `panel`: `orders`,
   `orders.detail`, `students`, `students.detail`, and
   `settings` (with `form.*`) in both locale files. Plural
@@ -1500,8 +1505,8 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   [0008-merchant-admin-dashboard](docs/architecture/decisions/0008-merchant-admin-dashboard.md):
   the merchant admin panel at `/[locale]/panel/...`. Auth via the
   Nostr session module (ADR 0007) gated by `ADMIN_PUBKEYS` env
-  var; non-admins receive 404. Read-only over orders, payments,
-  and buyers in v1 (filter, search, sort, paginate, CSV export
+  var; non-admins receive 404. No mutations over orders, payments,
+  and buyers (filter, search, sort, paginate, CSV export
   remain). Full CRUD over offerings. Settings updates touching
   payment-destination fields (CBU, alias) require a NIP-07
   re-sign at save time. Every mutation writes to
@@ -1601,8 +1606,8 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   API namespace, audit log, and the per-mutation NIP-07 re-sign
   for payment-destination changes; "What is intentionally not
   here" updated to remove "no buyer accounts" and "no admin UI"
-  and to add "no CMS for landing content" plus the read-only
-  v1 carve-out.
+  and to add "no CMS for landing content" plus the no-mutations
+  carve-out.
 - ADR 0006 extended to record a third DM trigger — logged-in
   Nostr sessions — alongside npub-at-checkout and NWC-derived
   pubkey for subscribers. Status updated to "Accepted (extended

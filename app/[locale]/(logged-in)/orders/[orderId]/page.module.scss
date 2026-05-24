@@ -101,10 +101,3 @@
   background: color-mix(in srgb, $color-error 15%, transparent);
   color: $color-error;
 }
-
-.readonlyHint {
-  margin: 0;
-  font-size: $font-size-xs;
-  color: $color-text-secondary;
-  font-style: italic;
-}

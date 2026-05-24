@@ -486,7 +486,7 @@
   "orders": {
     "metadataTitle": "Orders",
     "title": "Orders",
-    "subtitle": "Sales history for your storefront. Read-only in v1.",
+    "subtitle": "Sales history for your storefront.",
     "empty": "No orders yet.",
     "anonymous": "Anonymous",
     "unknownOffering": "Unknown offering",
@@ -515,8 +515,7 @@
       "wapuDepositTxId": "Wapu deposit tx ID",
       "wapuWithdrawalTxId": "Wapu withdrawal tx ID",
       "payoutStatus": "Seller payout status",
-      "unknownOffering": "Unknown offering",
-      "readOnlyHint": "Orders are read-only in v1: no refunds, no resends, no manual delivery flagging."
+      "unknownOffering": "Unknown offering"
     }
   },
   "settings": {
