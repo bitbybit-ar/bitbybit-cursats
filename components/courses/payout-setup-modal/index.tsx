@@ -12,6 +12,7 @@ export interface PayoutSavedValues {
   cbu: string;
   alias: string;
   payoutMethod: PayoutMethod;
+  lightningAddress: string;
 }
 
 interface PayoutSetupModalProps {
@@ -48,7 +49,7 @@ export function PayoutSetupModal({
   const t = useTranslations("createCourse.payoutModal");
 
   return (
-    <Modal onClose={onClose} title={t("title")} size="md">
+    <Modal onClose={onClose} title={t("title")} size="lg">
       <p className={styles.intro}>{t("intro")}</p>
       <PayoutForm
         initialCbu={initialCbu}
@@ -57,6 +58,7 @@ export function PayoutSetupModal({
         initialTransferSpeed={initialTransferSpeed}
         currentLightningAddress={currentLightningAddress}
         onSaved={onSaved}
+        embedded
       />
     </Modal>
   );

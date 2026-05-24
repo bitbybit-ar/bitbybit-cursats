@@ -114,6 +114,14 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
   const [currentPayout, setCurrentPayout] =
     useState<OfferingFormPayoutState | null>(payoutState ?? null);
   const [showPayoutModal, setShowPayoutModal] = useState(false);
+  // The payout-setup modal opens for two reasons:
+  //   - the seller hit "Set up payment method" in the Pricing section
+  //     (proactive setup, before pricing) — just unlock the form.
+  //   - the submit-time / server gate caught a missing payout — resume
+  //     the in-flight submission once it's saved.
+  // This flag distinguishes them so a proactive setup doesn't try to
+  // submit a not-yet-filled form.
+  const [resumeSubmitAfterPayout, setResumeSubmitAfterPayout] = useState(false);
 
   const isEdit = offering !== undefined;
 
@@ -142,6 +150,23 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
   const priceCurrency: "ars" | "sats" = isEdit
     ? offering!.price_currency
     : railCurrency;
+  // Three pricing states the section adapts to:
+  //   - "unconfigured" — no payout method set yet (create only). The
+  //     price currency is undefined until a rail is chosen, so we hide
+  //     the price field and prompt the seller to set up payout first.
+  //   - "wapu"         — cbu_alias rail → priced in ARS, seller bears
+  //     the Wapu fee, net must clear WAPU_MIN_NET_ARS.
+  //   - "lightning"    — lightning_address rail → priced in sats.
+  // Edit mode always has a configured payout (an existing offering
+  // implies the seller cleared the gate at create time), so it never
+  // hits "unconfigured".
+  const payoutConfigured =
+    isEdit || (currentPayout !== null && isPayoutConfigured(currentPayout));
+  const pricingMode: "unconfigured" | "wapu" | "lightning" = !payoutConfigured
+    ? "unconfigured"
+    : priceCurrency === "sats"
+      ? "lightning"
+      : "wapu";
   // Live Wapu fee + net estimate for ARS (cbu_alias) sellers, who
   // bear the fee (ADR 0026). Null until a valid price is entered.
   const [payoutQuote, setPayoutQuote] = useState<{
@@ -335,7 +360,8 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
         if (data.error === "payout_not_configured") {
           // BE caught a payout gap the FE check missed (e.g. stale
           // payoutState prop). Surface the modal so the seller can
-          // recover without leaving the page.
+          // recover without leaving the page, then resume this submit.
+          setResumeSubmitAfterPayout(true);
           setShowPayoutModal(true);
           showToast(t("payoutNotConfigured"), "error");
           return;
@@ -389,7 +415,11 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
 
     // Pre-check seller's payout state on create. Edit-mode skips
     // the gate (existing offering already passed at create time).
+    // Reaching this with the new Pricing UI is a backstop — the price
+    // field is hidden until payout is set up — so resume the submit
+    // once the modal saves.
     if (!isEdit && currentPayout && !isPayoutConfigured(currentPayout)) {
+      setResumeSubmitAfterPayout(true);
       setShowPayoutModal(true);
       return;
     }
@@ -397,22 +427,34 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
     await submitOffering(payload);
   }
 
+  // Proactive setup from the Pricing section: the seller has no rail
+  // yet, so opening the modal here should just unlock the form (the
+  // price field appears once a rail is chosen) — not submit.
+  function openPayoutSetup() {
+    setResumeSubmitAfterPayout(false);
+    setShowPayoutModal(true);
+  }
+
   function handlePayoutSaved(next: PayoutSavedValues) {
-    // Merge the freshly-saved fields onto the existing payout state
-    // (lightning_address lives on the profile form and is unchanged
-    // by this modal — preserve whatever value we already had).
-    setCurrentPayout((prev) => ({
+    // Adopt the freshly-saved payout state wholesale — the modal now
+    // edits the LN address too, so we take its value rather than
+    // preserving a stale one (a seller can set their LN address here).
+    setCurrentPayout({
       cbu: next.cbu,
       alias: next.alias,
-      lightningAddress: prev?.lightningAddress ?? "",
+      lightningAddress: next.lightningAddress,
       payoutMethod: next.payoutMethod,
-    }));
+    });
     setShowPayoutModal(false);
 
-    // Replay the submission with the just-saved values. If the user
-    // picked the LN rail but has no LN address, PayoutForm's own
-    // validation would have blocked the save — so reaching this
-    // point means the merged state passes `isPayoutConfigured`.
+    // Only replay the submission when the modal was opened by the
+    // submit/server gate. A proactive setup (from the Pricing button)
+    // just unlocks the now-priced-able form and lets the seller carry
+    // on filling it in.
+    if (!resumeSubmitAfterPayout) return;
+    setResumeSubmitAfterPayout(false);
+    // The merged state passes `isPayoutConfigured` (PayoutForm blocks
+    // a save that wouldn't), so the submission can proceed.
     const payload = buildPayload();
     if (!payload) return;
     void submitOffering(payload);
@@ -451,42 +493,44 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
             <p className={styles.sectionHint}>{t("sectionBasicsHint")}</p>
           </header>
 
-          <div className={styles.field}>
-            <label htmlFor="title" className={styles.label}>
-              {t("title")}
-            </label>
-            <input
-              id="title"
-              type="text"
-              className={styles.input}
-              value={title}
-              onChange={(e) => handleTitleChange(e.target.value)}
-              required
-              maxLength={200}
-            />
-          </div>
-
-          <div className={styles.field}>
-            <label htmlFor="slug" className={styles.label}>
-              {t("slug")}
-              <Tooltip
-                text={t("slugHint")}
-                example={t("slugExample")}
-                label={tCommon("tooltipLabel")}
+          <div className={styles.row}>
+            <div className={styles.field}>
+              <label htmlFor="title" className={styles.label}>
+                {t("title")}
+              </label>
+              <input
+                id="title"
+                type="text"
+                className={styles.input}
+                value={title}
+                onChange={(e) => handleTitleChange(e.target.value)}
+                required
+                maxLength={200}
               />
-            </label>
-            <input
-              id="slug"
-              type="text"
-              className={styles.input}
-              value={slug}
-              onChange={(e) => handleSlugChange(e.target.value)}
-              required
-              maxLength={80}
-              pattern="[a-z0-9]+(-[a-z0-9]+)*"
-              autoComplete="off"
-              spellCheck={false}
-            />
+            </div>
+
+            <div className={styles.field}>
+              <label htmlFor="slug" className={styles.label}>
+                {t("slug")}
+                <Tooltip
+                  text={t("slugHint")}
+                  example={t("slugExample")}
+                  label={tCommon("tooltipLabel")}
+                />
+              </label>
+              <input
+                id="slug"
+                type="text"
+                className={styles.input}
+                value={slug}
+                onChange={(e) => handleSlugChange(e.target.value)}
+                required
+                maxLength={80}
+                pattern="[a-z0-9]+(-[a-z0-9]+)*"
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </div>
           </div>
 
           <div className={styles.field}>
@@ -554,51 +598,78 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
 
         <section className={styles.section}>
           <header className={styles.sectionHeader}>
-            <h2 className={styles.sectionTitle}>{t("sectionPricing")}</h2>
-            <p className={styles.sectionHint}>{t("sectionPricingHint")}</p>
-          </header>
-
-          <p className={styles.sectionHint}>
-            {priceCurrency === "ars"
-              ? t("priceCurrencyNoteArs")
-              : t("priceCurrencyNoteSats")}
-          </p>
-
-          <div className={styles.field}>
-            <label htmlFor="priceAmount" className={styles.label}>
-              {priceCurrency === "ars" ? t("priceArs") : t("priceSats")}
+            <h2 className={styles.sectionTitle}>
+              {t("sectionPricing")}
               <Tooltip
-                text={t("priceAmountHint")}
-                example={t("priceAmountExample")}
+                text={t("sectionPricingHint")}
                 label={tCommon("tooltipLabel")}
               />
-            </label>
-            <input
-              id="priceAmount"
-              type="number"
-              min={1}
-              step={1}
-              className={styles.input}
-              value={priceAmount}
-              onChange={(e) => setPriceAmount(e.target.value)}
-              required
-            />
-            {priceCurrency === "ars" && payoutQuote ? (
-              <p className={styles.payoutEstimate}>
-                {t("payoutEstimate", {
-                  fee: payoutQuote.fee_ars.toLocaleString(),
-                  net: payoutQuote.net_ars.toLocaleString(),
-                })}
+            </h2>
+          </header>
+
+          {pricingMode === "unconfigured" ? (
+            // No payout rail yet — the price currency is undefined, so
+            // hide the price field entirely and prompt setup instead.
+            <div className={styles.payoutCallout}>
+              <p className={styles.payoutCalloutText}>
+                {t("pricingSetupNeeded")}
               </p>
-            ) : null}
-            {isBelowWapuMin ? (
-              <p className={styles.payoutWarning} role="alert">
-                {t("priceBelowWapuMin", {
-                  min: WAPU_MIN_NET_ARS.toLocaleString(),
-                })}
-              </p>
-            ) : null}
-          </div>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={openPayoutSetup}
+                className={styles.payoutCalloutButton}
+              >
+                {t("pricingSetupButton")}
+              </Button>
+            </div>
+          ) : (
+            <div className={styles.row}>
+              <div className={styles.field}>
+                <label htmlFor="priceAmount" className={styles.label}>
+                  {priceCurrency === "ars" ? t("priceArs") : t("priceSats")}
+                  <Tooltip
+                    text={t("priceAmountHint")}
+                    example={t("priceAmountExample")}
+                    label={tCommon("tooltipLabel")}
+                  />
+                </label>
+                <input
+                  id="priceAmount"
+                  type="number"
+                  min={1}
+                  step={1}
+                  className={styles.input}
+                  value={priceAmount}
+                  onChange={(e) => setPriceAmount(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className={styles.priceAside}>
+                <p className={styles.sectionHint}>
+                  {priceCurrency === "ars"
+                    ? t("priceCurrencyNoteArs")
+                    : t("priceCurrencyNoteSats")}
+                </p>
+                {priceCurrency === "ars" && payoutQuote ? (
+                  <p className={styles.payoutEstimate}>
+                    {t("payoutEstimate", {
+                      fee: payoutQuote.fee_ars.toLocaleString(),
+                      net: payoutQuote.net_ars.toLocaleString(),
+                    })}
+                  </p>
+                ) : null}
+                {isBelowWapuMin ? (
+                  <p className={styles.payoutWarning} role="alert">
+                    {t("priceBelowWapuMin", {
+                      min: WAPU_MIN_NET_ARS.toLocaleString(),
+                    })}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          )}
         </section>
 
         <section className={styles.section}>
@@ -653,7 +724,7 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
           </fieldset>
 
           {type === "code" && !isEdit ? (
-            <div className={styles.field}>
+            <div className={`${styles.field} ${styles.fieldNarrow}`}>
               <label htmlFor="codeCount" className={styles.label}>
                 {t("codeCount")}
                 <Tooltip
@@ -718,8 +789,6 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
           <ImageUpload
             value={imageUrl ? imageUrl : null}
             onChange={(next) => setImageUrl(next ?? "")}
-            label={t("imageUrl")}
-            required
           />
         </section>
 
@@ -727,7 +796,9 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
           <Button
             type="submit"
             variant="primary"
-            disabled={isPending || isBelowWapuMin}
+            disabled={
+              isPending || isBelowWapuMin || pricingMode === "unconfigured"
+            }
           >
             {isPending ? t("saving") : isEdit ? t("saveEdit") : t("saveCreate")}
           </Button>
