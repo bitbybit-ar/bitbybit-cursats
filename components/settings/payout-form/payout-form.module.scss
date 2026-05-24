@@ -191,6 +191,24 @@
   }
 }
 
+// Invalid field: tint the border so the bad input reads at a glance,
+// paired with the inline `.fieldError` message below it.
+.inputError {
+  border-color: $color-error;
+
+  &:hover {
+    border-color: $color-error;
+  }
+}
+
+// Inline validation message rendered under a field. Mirrors the
+// `.error` idiom used by other forms (e.g. image-upload).
+.fieldError {
+  margin: 0;
+  font-size: $font-size-xs;
+  color: $color-error;
+}
+
 .actions {
   display: flex;
   gap: $spacing-12;
