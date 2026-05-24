@@ -258,6 +258,8 @@
     },
     "buy": "Pay with sats",
     "buying": "Creating invoice…",
+    "buyAgain": "Buy again",
+    "goToReceipt": "Go to receipt",
     "soldOut": "Sold out",
     "soldOutBadge": "Sold out",
     "rail": {

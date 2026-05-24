@@ -7,6 +7,7 @@ import {
   createOrder,
   markOrderPaid,
   getOrder,
+  getOrderByPubkeyAndOffering,
   listOrdersByPubkey,
   claimOrderForBuyer,
   drawAndAssignCode,
@@ -321,6 +322,63 @@ describe("orders/listOrdersByPubkey", () => {
     await seedPendingOrder(offering, { pubkey: "b".repeat(64) });
     const list = await listOrdersByPubkey(HEX_PUBKEY);
     expect(list.length).toBe(0);
+  });
+});
+
+describe("orders/getOrderByPubkeyAndOffering", () => {
+  // Seed a paid order with an explicit created_at so the
+  // "most recent" ordering is deterministic.
+  async function seedPaidOrder(
+    offering: { id: string; user_id: string; price_amount: number },
+    opts: { pubkey: string; createdAt: Date }
+  ): Promise<{ order_id: string }> {
+    const { order_id } = await seedPendingOrder(offering, opts);
+    await markOrderPaid({ order_id, paid_at: opts.createdAt });
+    return { order_id };
+  }
+
+  it("returns the most recent paid order for the buyer + offering", async () => {
+    const offering = await seedOffering();
+    await seedPaidOrder(offering, {
+      pubkey: HEX_PUBKEY,
+      createdAt: new Date(2026, 0, 1),
+    });
+    const newer = await seedPaidOrder(offering, {
+      pubkey: HEX_PUBKEY,
+      createdAt: new Date(2026, 0, 2),
+    });
+
+    const found = await getOrderByPubkeyAndOffering(HEX_PUBKEY, offering.id);
+    expect(found?.id).toBe(newer.order_id);
+  });
+
+  it("returns null when the buyer only has a pending order", async () => {
+    const offering = await seedOffering();
+    await seedPendingOrder(offering, { pubkey: HEX_PUBKEY });
+
+    const found = await getOrderByPubkeyAndOffering(HEX_PUBKEY, offering.id);
+    expect(found).toBeNull();
+  });
+
+  it("ignores other buyers, other offerings, and anonymous orders", async () => {
+    const offering = await seedOffering();
+    const otherOffering = await seedOffering("otro-curso");
+    // Different buyer, same offering.
+    await seedPaidOrder(offering, {
+      pubkey: "b".repeat(64),
+      createdAt: new Date(2026, 0, 1),
+    });
+    // Same buyer, different offering.
+    await seedPaidOrder(otherOffering, {
+      pubkey: HEX_PUBKEY,
+      createdAt: new Date(2026, 0, 1),
+    });
+    // Anonymous paid order on the target offering.
+    const anon = await seedPendingOrder(offering, { pubkey: null });
+    await markOrderPaid({ order_id: anon.order_id, paid_at: new Date() });
+
+    const found = await getOrderByPubkeyAndOffering(HEX_PUBKEY, offering.id);
+    expect(found).toBeNull();
   });
 });
 
