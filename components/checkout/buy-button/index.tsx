@@ -49,6 +49,7 @@ export function BuyButton({
           error?: string;
           reason?: string;
           lightning_reason?: string;
+          nwc_reason?: string;
         };
         // 409 with reason=offering_sold_out happens when the pool
         // emptied between page load and click (race against
@@ -70,6 +71,19 @@ export function BuyButton({
             bolt11_no_payment_hash: "sellerLightningMalformed",
           };
           const key = lnKey[data.lightning_reason] ?? "offeringUnavailable";
+          showToast(tErrors(key), "error");
+        } else if (data.nwc_reason) {
+          // The seller's wallet (NWC) couldn't mint the invoice —
+          // usually it's offline. Candid, buyer-can't-fix messaging.
+          const nwcKey: Record<string, string> = {
+            unreachable: "sellerNwcUnreachable",
+            make_invoice_failed: "sellerNwcUnreachable",
+            lookup_failed: "sellerNwcUnreachable",
+            invalid_uri: "sellerNwcUnavailable",
+            unsupported: "sellerNwcUnavailable",
+            no_payment_hash: "sellerNwcUnavailable",
+          };
+          const key = nwcKey[data.nwc_reason] ?? "offeringUnavailable";
           showToast(tErrors(key), "error");
         } else if (
           res.status === 404 ||

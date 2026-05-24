@@ -164,7 +164,9 @@ export function assertSafePublicHttpsUrl(url: string): URL {
   return parsed;
 }
 
-function isPrivateOrLocalHost(hostname: string): boolean {
+// Exported so the NWC relay guard (lib/nwc.ts) can reuse the same
+// private/local-host detection without duplicating the RFC1918 logic.
+export function isPrivateOrLocalHost(hostname: string): boolean {
   // Hostname literals
   if (hostname === "localhost" || hostname.endsWith(".localhost")) return true;
   if (hostname === "metadata" || hostname === "metadata.google.internal") {
@@ -548,7 +550,7 @@ async function fetchJsonWithTimeout(
       }
     }
     const text = new TextDecoder("utf-8").decode(
-      chunks.length === 1 ? chunks[0] : concatChunks(chunks, received),
+      chunks.length === 1 ? chunks[0] : concatChunks(chunks, received)
     );
     return JSON.parse(text);
   } finally {
