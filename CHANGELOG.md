@@ -12,6 +12,12 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Download links are limited per purchase.** A paid download grants
+  up to five file fetches, available for 30 days after payment. The
+  receipt's download card shows how many downloads are left and the
+  date the link expires; once spent, it explains the link is no longer
+  active. Code offerings are unaffected. Decision in ADR
+  [0006](docs/architecture/decisions/0006-nostr-and-inapp-delivery.md).
 - **Filter and paginate your order list.** `/orders` now has a status
   filter that distinguishes a buyer who hasn't paid ("Pending payment")
   from a Wapu payout still in flight ("Withdrawal pending" / "Settling")

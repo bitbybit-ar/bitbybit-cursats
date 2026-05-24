@@ -309,7 +309,10 @@
     "download": {
       "label": "Tu descarga",
       "cta": "Descargar archivo",
-      "missing": "El archivo de descarga aún no está disponible. Probá recargar en unos minutos."
+      "missing": "El archivo de descarga aún no está disponible. Probá recargar en unos minutos.",
+      "remaining": "{count, plural, =1 {# descarga restante} other {# descargas restantes}}",
+      "availableUntil": "disponible hasta el {date}",
+      "exhausted": "Este enlace de descarga alcanzó su límite o venció. Contactá al vendedor si todavía necesitás el archivo."
     },
     "pending": {
       "title": "Tu pago está procesándose",

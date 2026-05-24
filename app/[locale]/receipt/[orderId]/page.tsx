@@ -12,6 +12,11 @@ import { NostrPromptCard } from "@/components/receipt/nostr-prompt-card";
 import { getOrder } from "@/lib/orders";
 import { getOfferingById } from "@/lib/offerings";
 import { getUserById } from "@/lib/creator/users";
+import {
+  downloadAccessExpiresAt,
+  downloadsRemaining,
+  isDownloadAccessExpired,
+} from "@/lib/download-limits";
 import styles from "./page.module.scss";
 
 type Props = {
@@ -95,6 +100,13 @@ export default async function ReceiptPage({ params }: Props) {
             <ReceiptDownload
               orderId={orderId}
               isAvailable={offering.download_url !== null}
+              remaining={downloadsRemaining(order.download_count)}
+              expired={isDownloadAccessExpired(order.paid_at)}
+              expiresAtIso={
+                order.paid_at
+                  ? downloadAccessExpiresAt(order.paid_at).toISOString()
+                  : null
+              }
             />
           ) : null}
 

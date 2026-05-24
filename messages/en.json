@@ -309,7 +309,10 @@
     "download": {
       "label": "Your download",
       "cta": "Download file",
-      "missing": "Your download isn't ready yet. Try reloading in a few minutes."
+      "missing": "Your download isn't ready yet. Try reloading in a few minutes.",
+      "remaining": "{count, plural, =1 {# download left} other {# downloads left}}",
+      "availableUntil": "available until {date}",
+      "exhausted": "This download link has reached its limit or expired. Contact the seller if you still need the file."
     },
     "pending": {
       "title": "Your payment is processing",

@@ -5,6 +5,12 @@ import { sql, eq } from "drizzle-orm";
 import { testDb, cleanDb, seedUser } from "../setup";
 import { offerings, orders } from "@/lib/db/schema";
 import { GET } from "@/app/api/downloads/[orderId]/route";
+import {
+  MAX_DOWNLOADS_PER_ORDER,
+  DOWNLOAD_ACCESS_WINDOW_DAYS,
+} from "@/lib/download-limits";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const DOWNLOAD_BASE = "https://cursats.test/api/downloads";
 
@@ -94,11 +100,26 @@ async function seedOrder(offering: {
   return { order_id: row.id };
 }
 
-async function markPaid(orderId: string) {
+async function markPaid(orderId: string, paidAt: Date = new Date()) {
   await testDb
     .update(orders)
-    .set({ status: "paid", paid_at: new Date() })
+    .set({ status: "paid", paid_at: paidAt })
     .where(eq(orders.id, orderId));
+}
+
+async function setDownloadCount(orderId: string, count: number) {
+  await testDb
+    .update(orders)
+    .set({ download_count: count })
+    .where(eq(orders.id, orderId));
+}
+
+async function getDownloadCount(orderId: string): Promise<number> {
+  const [row] = await testDb
+    .select({ count: orders.download_count })
+    .from(orders)
+    .where(eq(orders.id, orderId));
+  return row?.count ?? -1;
 }
 
 function buildRequest(orderId: string): {
@@ -186,5 +207,59 @@ describe("GET /api/downloads/[orderId]", () => {
     const { req, ctx } = buildRequest(order_id);
     const res = await GET(req, ctx);
     expect(res.status).toBe(404);
+  });
+
+  it("bumps the download counter on each successful fetch", async () => {
+    const offering = await seedDownloadOffering(
+      "https://example.com/asset.pdf"
+    );
+    const { order_id } = await seedOrder(offering);
+    await markPaid(order_id);
+
+    expect(await getDownloadCount(order_id)).toBe(0);
+
+    const first = buildRequest(order_id);
+    expect((await GET(first.req, first.ctx)).status).toBe(302);
+    expect(await getDownloadCount(order_id)).toBe(1);
+
+    const second = buildRequest(order_id);
+    expect((await GET(second.req, second.ctx)).status).toBe(302);
+    expect(await getDownloadCount(order_id)).toBe(2);
+  });
+
+  it("returns 410 once the per-order download cap is reached", async () => {
+    const offering = await seedDownloadOffering(
+      "https://example.com/asset.pdf"
+    );
+    const { order_id } = await seedOrder(offering);
+    await markPaid(order_id);
+    await setDownloadCount(order_id, MAX_DOWNLOADS_PER_ORDER);
+
+    const { req, ctx } = buildRequest(order_id);
+    const res = await GET(req, ctx);
+    expect(res.status).toBe(410);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toBe("download_limit_reached");
+    // A refused request must not consume another slot.
+    expect(await getDownloadCount(order_id)).toBe(MAX_DOWNLOADS_PER_ORDER);
+  });
+
+  it("returns 410 once the post-payment download window has elapsed", async () => {
+    const offering = await seedDownloadOffering(
+      "https://example.com/asset.pdf"
+    );
+    const { order_id } = await seedOrder(offering);
+    const longAgo = new Date(
+      Date.now() - (DOWNLOAD_ACCESS_WINDOW_DAYS + 1) * DAY_MS
+    );
+    await markPaid(order_id, longAgo);
+
+    const { req, ctx } = buildRequest(order_id);
+    const res = await GET(req, ctx);
+    expect(res.status).toBe(410);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toBe("link_expired");
+    // Expiry is checked before the counter, so no slot is consumed.
+    expect(await getDownloadCount(order_id)).toBe(0);
   });
 });
