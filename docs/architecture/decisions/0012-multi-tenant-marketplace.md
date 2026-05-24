@@ -3,7 +3,7 @@
 - **Date**: 2026-05-08
 - **Status**: Superseded by [0014](0014-marketplace-open-to-all-logged-in-users.md)
 - **Deciders**: BitByBit team
-- **Last updated**: 2026-05-22
+- **Last updated**: 2026-05-24
 
 ---
 
@@ -11,6 +11,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | Decision, Consequences | Annotated the "platform never touches the funds" and "never custodies ARS or sats / not a money-services business in the AFIP sense" claims: the direct-payment model they rest on was superseded by the two-leg flow of ADR 0025, where the `wapu_ars` rail holds funds in transit, so the no-custody and regulatory conclusions no longer hold. | Keep this already-superseded ADR from asserting no-custody and not-an-MSB claims that are false under the current rail — the highest-risk version of the audit finding. |
 | 2026-05-22 | — | Note: the `ADMIN_PUBKEYS` / `PLATFORM_ADMIN_PUBKEYS` references here were removed as dead code (this ADR is already superseded by ADR 0014). | The env vars and code no longer exist. |
 | 2026-05-09 | Status | Marked Superseded by ADR 0014. | The merchant-only access model has been replaced — any signed-in user is implicitly a creator now. The per-merchant ownership FK structure survives. |
 | 2026-05-08 | Status, Decision | Status flipped from Proposed to Accepted; AR alias validation rule (BCRA 6–20 chars, `[A-Za-z0-9.-]`) folded into the merchant signup contract; AFIP posture deferred to a follow-up review; webhook payload question deferred and flagged at the code site. | Wapu confirmation + the open-question answers from 2026-05-08 unblock the rewrite. |
@@ -85,7 +86,11 @@ Pivot Cursats to a multi-tenant marketplace:
   is created with the merchant's stored alias as the
   destination; the buyer's sats arrive as Lightning funding to
   Wapu, and Wapu credits ARS straight to the merchant's
-  alias. The platform never touches the funds.
+  alias. The platform never touches the funds. (Superseded: ADR
+  0025 replaced this direct-payment model with a two-leg flow in
+  which the deposit lands in a Cursats-controlled Wapu wallet
+  before a separate withdrawal pays the seller — the `wapu_ars`
+  rail does hold funds in transit.)
 - The mission, README, and CHANGELOG get rewritten to reflect
   the new posture.
 
@@ -106,7 +111,12 @@ unchanged.
 - Platform never custodies ARS or sats. The
   Wapu-direct-payment path means the buyer's payment lands in
   the merchant's CBU directly. We are not a money-services
-  business in the AFIP sense.
+  business in the AFIP sense. (Superseded by ADR 0025: the real
+  Wapu integration is a two-leg flow in which the buyer's payment
+  is credited to a Cursats-controlled Wapu wallet before a
+  separate withdrawal pays the seller. The `wapu_ars` rail holds
+  funds in transit, so this no-custody / not-an-MSB conclusion no
+  longer holds and any regulatory posture must be re-evaluated.)
 - Discovery: a single home page across all merchants is a
   much stronger funnel than N forked deployments.
 - Existing infrastructure carries over: NIP-98 auth,
