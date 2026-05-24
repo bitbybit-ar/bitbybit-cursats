@@ -106,7 +106,7 @@ cursats.bitbybit.com.ar/pianoba/c/clase-piano-1h
 The `c/` segment is reserved (along with a small set of other
 top-level route names like `explore`, `settings`,
 `my-courses` — full list in
-`lib/admin/ar-bank-id.ts`); it cannot be claimed as a user
+`lib/creator/ar-bank-id.ts`); it cannot be claimed as a user
 slug. This is what lets storefronts live at `/<userSlug>`
 without colliding with any product slug.
 

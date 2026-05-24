@@ -10,9 +10,9 @@ import { useSignerContext } from "@/lib/contexts/signer-context";
 import {
   buildSettingsAuthEvent,
   hashSettingsBody,
-} from "@/lib/admin/sign-settings-payload";
+} from "@/lib/creator/sign-settings-payload";
 import { isSignerCancellation } from "@/lib/nostr/auth-errors";
-import { checkAlias, checkCbu } from "@/lib/admin/ar-bank-id";
+import { checkAlias, checkCbu } from "@/lib/creator/ar-bank-id";
 import styles from "./payout-form.module.scss";
 
 // Minimal user@domain shape check for the LN address before hitting

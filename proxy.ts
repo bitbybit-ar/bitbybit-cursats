@@ -48,7 +48,7 @@ function isPrefetchRequest(req: NextRequest): boolean {
  *      /create-course, /orders, /purchases) to signed-in users.
  *      Anonymous visitors bounce to /sign-in preserving the
  *      original target via ?next=. The user-row check happens
- *      server-side in each page (via requirePanelUser); the edge
+ *      server-side in each page (via requirePageUser); the edge
  *      gate just enforces "you must be signed in".
  *
  *   2. Everything else falls through to the next-intl locale
@@ -69,7 +69,7 @@ export default async function proxy(
   // Skip the auth gate for prefetch: bouncing a prefetch to /sign-in
   // would poison the prefetch cache for a gated page. The real
   // (non-prefetch) navigation still hits this gate, and each page's
-  // `requirePanelUser` is the server-side backstop.
+  // `requirePageUser` is the server-side backstop.
   if (creatorMatch && !isPrefetch) {
     const locale = creatorMatch[1] ?? routing.defaultLocale;
     const session = await readSession(request);
@@ -95,7 +95,7 @@ export default async function proxy(
       return redirect;
     }
 
-    // Signed in — fall through. Each page's `requirePanelUser`
+    // Signed in — fall through. Each page's `requirePageUser`
     // lazily creates the user row and 404s on deactivation.
   }
 

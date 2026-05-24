@@ -1,10 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server";
 import {
   CreateOfferingSchema,
-  createOfferingForAdmin,
-} from "@/lib/admin/offerings";
-import { requireUser } from "@/lib/admin/require-user";
-import { hasPayoutConfigured, expectedPriceCurrency } from "@/lib/admin/users";
+  createOfferingForCreator,
+} from "@/lib/creator/offerings";
+import { requireUser } from "@/lib/creator/require-user";
+import { hasPayoutConfigured, expectedPriceCurrency } from "@/lib/creator/users";
 import { quoteSellerPayout } from "@/lib/wapu-settlement";
 import { WAPU_MIN_NET_ARS } from "@/lib/wapu-limits";
 
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
   }
 
-  const result = await createOfferingForAdmin(
+  const result = await createOfferingForCreator(
     auth.user.id,
     parsed.data,
     auth.session.pubkey

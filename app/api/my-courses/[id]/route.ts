@@ -2,11 +2,11 @@ import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
   UpdateOfferingSchema,
-  updateOfferingForAdmin,
-  archiveOfferingForAdmin,
-} from "@/lib/admin/offerings";
-import { requireUser } from "@/lib/admin/require-user";
-import { expectedPriceCurrency } from "@/lib/admin/users";
+  updateOfferingForCreator,
+  archiveOfferingForCreator,
+} from "@/lib/creator/offerings";
+import { requireUser } from "@/lib/creator/require-user";
+import { expectedPriceCurrency } from "@/lib/creator/users";
 import { quoteSellerPayout } from "@/lib/wapu-settlement";
 import { WAPU_MIN_NET_ARS } from "@/lib/wapu-limits";
 
@@ -68,7 +68,7 @@ export async function PATCH(
     }
   }
 
-  const result = await updateOfferingForAdmin(
+  const result = await updateOfferingForCreator(
     auth.user.id,
     parsedParams.data.id,
     parsedBody.data,
@@ -99,7 +99,7 @@ export async function DELETE(
     return NextResponse.json({ error: "invalid_id" }, { status: 400 });
   }
 
-  const result = await archiveOfferingForAdmin(
+  const result = await archiveOfferingForCreator(
     auth.user.id,
     parsed.data.id,
     auth.session.pubkey

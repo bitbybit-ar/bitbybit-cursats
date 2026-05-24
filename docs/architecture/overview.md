@@ -186,8 +186,8 @@ Two buyer identity tiers (ADR
 ## Creator surfaces
 
 Any signed-in user can reach the creator surfaces; the user row is
-created lazily on first hit (`requirePanelUser` in
-`lib/admin/require-user.ts`). There is no `/panel/*` namespace
+created lazily on first hit (`requirePageUser` in
+`lib/creator/require-user.ts`). There is no `/panel/*` namespace
 (removed in ADR
 [0014](decisions/0014-marketplace-open-to-all-logged-in-users.md))
 — creator pages are top-level English routes inside the
@@ -204,7 +204,7 @@ created lazily on first hit (`requirePanelUser` in
 
 - **Auth.** Edge gate in `proxy.ts` requires a signed-in session;
   anonymous visitors bounce to `/sign-in?next=...`. Server-side,
-  each page's `requirePanelUser` materialises the user row on
+  each page's `requirePageUser` materialises the user row on
   first hit.
 - **Write**: offerings (full CRUD), settings (CBU, alias,
   Lightning Address, payout method).
@@ -388,7 +388,7 @@ settles. These reach signed-in users only.
   for every creator surface (`/settings`, `/my-courses`,
   `/create-course`, `/orders`, `/purchases`); anonymous visitors
   bounce to `/sign-in?next=...`. Server-side, each page's
-  `requirePanelUser` resolves (or lazily creates) the user row.
+  `requirePageUser` resolves (or lazily creates) the user row.
   Inactive users (the `users.active` flag) 404 instead of
   rendering.
 - Updates to payment-destination fields (CBU, alias, Lightning

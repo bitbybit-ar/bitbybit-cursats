@@ -2,7 +2,7 @@ import { and, count, desc, eq, sql } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { orders, offerings } from "@/lib/db/schema";
 
-export interface AdminOrderRow {
+export interface CreatorOrderRow {
   id: string;
   status: typeof orders.$inferSelect.status;
   amount_ars: number;
@@ -14,7 +14,7 @@ export interface AdminOrderRow {
   offering_slug: string | null;
 }
 
-export interface AdminOrderDetail extends AdminOrderRow {
+export interface CreatorOrderDetail extends CreatorOrderRow {
   payment_hash: string | null;
   wapu_deposit_tx_id: string | null;
   wapu_withdrawal_tx_id: string | null;
@@ -24,10 +24,10 @@ export interface AdminOrderDetail extends AdminOrderRow {
 
 const DEFAULT_LIMIT = 50;
 
-export async function listAdminOrders(
+export async function listCreatorOrders(
   userId: string,
   opts: { limit?: number; offeringSlug?: string } = {}
-): Promise<AdminOrderRow[]> {
+): Promise<CreatorOrderRow[]> {
   const db = getDb();
   const conditions = [eq(orders.user_id, userId)];
   if (opts.offeringSlug) {
@@ -76,10 +76,10 @@ export async function salesCountByOffering(
   return map;
 }
 
-export async function getAdminOrderDetail(
+export async function getCreatorOrderDetail(
   userId: string,
   orderId: string
-): Promise<AdminOrderDetail | null> {
+): Promise<CreatorOrderDetail | null> {
   const db = getDb();
   const [row] = await db
     .select({
@@ -105,7 +105,7 @@ export async function getAdminOrderDetail(
   return row ?? null;
 }
 
-export interface AdminStudentRow {
+export interface CreatorStudentRow {
   pubkey: string;
   order_count: number;
   total_ars: number;
@@ -113,10 +113,10 @@ export interface AdminStudentRow {
   most_recent: Date;
 }
 
-export async function listAdminStudents(
+export async function listCreatorStudents(
   userId: string,
   opts: { limit?: number } = {}
-): Promise<AdminStudentRow[]> {
+): Promise<CreatorStudentRow[]> {
   const db = getDb();
   const { rows } = await db.execute<{
     pubkey: string;
@@ -147,7 +147,7 @@ export async function listAdminStudents(
   }));
 }
 
-export async function getAdminStudentDetail(
+export async function getCreatorStudentDetail(
   userId: string,
   pubkey: string
 ): Promise<{
@@ -155,7 +155,7 @@ export async function getAdminStudentDetail(
   order_count: number;
   total_ars: number;
   paid_count: number;
-  orders: AdminOrderRow[];
+  orders: CreatorOrderRow[];
 } | null> {
   const db = getDb();
 

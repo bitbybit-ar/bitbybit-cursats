@@ -64,13 +64,13 @@
   ADRs
   [0014](decisions/0014-marketplace-open-to-all-logged-in-users.md)
   and [0023](decisions/0023-english-public-content-slugs.md);
-  reserved-slug list in `lib/admin/ar-bank-id.ts` blocks these
+  reserved-slug list in `lib/creator/ar-bank-id.ts` blocks these
   route names from being claimed as a user slug.
 - The storefront URL is `/[userSlug]` (ADR 0017). It used to nest
   under `/m/[userSlug]` for share-link continuity with the
   pre-merger merchant model (ADR 0016), but the marketplace had not
   shipped any production links yet, so the prefix was dropped before
-  launch. The reserved-slug list in `lib/admin/ar-bank-id.ts` blocks
+  launch. The reserved-slug list in `lib/creator/ar-bank-id.ts` blocks
   any user from claiming a top-level route name, so the flattening
   cannot collide with `/explore`, `/settings`, etc.
 - Dynamic segments use the shape that survives the longest:
@@ -84,8 +84,8 @@
   `/settings`, `/purchases`) are gated at the edge by `proxy.ts`:
   anonymous visitors bounce to `/sign-in?next=...`. There is no
   user-row gate — any signed-in user gets a placeholder user row
-  lazily on first server-side need (`requirePanelUser` in
-  `lib/admin/require-user.ts`). Decision pinned in ADR
+  lazily on first server-side need (`requirePageUser` in
+  `lib/creator/require-user.ts`). Decision pinned in ADR
   [0014](decisions/0014-marketplace-open-to-all-logged-in-users.md).
 
 ## Buyer flow

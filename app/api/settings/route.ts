@@ -5,14 +5,14 @@ import {
   UpdateUserProfileSchema,
   updateUserProfile,
   softDeleteUser,
-} from "@/lib/admin/users";
+} from "@/lib/creator/users";
 import { getDb } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { SESSION_COOKIE_NAME } from "@/lib/auth";
-import { requireUser } from "@/lib/admin/require-user";
+import { requireUser } from "@/lib/creator/require-user";
 import { parseNostrAuthHeader } from "@/lib/nostr/http-auth";
 import { validateNip98AuthEvent } from "@/lib/nostr/verify";
-import { hashSettingsBody } from "@/lib/admin/sign-settings-payload";
+import { hashSettingsBody } from "@/lib/creator/sign-settings-payload";
 import { getLightningClient, LightningMintError } from "@/lib/lightning";
 
 /**
@@ -165,7 +165,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
  * offerings, orders, and audit-log entries keep their foreign-key
  * references intact and the deleted account can't be re-claimed
  * (the pubkey check rejects on `deleted_at IS NOT NULL` via
- * `lib/admin/users.ts:ensureUserForPubkey`).
+ * `lib/creator/users.ts:ensureUserForPubkey`).
  *
  * Requires NIP-98 re-sign so a stolen session cookie can't take
  * the account out from under the rightful owner. Same envelope

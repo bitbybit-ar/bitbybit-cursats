@@ -4,15 +4,15 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/routing";
 import { Card } from "@/components/ui/card";
 import { ArrowRightIcon } from "@/components/icons";
-import { listAdminOrders } from "@/lib/admin/orders";
-import { requirePanelUser } from "@/lib/admin/panel-context";
+import { listCreatorOrders } from "@/lib/creator/orders";
+import { requirePageUser } from "@/lib/creator/page-context";
 import { SyncOrdersButton } from "@/components/orders/sync-orders-button";
 import styles from "./page.module.scss";
 
 export const dynamic = "force-dynamic";
 
 // The `?course=` filter is a kebab-case offering slug (matches the
-// slug constraint in lib/admin/offerings). An invalid value is ignored
+// slug constraint in lib/creator/offerings). An invalid value is ignored
 // rather than 400'd — it's a display filter, not a mutation, mirroring
 // how the explore params coerce. The query is parameterized and scoped
 // to the seller's own rows regardless.
@@ -47,8 +47,8 @@ export default async function PanelOrdersPage({
   const { course: rawCourse } = await searchParams;
   const parsedCourse = CourseFilterSchema.safeParse(rawCourse);
   const course = parsedCourse.success ? parsedCourse.data : undefined;
-  const { user } = await requirePanelUser();
-  const orders = await listAdminOrders(user.id, { offeringSlug: course });
+  const { user } = await requirePageUser();
+  const orders = await listCreatorOrders(user.id, { offeringSlug: course });
   const t = await getTranslations("orders");
   const tStatus = await getTranslations("orderStatus");
   const arsFormatter = new Intl.NumberFormat(

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/admin/require-user";
+import { requireUser } from "@/lib/creator/require-user";
 import { runWapuSettlements } from "@/lib/wapu-settlement";
 
 export const dynamic = "force-dynamic";

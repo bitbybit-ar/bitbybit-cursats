@@ -118,7 +118,7 @@ export async function listDiscoveryOfferingsPaged(
       const pattern = `%${q.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
       // Tag matches are exact rather than ILIKE — tags are
       // constrained kebab-case (see `TagSchema` in
-      // `lib/admin/offerings.ts`), so a partial LIKE would create
+      // `lib/creator/offerings.ts`), so a partial LIKE would create
       // noisy cross-tag hits ("art" would match "martial-arts").
       // The GIN index makes `= ANY(tags)` cheap. ADR 0024.
       const search = or(

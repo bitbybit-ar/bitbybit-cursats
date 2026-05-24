@@ -90,7 +90,7 @@ the save.
 
 The PATCH lives at `app/api/settings/route.ts`; the signed
 payload is built and verified through
-`lib/admin/sign-settings-payload.ts`. Step-by-step, when a
+`lib/creator/sign-settings-payload.ts`. Step-by-step, when a
 seller saves a tier-2 field:
 
 1. User edits the field in `/settings` and clicks Save.
@@ -111,7 +111,7 @@ seller saves a tier-2 field:
    d. Runs the field-specific validator. For a Lightning Address,
       this includes the LUD-21 probe (see next section).
    e. On success, writes the row and emits an `admin_audit_log`
-      entry (via `lib/admin/audit.ts`). On failure, returns the
+      entry (via `lib/creator/audit.ts`). On failure, returns the
       failure reason and leaves the row untouched.
 
 The signer-prompt UX is the same shape as sign-in: the user has

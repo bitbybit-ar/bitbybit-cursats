@@ -252,11 +252,11 @@ order to paid.
 | Wapu API client | `lib/wapu.ts` |
 | Lightning mint + LUD-21 verify | `lib/lightning.ts` (LNURL helper in `lib/nostr/lnurl.ts`) |
 | Rail dispatch + state machine | `lib/orders.ts` |
-| Code minting / draw | `lib/admin/offerings.ts` (`mintCodesForOffering`), `lib/orders.ts` (`drawAndAssignCode`) |
+| Code minting / draw | `lib/creator/offerings.ts` (`mintCodesForOffering`), `lib/orders.ts` (`drawAndAssignCode`) |
 | Download proxy | `app/api/downloads/[orderId]/route.ts` |
 | Nostr sign-in + session JWT | `app/api/auth/nostr/route.ts`, `lib/auth.ts` |
-| User-row materialisation | `lib/admin/users.ts` (`ensureUserForPubkey`); gates in `lib/admin/require-user.ts` / `lib/admin/panel-context.ts` |
-| Re-sign on payment fields | `app/api/settings/route.ts`, `lib/admin/sign-settings-payload.ts` |
+| User-row materialisation | `lib/creator/users.ts` (`ensureUserForPubkey`); gates in `lib/creator/require-user.ts` / `lib/creator/page-context.ts` |
+| Re-sign on payment fields | `app/api/settings/route.ts`, `lib/creator/sign-settings-payload.ts` |
 | Exchange rate | `lib/exchange-rate.ts` |
 | Blossom upload (client-side) | `lib/blossom/client.ts` |
 | Personalised discovery | `lib/recommendations.ts`, `app/api/recommendations/route.ts` |
@@ -300,3 +300,8 @@ bell, locale switching — jump to
 [`docs/testing-plan.md`](./docs/testing-plan.md). Numbered
 steps, each naming a visible button label and the underlying
 flow it exercises.
+
+Prefer to run the programmatic suite? `npm test` runs the vitest
+unit and integration tests. Their structure, the Neon test branch
+setup, and the gated Wapu staging smoke tests are documented in
+[`docs/architecture/automated-tests.md`](./docs/architecture/automated-tests.md).

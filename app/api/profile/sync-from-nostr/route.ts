@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/admin/require-user";
+import { requireUser } from "@/lib/creator/require-user";
 import { fetchKind0Profile } from "@/lib/nostr/profile";
 
 /**

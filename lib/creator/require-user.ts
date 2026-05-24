@@ -1,6 +1,6 @@
 import { type NextResponse } from "next/server";
 import { getSession, type AuthSession } from "@/lib/auth";
-import { ensureUserForPubkey, type User } from "@/lib/admin/users";
+import { ensureUserForPubkey, type User } from "@/lib/creator/users";
 
 /**
  * Read the current session and look up (or lazily create) its user
@@ -12,7 +12,7 @@ import { ensureUserForPubkey, type User } from "@/lib/admin/users";
  *
  *   - no session            → 401 `unauthorized`
  *   - session, deactivated  → 404 `user_inactive` — the platform
- *                              admin disabled this user; the
+ *                              operator deactivated this user; the
  *                              surface is not advertised.
  */
 export async function requireUser(): Promise<

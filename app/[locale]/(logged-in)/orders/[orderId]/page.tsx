@@ -5,8 +5,8 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/routing";
 import { Card } from "@/components/ui/card";
 import { ArrowLeftIcon } from "@/components/icons";
-import { getAdminOrderDetail } from "@/lib/admin/orders";
-import { requirePanelUser } from "@/lib/admin/panel-context";
+import { getCreatorOrderDetail } from "@/lib/creator/orders";
+import { requirePageUser } from "@/lib/creator/page-context";
 import styles from "./page.module.scss";
 
 const ParamsSchema = z.object({ orderId: z.string().uuid() });
@@ -40,8 +40,8 @@ export default async function PanelOrderDetailPage({
   const parsed = ParamsSchema.safeParse({ orderId });
   if (!parsed.success) notFound();
 
-  const { user } = await requirePanelUser();
-  const order = await getAdminOrderDetail(user.id, orderId);
+  const { user } = await requirePageUser();
+  const order = await getCreatorOrderDetail(user.id, orderId);
   if (!order) notFound();
 
   const t = await getTranslations("orders.detail");

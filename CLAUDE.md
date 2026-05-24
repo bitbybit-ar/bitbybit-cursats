@@ -142,7 +142,7 @@ repo's copy is intentionally identical and should stay in sync.
 - **Price currency follows the payout rail; the seller bears the
   Wapu fee.** `cbu_alias` sellers price in ARS, `lightning_address`
   sellers price in sats — there is no free per-course picker
-  (`expectedPriceCurrency` in `lib/admin/users.ts`; `/api/my-courses`
+  (`expectedPriceCurrency` in `lib/creator/users.ts`; `/api/my-courses`
   rejects a mismatch). On the ARS rail the seller receives
   `gross − fee`; the create-course form previews it via
   `/api/payout-quote` and the withdrawal pays the net (both use
@@ -209,7 +209,7 @@ repo's copy is intentionally identical and should stay in sync.
   `/configuracion`, `/explorar`) 404. ADR 0028 removed the
   `proxy.ts` redirect layer pre-launch; `proxy.ts` now only gates
   creator routes and runs the next-intl locale rewrite. The
-  reserved-slug list in `lib/admin/ar-bank-id.ts` still blocks users
+  reserved-slug list in `lib/creator/ar-bank-id.ts` still blocks users
   from claiming any top-level route name (including `c` and `m`) and
   those legacy names.
 - **Notifications are a Postgres table polled by the navbar

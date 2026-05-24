@@ -141,6 +141,8 @@ Architecture and history:
 - [Mission and product positioning](./docs/about/mission.md)
 - [Architecture overview](./docs/architecture/overview.md)
 - [Route map](./docs/architecture/routing.md)
+- [Automated tests](./docs/architecture/automated-tests.md) — the
+  vitest unit + integration suite
 - [Architecture decisions (ADRs)](./docs/architecture/decisions/)
 - [Documentation standard](./docs/README.md)
 

@@ -10,7 +10,7 @@ import { useSignerContext } from "@/lib/contexts/signer-context";
 import {
   buildSettingsAuthEvent,
   hashSettingsBody,
-} from "@/lib/admin/sign-settings-payload";
+} from "@/lib/creator/sign-settings-payload";
 import { buildProfileMetadataEvent } from "@/lib/nostr/events";
 import { publishSignedEvent } from "@/lib/nostr/publish";
 import type { Kind0Profile } from "@/lib/nostr/profile";

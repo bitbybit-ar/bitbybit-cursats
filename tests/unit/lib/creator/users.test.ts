@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect } from "vitest";
-import { slugifyDisplayName, hasPayoutConfigured } from "@/lib/admin/users";
-import type { User } from "@/lib/admin/users";
+import { slugifyDisplayName, hasPayoutConfigured } from "@/lib/creator/users";
+import type { User } from "@/lib/creator/users";
 
 // Minimal User stub that satisfies hasPayoutConfigured's reads. The
 // helper only inspects four columns; the rest are filler so the cast

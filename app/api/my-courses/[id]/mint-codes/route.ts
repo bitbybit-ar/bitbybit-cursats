@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { mintCodesForOffering } from "@/lib/admin/offerings";
-import { requireUser } from "@/lib/admin/require-user";
+import { mintCodesForOffering } from "@/lib/creator/offerings";
+import { requireUser } from "@/lib/creator/require-user";
 
 const ParamsSchema = z.object({ id: z.string().uuid() });
 const BodySchema = z.object({

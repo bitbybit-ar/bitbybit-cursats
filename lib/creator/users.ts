@@ -8,7 +8,7 @@ import {
   UserSlugSchema,
   RESERVED_SLUGS,
   classifyPayoutDestination,
-} from "@/lib/admin/ar-bank-id";
+} from "@/lib/creator/ar-bank-id";
 import { LightningAddressSchema } from "@/lib/schemas/primitives";
 import { writeAuditLog } from "./audit";
 
@@ -24,11 +24,11 @@ import { writeAuditLog } from "./audit";
  *     through the row id so the caller has already proven they
  *     are talking about a specific row.
  *   - The CBU/alias re-sign machinery from ADR 0008 lives at
- *     `lib/admin/sign-settings-payload.ts` and stays in place;
+ *     `lib/creator/sign-settings-payload.ts` and stays in place;
  *     the route consumers wire it through with the user id
  *     instead of the singleton settings row.
  *   - Audit-log writes carry `user_id` from this layer up so
- *     the platform-admin moderation surface can filter the log
+ *     the platform moderation surface can filter the log
  *     by user.
  */
 

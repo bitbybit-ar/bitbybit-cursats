@@ -18,6 +18,12 @@ feature docs and the code.
 > Locale, signer, and rail-config notes are duplicated only when
 > a specific step depends on them.
 
+> **Looking for the automated suite?** This walkthrough covers
+> manual UI evaluation only. The vitest unit and integration tests
+> — structure, how to run them, the Neon test branch, and the gated
+> Wapu staging smoke tests — are documented in
+> [Automated tests](./architecture/automated-tests.md).
+
 ---
 
 ## Step 1 — Sign in

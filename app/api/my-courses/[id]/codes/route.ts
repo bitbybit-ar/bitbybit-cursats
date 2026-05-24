@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getOfferingForAdminById } from "@/lib/admin/offerings";
-import { requireUser } from "@/lib/admin/require-user";
+import { getOfferingForCreatorById } from "@/lib/creator/offerings";
+import { requireUser } from "@/lib/creator/require-user";
 
 const ParamsSchema = z.object({ id: z.string().uuid() });
 
@@ -27,7 +27,7 @@ export async function GET(
     return NextResponse.json({ error: "invalid_id" }, { status: 400 });
   }
 
-  const offering = await getOfferingForAdminById(auth.user.id, parsed.data.id);
+  const offering = await getOfferingForCreatorById(auth.user.id, parsed.data.id);
   if (!offering) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }

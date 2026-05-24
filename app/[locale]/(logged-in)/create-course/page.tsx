@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { OfferingForm } from "@/components/courses/offering-form";
-import { requirePanelUser } from "@/lib/admin/panel-context";
+import { requirePageUser } from "@/lib/creator/page-context";
 import styles from "./page.module.scss";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +30,7 @@ export default async function NewOfferingPage({
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("createCourse");
-  const { user } = await requirePanelUser();
+  const { user } = await requirePageUser();
 
   return (
     <>

@@ -1,7 +1,7 @@
 import "server-only";
 import { notFound } from "next/navigation";
 import { getSession, type AuthSession } from "@/lib/auth";
-import { ensureUserForPubkey, type User } from "@/lib/admin/users";
+import { ensureUserForPubkey, type User } from "@/lib/creator/users";
 
 /**
  * Page-side counterpart of `requireUser` (the API helper). Used by
@@ -15,7 +15,7 @@ import { ensureUserForPubkey, type User } from "@/lib/admin/users";
  * Anonymous visitors are bounced upstream by the edge proxy; the
  * `notFound()` here is defence-in-depth.
  */
-export async function requirePanelUser(): Promise<{
+export async function requirePageUser(): Promise<{
   session: AuthSession;
   user: User;
 }> {

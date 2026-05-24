@@ -186,7 +186,7 @@ export const offerings = pgTable(
     image_url: text("image_url"),
     // Discovery + recommendation signal. Kebab-case, lowercase ASCII;
     // ≤8 tags per offering, ≤32 chars per tag (enforced by the Zod
-    // schema in `lib/admin/offerings.ts`). Empty array default so
+    // schema in `lib/creator/offerings.ts`). Empty array default so
     // pre-tags rows behave like rows with no tags rather than NULL,
     // which would force every read site to handle a third state.
     // GIN index on the column powers `tags && $signal` queries used

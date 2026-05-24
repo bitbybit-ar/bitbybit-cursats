@@ -6,7 +6,7 @@ import { PreferencesForm } from "@/components/settings/preferences-form";
 import { DangerZoneForm } from "@/components/settings/danger-zone-form";
 import { SettingsNav } from "@/components/settings/settings-nav";
 import { isSettingsSection } from "@/components/settings/settings-nav/sections";
-import { requirePanelUser } from "@/lib/admin/panel-context";
+import { requirePageUser } from "@/lib/creator/page-context";
 import { fetchKind0Profile } from "@/lib/nostr/profile";
 import styles from "./page.module.scss";
 
@@ -35,7 +35,7 @@ export default async function SettingsPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const { user } = await requirePanelUser();
+  const { user } = await requirePageUser();
   const t = await getTranslations("settings");
 
   const { section: sectionParam } = await searchParams;
