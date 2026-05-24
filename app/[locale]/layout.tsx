@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
 import {
   getMessages,
@@ -147,6 +148,11 @@ export default async function LocaleLayout({
   const t = await getTranslations({ locale, namespace: "metadata" });
   const baseUrl = getBaseUrl();
   const initialSession = await resolveInitialSession();
+  // Per-request CSP nonce minted in proxy.ts. Stamped on the inline
+  // JSON-LD scripts and the next-themes script so they survive the
+  // production `script-src 'nonce-…' 'strict-dynamic'` policy.
+  // `undefined` in dev, where inline scripts are still allowed.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   const orgJsonLd = {
     "@context": "https://schema.org",
@@ -185,18 +191,28 @@ export default async function LocaleLayout({
     >
       <head>
         <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
+        {/* eslint-disable react/no-danger -- The only legitimate
+            dangerouslySetInnerHTML in the app: JSON-LD sinks fed
+            exclusively by server config + i18n (no user input), and
+            serializeJsonLd already escapes </script, <!--, and
+            U+2028/U+2029. Block-scoped because the rule reports on the
+            attribute line, which a -next-line directive can't reach
+            across the multi-line element. See issue #32. */}
         <script
           type="application/ld+json"
+          nonce={nonce}
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(orgJsonLd) }}
         />
         <script
           type="application/ld+json"
+          nonce={nonce}
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(websiteJsonLd) }}
         />
+        {/* eslint-enable react/no-danger */}
       </head>
       <body suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
-          <ThemeProvider>
+          <ThemeProvider nonce={nonce}>
             <SignerProviderClient initialSession={initialSession}>
               <ToastProvider>
                 <a href="#main" className="skip-link">

@@ -263,6 +263,17 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
+- **CSP hardened: per-request nonce, no `script-src 'unsafe-inline'`.**
+  The Content-Security-Policy moved from a static `next.config.ts`
+  header to a per-request build in `proxy.ts` (`lib/csp.ts`).
+  Production `script-src` is now `'self' 'nonce-…' 'strict-dynamic'`
+  — the inline-script escape hatch is gone, so an injected inline
+  `<script>` is refused by the browser even if a future HTML sink
+  slipped past the `react/no-danger` lint guard. The nonce is stamped
+  on Next's bootstrap scripts and on the inline JSON-LD + theme
+  scripts; development keeps `'unsafe-inline' 'unsafe-eval'` for
+  fast-refresh. Defense in depth for issue #32 (no XSS vector exists
+  today — all user text renders through auto-escaping JSX).
 - **Download proxy restricted to https.** The offering schema's
   `download_url` field now rejects `javascript:`, `data:`,
   `file:`, and bare http; the `/api/downloads/[orderId]` route

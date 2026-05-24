@@ -6,6 +6,7 @@ import {
   SESSION_INACTIVITY_MINUTES,
 } from "@/lib/auth-constants";
 import { createSession, verifySessionToken } from "@/lib/auth";
+import { buildContentSecurityPolicy, generateNonce } from "@/lib/csp";
 
 const intlMiddleware = createMiddleware(routing);
 
@@ -42,7 +43,7 @@ function isPrefetchRequest(req: NextRequest): boolean {
 /**
  * Edge middleware.
  *
- * Two responsibilities:
+ * Three responsibilities:
  *
  *   1. Gate creator-facing surfaces (/settings, /my-courses,
  *      /create-course, /orders, /purchases) to signed-in users.
@@ -56,6 +57,16 @@ function isPrefetchRequest(req: NextRequest): boolean {
  *      unprefixed (`/`, `/foo`); English routes carry the `/en`
  *      prefix.
  *
+ *   3. Set the per-request Content-Security-Policy. The nonce is
+ *      minted here (production only) and threaded onto the *request*
+ *      headers so Next.js stamps it on its own bootstrap/hydration
+ *      scripts and the layout can stamp the JSON-LD + theme scripts;
+ *      next-intl forwards those cloned request headers into its
+ *      rewrite. The same policy is echoed on the response. CSP can't
+ *      live in next.config.ts headers() because the nonce must be
+ *      unique per request. Other security headers (HSTS, X-Frame-
+ *      Options, …) stay static in next.config.ts.
+ *
  * The session check uses `verifySessionToken` (jose-only, no
  * `next/headers`) so this whole module runs on the edge runtime.
  */
@@ -64,6 +75,20 @@ export default async function proxy(
 ): Promise<NextResponse> {
   const pathname = request.nextUrl.pathname;
   const isPrefetch = isPrefetchRequest(request);
+
+  // Mint the CSP nonce up front so every exit path (auth redirect,
+  // locale rewrite, pass-through) carries the same policy. Dev keeps a
+  // loose, nonce-less policy — see buildContentSecurityPolicy.
+  const isProd = process.env.NODE_ENV === "production";
+  const nonce = isProd ? generateNonce() : undefined;
+  const csp = buildContentSecurityPolicy({ nonce, isDev: !isProd });
+  if (nonce) {
+    // Visible to the rendered request: Next reads the nonce from the
+    // request CSP header; the layout reads x-nonce. next-intl clones
+    // these via `new Headers(request.headers)` into its rewrite.
+    request.headers.set("x-nonce", nonce);
+    request.headers.set("content-security-policy", csp);
+  }
 
   const creatorMatch = CREATOR_PATH_RE.exec(pathname);
   // Skip the auth gate for prefetch: bouncing a prefetch to /sign-in
@@ -92,6 +117,7 @@ export default async function proxy(
       if (request.cookies.has(SESSION_COOKIE_NAME)) {
         redirect.cookies.delete(SESSION_COOKIE_NAME);
       }
+      redirect.headers.set("content-security-policy", csp);
       return redirect;
     }
 
@@ -105,6 +131,7 @@ export default async function proxy(
   if (!isPrefetch) {
     await refreshOrClearSessionCookie(request, response);
   }
+  response.headers.set("content-security-policy", csp);
   return response;
 }
 

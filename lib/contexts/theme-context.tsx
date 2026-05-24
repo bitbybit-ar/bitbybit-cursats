@@ -8,15 +8,23 @@ import {
 
 interface ThemeProviderProps {
   children: React.ReactNode;
+  /**
+   * CSP nonce for the inline anti-FOUC script next-themes injects.
+   * Without it, that script is refused under the production
+   * `script-src 'nonce-…' 'strict-dynamic'` policy. `undefined` in
+   * development, where the policy still allows inline scripts.
+   */
+  nonce?: string;
 }
 
-export function ThemeProvider({ children }: ThemeProviderProps) {
+export function ThemeProvider({ children, nonce }: ThemeProviderProps) {
   return (
     <NextThemesProvider
       attribute="data-theme"
       defaultTheme="light"
       enableSystem
       enableColorScheme={false}
+      nonce={nonce}
     >
       {children}
     </NextThemesProvider>
