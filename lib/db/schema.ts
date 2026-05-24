@@ -186,8 +186,10 @@ export const users = pgTable(
 // ADRs 0009 (storage), 0012 (per-seller ownership, predates the
 // users-table rename), 0014 (any signed-in user can sell), and
 // 0016 (merchants table collapsed into users). Soft delete via
-// archived_at; hard delete is not exposed in v1 because orders
-// reference offerings and we do not want orphaned references.
+// archived_at (reversible). Hard delete is exposed only for offerings
+// with no orders (ADR 0031): orders reference offerings with no
+// cascade, so a course with any order can only be archived, never
+// deleted — that keeps sale history from being orphaned.
 export const offerings = pgTable(
   "offerings",
   {

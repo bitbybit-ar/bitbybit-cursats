@@ -2,34 +2,33 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { useRouter } from "@/i18n/routing";
-import styles from "./code-pool-panel.module.scss";
+import styles from "./code-pool-modal.module.scss";
 
-interface CodePoolPanelProps {
+interface CodePoolModalProps {
   offeringId: string;
   offeringSlug: string;
   initialRemaining: number;
+  onClose: () => void;
 }
 
 /**
- * Edit-page sidekick for type=code offerings. Two affordances:
- *
- *   1. Mint additional codes — bumps the pool by N. Calls
- *      `POST /api/my-courses/[id]/mint-codes`.
- *   2. Download the current pool as CSV — for sellers to back up
- *      the unused codes before they distribute them in-person.
- *
- * Lives outside `OfferingForm` so a mint action does not require
- * the seller to re-submit the whole form, and so the audit row for
- * "mint_codes" is distinct from "update".
+ * Redemption-code management surface for type=code offerings, shown in
+ * a modal so it can open from both the edit page and the My courses
+ * kebab menu. Two affordances: mint additional codes
+ * (`POST /api/my-courses/[id]/mint-codes`) and download the unused
+ * pool as CSV. A mint does not require re-submitting the offering
+ * form, and lands a distinct "mint_codes" audit row.
  */
-export function CodePoolPanel({
+export function CodePoolModal({
   offeringId,
   offeringSlug,
   initialRemaining,
-}: CodePoolPanelProps) {
+  onClose,
+}: CodePoolModalProps) {
   const t = useTranslations("myCourses.codePool");
   const tErr = useTranslations("errors");
   const router = useRouter();
@@ -70,13 +69,8 @@ export function CodePoolPanel({
   }
 
   return (
-    <section className={styles.panel}>
-      <header className={styles.header}>
-        <h2 className={styles.title}>{t("title")}</h2>
-        <p className={styles.subtitle}>
-          {t("remaining", { count: remaining })}
-        </p>
-      </header>
+    <Modal onClose={onClose} title={t("title")} size="md">
+      <p className={styles.subtitle}>{t("remaining", { count: remaining })}</p>
 
       <div className={styles.row}>
         <div className={styles.field}>
@@ -111,8 +105,8 @@ export function CodePoolPanel({
       >
         {t("downloadCsv")}
       </a>
-    </section>
+    </Modal>
   );
 }
 
-export default CodePoolPanel;
+export default CodePoolModal;

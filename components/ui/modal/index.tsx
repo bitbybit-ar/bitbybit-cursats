@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useCallback, useRef, useId } from "react";
+import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { CloseIcon, ArrowLeftIcon } from "@/components/icons";
@@ -108,7 +109,13 @@ export function Modal({
     };
   }, [handleKeyDown]);
 
-  return (
+  // Portal to <body> so the overlay is never trapped inside an
+  // ancestor stacking context (e.g. the storefront hero's
+  // `isolation: isolate`), which would let later-in-DOM content paint
+  // over a fixed, high-z-index modal. Modals only mount on client
+  // interaction, so `document` is defined whenever this renders; guard
+  // against SSR just in case.
+  const overlay = (
     <div
       className={styles.overlay}
       role="dialog"
@@ -145,6 +152,9 @@ export function Modal({
       </div>
     </div>
   );
+
+  if (typeof document === "undefined") return null;
+  return createPortal(overlay, document.body);
 }
 
 export default Modal;

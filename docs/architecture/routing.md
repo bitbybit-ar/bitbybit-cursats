@@ -11,6 +11,7 @@
 |---|---|---|---|
 | 2026-05-24 | Creator surfaces | Dropped the "Read-only in v1" qualifier from the `/orders` Sales history row. | The "read-only in v1" wording was removed product-wide as a meaningless UI hint; the route map is aligned with that copy cleanup. |
 | 2026-05-24 | API | Corrected the `/api/downloads/[orderId]` row: it serves the file (it never issued a "signed URL") and now enforces a per-order download cap and post-payment expiry window (`lib/download-limits.ts`), returning `410` once spent. | The proxy gained download-access limits and the prior description was inaccurate. |
+| 2026-05-24 | API routes (Creator-scoped) | Added the `DELETE /api/my-courses/[id]/delete` (permanent delete, refused while any order exists — ADR 0031) and `POST /api/my-courses/[id]/mint-codes` rows; clarified that `DELETE /api/my-courses/[id]` is the reversible archive. | The My courses kebab menu added a permanent-delete action distinct from archive; the route map should list both surfaces. |
 | 2026-05-24 | Sign-in | Linked the `/sign-in` row to the new [authentication](../features/authentication.md) feature doc and noted the mobile `nostrconnect://` deep link. | Sign-in mechanics were split out of `nostr-identity.md` into a dedicated authentication doc; the route map should point at it. |
 | 2026-05-23 | Conventions, Special files, Legacy redirects (removed), What is intentionally not routed | Removed the legacy URL redirects entirely (ADR 0028): deleted the three redirect tables (`/panel/*`, ADR-0014-era Spanish slugs, public Spanish→English) and the `proxy.ts` redirect code. The body now documents only the implemented route map; old paths 404. The reserved-slug list still blocks those names. Also reconciled the Table of Contents with the body: removed the stale "Subscriber (auto-renewal)" entry (no such section; autorenewal deferred per ADR 0020). Removed the "What is intentionally not routed" section and its TOC entry, and corrected the storefront slug note (auto-assigned at sign-in, not renamed in `/settings`). | Pre-launch with no external links to old slugs — the 308 layer guarded bookmarks that do not exist. Per the docs standard, the historical mappings stay here in the Change Log, not the body; the TOC also still linked a subscriber section that no longer exists. |
 | 2026-05-22 | Subscriber, API | Removed the reserved NWC routes (`/api/nwc/*`, `/subscription` "manage NWC connection") from the deferred-subscriber tables; the recurring-charge mechanism is now left undecided for a future ADR. Noted that `/api/cron/wapu-settlements` is the shipped payout cron. | `NWC_CONNECTION_URL` and the NWC code were removed; the doc still reserved NWC-named routes. |
@@ -190,7 +191,9 @@ appropriate session (buyer Nostr session for
 | Route | Method | Purpose |
 |---|---|---|
 | `/api/my-courses` | GET, POST | List + create offerings for the signed-in user. |
-| `/api/my-courses/[id]` | GET, PATCH, DELETE | Read, update, archive a single offering. |
+| `/api/my-courses/[id]` | GET, PATCH, DELETE | Read, update, archive (soft-delete) a single offering. |
+| `/api/my-courses/[id]/delete` | DELETE | Permanently delete an offering. Refused with `409 has_sales` while any order references it; sellers archive instead (ADR 0031). |
+| `/api/my-courses/[id]/mint-codes` | POST | Mint additional redemption codes for a code-type offering. |
 | `/api/settings` | GET, PATCH | Read + update settings. CBU/alias/Lightning-Address updates require a NIP-07 re-sign payload; a new Lightning Address must pass a 1-sat LUD-21 probe before the PATCH succeeds. |
 
 Image uploads do **not** ride a server route. Per ADR

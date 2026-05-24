@@ -59,6 +59,37 @@
   flex: 1;
 }
 
+// Quiet icon-only button at the right edge of the preview row. Reads
+// as destructive on hover (matches the "danger" intent of removing the
+// cover) without shouting in its resting state.
+.removeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: $border-radius-sm;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+
+  &:hover {
+    background: color-mix(in srgb, $color-error 10%, transparent);
+    color: $color-error;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $focus-ring;
+    outline-offset: 1px;
+  }
+}
+
 .urlText {
   font-family: ui-monospace, "SF Mono", "Menlo", monospace;
   font-size: $font-size-xs;

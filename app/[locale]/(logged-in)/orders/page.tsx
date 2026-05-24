@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/routing";
 import { Card } from "@/components/ui/card";
 import { ArrowRightIcon } from "@/components/icons";
+import { BackToCatalog } from "@/components/courses/back-to-catalog";
 import { Pager } from "@/components/catalog/explore-pager";
 import { OrdersFilter } from "@/components/orders/orders-filter";
 import {
@@ -73,6 +74,7 @@ export default async function PanelOrdersPage({
 
   return (
     <>
+      <BackToCatalog />
       <header className={styles.header}>
         <div className={styles.headerTop}>
           <h1 className={styles.title}>{t("title")}</h1>

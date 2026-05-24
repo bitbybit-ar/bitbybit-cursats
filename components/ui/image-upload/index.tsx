@@ -17,7 +17,7 @@
 import { useState, type ChangeEvent } from "react";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
+import { TrashIcon } from "@/components/icons";
 import { useSignerContext } from "@/lib/contexts/signer-context";
 import {
   BlossomUploadError,
@@ -151,15 +151,16 @@ export function ImageUpload({
           </div>
           <div className={styles.previewMeta}>
             <span className={styles.urlText}>{value}</span>
-            <Button
-              type="button"
-              variant="link"
-              size="sm"
-              onClick={handleClear}
-            >
-              {t("remove")}
-            </Button>
           </div>
+          <button
+            type="button"
+            className={styles.removeButton}
+            onClick={handleClear}
+            aria-label={t("remove")}
+            title={t("remove")}
+          >
+            <TrashIcon size={18} />
+          </button>
         </div>
       ) : null}
 

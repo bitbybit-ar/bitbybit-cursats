@@ -1,0 +1,17 @@
+@use "@/styles/colors" as *;
+@use "@/styles/spacing" as *;
+@use "@/styles/typography" as *;
+
+.section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: $spacing-12;
+  margin-top: $spacing-24;
+}
+
+.summary {
+  margin: 0;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}

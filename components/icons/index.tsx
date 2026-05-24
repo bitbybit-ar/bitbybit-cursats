@@ -1,5 +1,6 @@
 export type { IconProps } from "./types";
 
+export { ArchiveIcon } from "./ArchiveIcon";
 export { ArrowLeftIcon } from "./ArrowLeftIcon";
 export { ArrowRightIcon } from "./ArrowRightIcon";
 export { BadgeIcon } from "./BadgeIcon";
@@ -23,12 +24,15 @@ export { LogoutIcon } from "./LogoutIcon";
 export { MathSymbolIcon } from "./MathSymbolIcon";
 export { MenuIcon } from "./MenuIcon";
 export { MoonIcon } from "./MoonIcon";
+export { MoreIcon } from "./MoreIcon";
 export { MusicNoteIcon } from "./MusicNoteIcon";
 export { PaletteIcon } from "./PaletteIcon";
+export { PencilIcon } from "./PencilIcon";
 export { QrIcon } from "./QrIcon";
 export { SettingsIcon } from "./SettingsIcon";
 export { ShoppingBagIcon } from "./ShoppingBagIcon";
 export { SunIcon } from "./SunIcon";
+export { TrashIcon } from "./TrashIcon";
 export { TrophyIcon } from "./TrophyIcon";
 export { UserIcon } from "./UserIcon";
 export { WotIcon } from "./WotIcon";

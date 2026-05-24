@@ -1,0 +1,21 @@
+@use "@/styles/colors" as *;
+@use "@/styles/spacing" as *;
+@use "@/styles/typography" as *;
+@use "@/styles/media-mixins" as *;
+
+.message {
+  margin: 0 0 $spacing-24;
+  font-size: $font-size-sm;
+  line-height: 1.5;
+  color: $color-text-secondary;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-12;
+
+  @include mobile {
+    flex-direction: column-reverse;
+  }
+}

@@ -2,20 +2,6 @@
 @use "@/styles/spacing" as *;
 @use "@/styles/typography" as *;
 
-.back {
-  display: inline-flex;
-  align-items: center;
-  gap: $spacing-4;
-  color: $color-text-secondary;
-  font-size: $font-size-sm;
-  text-decoration: none;
-  margin-bottom: $spacing-16;
-
-  &:hover {
-    color: $color-text-primary;
-  }
-}
-
 .title {
   margin: 0 0 $spacing-4;
   font-family: $font-family-display;
