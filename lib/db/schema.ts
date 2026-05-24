@@ -135,9 +135,7 @@ export const users = pgTable(
     // Which rail this user uses to receive funds (when selling).
     // ADR 0015. 'cbu_alias' preserves prior behavior on migration;
     // users who want sats flip the radio in the settings page.
-    payout_method: payoutMethod("payout_method")
-      .notNull()
-      .default("cbu_alias"),
+    payout_method: payoutMethod("payout_method").notNull().default("cbu_alias"),
     // Wapu fiat-transfer speed for the cbu_alias rail (see enum).
     // Sellers pick standard vs fast in /settings; fast costs a
     // higher Wapu fee.

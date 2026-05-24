@@ -550,7 +550,7 @@ async function fetchJsonWithTimeout(
       }
     }
     const text = new TextDecoder("utf-8").decode(
-      chunks.length === 1 ? chunks[0] : concatChunks(chunks, received),
+      chunks.length === 1 ? chunks[0] : concatChunks(chunks, received)
     );
     return JSON.parse(text);
   } finally {

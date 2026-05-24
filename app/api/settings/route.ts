@@ -1,13 +1,10 @@
 import { cookies } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
 import {
   UpdateUserProfileSchema,
   updateUserProfile,
   softDeleteUser,
 } from "@/lib/creator/users";
-import { getDb } from "@/lib/db";
-import { users } from "@/lib/db/schema";
 import { SESSION_COOKIE_NAME } from "@/lib/auth";
 import { requireUser } from "@/lib/creator/require-user";
 import { parseNostrAuthHeader } from "@/lib/nostr/http-auth";

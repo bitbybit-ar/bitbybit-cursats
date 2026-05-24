@@ -6,7 +6,7 @@ import {
 } from "@/lib/wapu-settlement";
 import { getLightningClient } from "@/lib/lightning";
 import { lookupNwcInvoice } from "@/lib/nwc";
-import { getUserById } from "@/lib/admin/users";
+import { getUserById } from "@/lib/creator/users";
 import { decrypt } from "@/lib/crypto";
 
 type OrderRow = NonNullable<Awaited<ReturnType<typeof getOrder>>>;
