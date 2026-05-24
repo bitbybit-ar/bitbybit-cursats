@@ -96,12 +96,13 @@ export async function generateMetadata({
       url: locale === "es" ? baseUrl : `${baseUrl}/${locale}`,
       locale: ogLocale,
       alternateLocale: altLocale,
-      // Static PNG referenced explicitly so WhatsApp's link-preview
-      // crawler (which historically misses Next.js file-convention
-      // OG endpoints) has a guaranteed image to fetch. The dynamic
-      // `opengraph-image.tsx` in this segment still auto-injects as
-      // a second entry — crawlers that respect file conventions get
-      // the per-locale headline; those that don't get the static one.
+      // Fallback brand card for routes that inherit this layout's
+      // metadata without setting their own `openGraph` (e.g. the
+      // account and sign-in pages). On the home page the sibling
+      // `opengraph-image.tsx` file convention *overrides* this entry
+      // — Next.js does not stack the two — so the home card stays the
+      // localized dynamic one. Shared content pages emit their own
+      // single image via `buildPageMetadata`.
       images: [
         {
           url: "/og.png",

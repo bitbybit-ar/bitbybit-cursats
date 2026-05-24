@@ -11,6 +11,7 @@
 |---|---|---|---|
 | 2026-05-24 | Offering types | Replaced the `download` type's "short-lived signed URL" description with the proxy's actual behavior: it serves the file behind a per-order fetch cap and post-payment expiry window (`lib/download-limits.ts`). | The download proxy gained access limits; the prior "signed URL" phrasing never matched the implementation. |
 | 2026-05-24 | Creator surfaces | Dropped the "read-only in v1" qualifier from the `/orders` route row and relabeled the access-model bullet from "Read-only" to "No mutations" (the substance — orders/payments/buyers are immutable views — is unchanged). | The "read-only in v1" wording was surfaced to sellers as a meaningless UI hint and removed product-wide; the docs are aligned with that copy cleanup. |
+| 2026-05-24 | SEO surface | `buildPageMetadata` now emits **exactly one** `og:image` per page: a page with its own `image` (course image / store banner) shows only that; a page without one falls back to the single localized `opengraph-image` brand card. Dropped the stacked `og.png` twin from the shared builder (`og.png` stays only as the inherited-layout fallback). | Stacking the page image plus both brand cards produced three `og:image` tags on course/store pages: WhatsApp showed the *last* (the fallback) instead of the course image, and Discord rendered all three. |
 | 2026-05-24 | SEO surface | Redrew the OG image as one lockup (bigger stacked block mark beside a single giant `CURSATS` wordmark, no second small lockup) rendered in the brand display face (Nunito, vendored WOFF read via `fs`); added the shared `buildPageMetadata` helper in `lib/seo.ts` so every page carries the brand card under its own title/description (course pages and creator stores lead with their own image, brand card as fallback), and shortened the `metadata.description` so WhatsApp stops truncating it mid-sentence. `og.png` re-baked from the es route as the fallback. | The card duplicated the wordmark (small lockup + hero) and used Satori's fallback sans; nested pages either showed no card image or reused the home page's title/description because the `opengraph-image` file convention doesn't propagate to nested segments; the description was being cut off at "you choose how to get". |
 | 2026-05-24 | Security | CSP moved from a static `next.config.ts` header to a per-request build in `proxy.ts` (`lib/csp.ts`): production `script-src` is now `'self' 'nonce-…' 'strict-dynamic'` with no `'unsafe-inline'`, the nonce stamped on Next's bootstrap scripts plus the inline JSON-LD and theme scripts; other security headers stay static. | Defense in depth (issue #32): removing `script-src 'unsafe-inline'` ensures an injected inline `<script>` can't execute even if a future HTML sink slips past the `react/no-danger` guard. |
 | 2026-05-23 | Stack, Table of Contents, Payment flow | Corrected the exchange-rate source from Yadio to Wapu's `/exchange_rates` (ADR 0027 superseded 0022); fixed the staging API base to `be-stage.wapu.app` (`staging.wapu.app` is the web environment, not the API host); dropped the stale "server-side signing for outgoing DMs" from the Nostr line (no server signing key ships; in-app delivery per ADR 0006). Reconciled the Table of Contents with the body: removed the stale "Auto-renewal flow (optional)", "Notifications & delivery", "Configuration model", and "What is intentionally not here" entries (none exist as sections — notifications now lives as an H3 under Payment flow) and repointed the in-body delivery link to `#in-app-notifications`. | The Stack section still named Yadio, mislabeled the staging API base, and described a server-side DM signer that was removed; the TOC linked four sections that no longer exist as headings, and an in-body link pointed at the dead anchor. |
@@ -230,12 +231,14 @@ Routes inventory and request shapes live in
   produces title, description, keywords, OG, Twitter, robots,
   canonical, and `hreflang` alternates for the home page. Every
   other page builds its metadata through `buildPageMetadata` in
-  `lib/seo.ts`, so each route carries the brand social card (the
-  localized `opengraph-image` route, with `og.png` as a fallback
-  `og:image`) under its **own** per-page title and description.
-  Course pages and creator stores pass an optional `image` (the
-  course image / store banner) that leads the `og:image` list, with
-  the brand card kept after it as a fallback. The helper exists
+  `lib/seo.ts`, which emits **exactly one** `og:image` per page
+  under its **own** per-page title and description. A page that
+  passes an optional `image` (a course image / store banner) shows
+  only that image; a page without one falls back to the single
+  localized brand card (the `opengraph-image` route). Emitting more
+  than one `og:image` breaks sharing — WhatsApp picks the *last*
+  tag and Discord renders *every* tag — so the helper never stacks
+  the page image and the brand card. The helper exists
   because the `opengraph-image`
   file convention does not propagate to nested route segments, and
   a page that sets its own `openGraph` block otherwise drops the
@@ -261,11 +264,12 @@ Routes inventory and request shapes live in
   sats"), which also doubles as the link title
   (`metadata.siteTitle`); the long product description stays out of
   the image and lives only in the link description. `public/og.png`
-  is a baked twin of the **default-locale (es)** route, used as the
-  fallback `og:image` for crawlers that can't render the
-  file-convention endpoint; regenerate it (`curl
-  …/opengraph-image > public/og.png`) whenever the route's design
-  changes.
+  is a baked twin of the **default-locale (es)** route. It is the
+  `og:image` only for routes that inherit the layout metadata
+  without setting their own `openGraph` (the account and sign-in
+  pages); shared content pages emit a single image via
+  `buildPageMetadata`. Regenerate it (`curl …/opengraph-image >
+  public/og.png`) whenever the route's design changes.
 - `app/sitemap.ts` lists `/es` and `/en` with hreflang alternates.
 - `app/robots.ts` allows everything except `/api/` and `/_next/`.
 - `app/manifest.ts` declares the standalone PWA shell with
