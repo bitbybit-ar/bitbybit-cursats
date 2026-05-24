@@ -2,7 +2,7 @@
   "metadata": {
     "siteName": "CURSATS",
     "siteTitle": "CURSATS — Your next class, paid in sats.",
-    "description": "Lightning checkout for teachers and educational creators. Buyers pay in sats; you choose how to get paid — sats to your wallet, or pesos to your CBU/CVU.",
+    "description": "Lightning checkout for teachers. Buyers pay in sats; you choose how to get paid — sats to your wallet, or pesos to your CBU/CVU.",
     "keywords": "bitbybit,cursats,lightning checkout,bitcoin,sats,lightning address,wapu,payments,argentina,education,classes,teachers,creators,la crypta",
     "ogValueLine": "Your next class, paid in sats.",
     "skipToContent": "Skip to content"
@@ -208,6 +208,8 @@
     }
   },
   "catalog": {
+    "metadataTitle": "Explore courses",
+    "metadataDescription": "Browse classes, workshops, and study material from teachers — pay in sats over the Lightning Network.",
     "hero": {
       "title": "Buy your next class with sats.",
       "subtitle": "Pay for classes, workshops, and study material with your Lightning wallet. The teacher chooses how to get paid: sats to their wallet, or pesos to their CBU/CVU."

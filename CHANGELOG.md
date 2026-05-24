@@ -123,6 +123,18 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   Wapu into a Cursats-controlled account and settled to the seller's
   CBU/CVU in a second leg, so Wapu and Cursats are intermediaries that
   briefly hold the funds — the copy now says so plainly.
+- **Redesigned the social share card, and every page now has its
+  own.** The link-preview image (shown on WhatsApp, Twitter, etc.) is
+  now a single bold lockup — the colour-block logo beside one giant
+  `CURSATS` wordmark in the brand typeface — instead of repeating the
+  wordmark twice. This branded card now appears on **every** page
+  (`/explore`, `/features`, FAQ, how-it-works, both languages), each
+  with its own title and description (e.g. "CURSATS — FAQ") rather
+  than every page reusing the home page's preview. Course pages and
+  creator stores go further and preview their **own** image (the
+  course image / store banner), falling back to the branded card when
+  none is set. The preview description was also shortened so messaging
+  apps stop cutting it off mid-sentence.
 - **Seller notifications now open the order.** Clicking a
   sale-received or payout notification opens that order's detail page
   (buyer "order paid" notifications still open the receipt).

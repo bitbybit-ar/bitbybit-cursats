@@ -16,7 +16,7 @@ import {
 import { getOfferingByUserAndSlug } from "@/lib/offerings";
 import { getOrderByPubkeyAndOffering } from "@/lib/orders";
 import { getSession } from "@/lib/auth";
-import { alternatesFor } from "@/lib/seo";
+import { buildPageMetadata } from "@/lib/seo";
 import styles from "./page.module.scss";
 
 type Props = {
@@ -36,11 +36,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, userSlug, offeringSlug } = await params;
   const row = await getOfferingByUserAndSlug(userSlug, offeringSlug);
   if (!row) return {};
-  return {
-    title: `${row.offering.title} · ${row.seller.display_name}`,
+  const socialTitle = `${row.offering.title} · ${row.seller.display_name}`;
+  return buildPageMetadata({
+    locale,
+    path: `/${userSlug}/c/${offeringSlug}`,
+    title: socialTitle,
     description: row.offering.description.slice(0, 160),
-    alternates: alternatesFor(locale, `/${userSlug}/c/${offeringSlug}`),
-  };
+    socialTitle,
+    // Preview the course's own image when it has one; the brand card
+    // stays as the fallback for offerings published without an image.
+    image: row.offering.image_url
+      ? { url: row.offering.image_url, alt: row.offering.title }
+      : undefined,
+  });
 }
 
 export default async function OfferingPage({ params }: Props) {

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Container } from "@/components/ui/container";
-import { Section } from "@/components/ui/section";
 import { Polaroid } from "@/components/ui/polaroid";
 import { Wordmark } from "@/components/common/wordmark";
 import { FeatureDeck } from "@/components/features/feature-deck";
@@ -14,7 +13,7 @@ import { LightningLogo } from "@/components/features/illustrations/lightning-log
 import { CreatorAccount } from "@/components/features/illustrations/creator-account";
 import { CodesOrDownloads } from "@/components/features/illustrations/codes-or-downloads";
 import { OpenMarketplace } from "@/components/features/illustrations/open-marketplace";
-import { alternatesFor } from "@/lib/seo";
+import { buildPageMetadata } from "@/lib/seo";
 import styles from "./page.module.scss";
 
 type Props = {
@@ -99,11 +98,12 @@ const FEATURES = [
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "features" });
-  return {
+  return buildPageMetadata({
+    locale,
+    path: "/features",
     title: t("metadataTitle"),
     description: t("metadataDescription"),
-    alternates: alternatesFor(locale, "/features"),
-  };
+  });
 }
 
 export default async function FeaturesPage({ params }: Props) {
