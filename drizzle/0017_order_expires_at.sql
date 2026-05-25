@@ -16,7 +16,7 @@
 -- drizzle/meta/ are not consumed by the runtime migrator.
 
 ALTER TABLE "orders" ADD COLUMN IF NOT EXISTS "expires_at" timestamp;
-
+--> statement-breakpoint
 UPDATE "orders"
 SET "expires_at" = "created_at" + interval '10 minutes'
 WHERE "status" = 'pending' AND "expires_at" IS NULL;
