@@ -277,7 +277,7 @@
     }
   },
   "checkout": {
-    "title": "Pay for your order",
+    "title": "Your order",
     "instructions": "Scan the QR with your Lightning wallet, or copy the invoice and paste it into your payment app.",
     "amount": "Total",
     "copyInvoice": "Copy invoice",
@@ -747,7 +747,8 @@
     "pending": "Pending",
     "paid": "Paid",
     "failed": "Failed",
-    "refunded": "Refunded"
+    "refunded": "Refunded",
+    "expired": "Expired"
   },
   "orderLabel": {
     "all": "All",

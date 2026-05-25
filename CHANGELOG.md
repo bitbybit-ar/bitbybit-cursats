@@ -140,6 +140,12 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Clearer checkout page when an invoice expires.** The checkout
+  heading now reads "Your order" (not "Pay for your order"), the course
+  title is a link back to the course, and a status badge shows
+  "Pending" / "Paid" / "Failed" / "Expired". When the invoice has
+  expired the QR code and countdown are hidden and the page points you
+  back to the course to start a new order.
 - **Dropped the "Read-only in v1" wording from the Orders pages.** The
   orders list subtitle no longer ends with "Read-only in v1." and the
   order-detail "Orders are read-only in v1…" hint is gone — the qualifier
@@ -323,6 +329,11 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **Expired orders no longer linger as "Pending" forever.** A Lightning
+  invoice that is never paid now flips its order to "Failed" once it
+  expires — checked whenever the order is viewed (the checkout page, the
+  buyer's Purchases list, and the seller's Orders list), so stuck
+  pending rows stop piling up. No background job is involved.
 - **Shared course and store links now preview their own image.** A
   course (or creator store) shared to WhatsApp, Discord, or any social
   app now shows that course image — not the generic brand card — and

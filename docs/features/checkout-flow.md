@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | Polling, timeouts | Expiry is now persisted on `orders.expires_at` and pending orders are failed at read time (status poller + `/purchases` + `/orders`) via `failExpiredOrder` / `failExpiredOrders`; clarified that expiry resolves to `failed` with a derived "Expired" checkout badge, not a status row. | Issue #57 — stuck `pending` orders no longer linger forever; no cron needed. |
 | 2026-05-24 | Rail dispatch, Direct-sats rail, Polling, Pointers | Documented NWC (NIP-47) as the second input method of the `direct_lightning` rail: third `payout_method` value + dispatch-table row, NWC invoice/confirmation variant on the sats-rail sequence, generalized the "LUD-21 mandatory" key points to "LUD-21 or NWC", and added the `lib/nwc.ts` pointer. | ADR 0029 — sellers whose wallet lacks LUD-21 receive via NWC, confirmed by `lookup_invoice` instead of the `verify` URL. |
 | 2026-05-24 | Wapu rail | Corrected the "deployment never holds the buyer's sats / same call" bullet to match the two-leg flow and the diagram: the deposit credits USDT to a Cursats-controlled Wapu wallet (leg 1) and the seller payout is a separate withdrawal (leg 2), so the rail is custodial in transit. | The bullet still described the pre-ADR-0025 direct-payment model and contradicted its own leg-1/leg-2 sequence diagram. |
 | 2026-05-23 | Wapu rail, Why the rails feel identical, Polling, prose/diagrams | Rewrote the residual webhook language for the wapu_ars rail to the poll-driven model (deposit poll is the source of truth); switched Spanish UI labels in prose, code blocks, and diagrams to the English `messages/en.json` strings. | Docs must match the implemented poll-driven rail (ADR 0025) and the English-only UI judges test against. |
@@ -244,13 +245,22 @@ dispatch.
   NWC `lookup_invoice` per the order's sub-method. If the
   buyer closes the tab mid-payment, the rail still confirms the
   order the next time the order is touched.
-- **Invoices expire.** Lightning invoices carry a finite
-  expiry — both rails honour it. An unpaid order remains
-  `pending` and is harmless; the buyer can start a new order from
-  the offering page.
+- **Invoices expire — and expired orders are failed at read
+  time.** Lightning invoices carry a finite expiry, persisted on
+  `orders.expires_at` from the upstream invoice at funding time
+  (both rails). There is no expiry cron: the status poller
+  (`/api/orders/[orderId]`) and the `/purchases` and `/orders`
+  lists flip a still-`pending` order to `failed` once `now()`
+  passes `expires_at`, via the idempotent `failExpiredOrder` /
+  `failExpiredOrders` helpers in `lib/orders.ts`. The poller does
+  this *before* polling upstream — an expired BOLT11 can no longer
+  settle. The checkout page hides the dead QR and links back to
+  the course; the buyer can start a new order from there.
 - **The same order cannot be paid twice.** Order status is
-  one-way into a terminal state (`paid`, `failed`, or `refunded` —
-  there is no `expired` status). Once `paid`, `markOrderPaid`
+  one-way into a terminal state (`paid`, `failed`, or `refunded`).
+  There is no `expired` status row — expiry resolves to `failed`;
+  the checkout page shows a derived "Expired" badge for a pending
+  order past its `expires_at`. Once `paid`, `markOrderPaid`
   short-circuits on both rails (the Wapu deposit poller and the
   direct-lightning poller, whether it confirmed via LUD-21 verify
   or NWC `lookup_invoice`); no second payment can flip state again,
