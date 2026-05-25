@@ -3,7 +3,7 @@
 - **Date**: 2026-05-14
 - **Status**: Accepted
 - **Deciders**: BitByBit team
-- **Last updated**: 2026-05-14
+- **Last updated**: 2026-05-24
 
 ---
 
@@ -11,6 +11,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | Decision › `locale` | Spelled out the mechanism behind "applied on next sign-in": seed `users.locale` from the sign-in locale on **account creation**, and have the auth route return the row's stored locale so the sign-in redirect lands the user in their preferred language. | The original ADR stated the intent but left the mechanism unimplemented — a returning user who saved `en` still landed on the Spanish URL, and a new account was always created as `es` regardless of the language used to sign up. |
 | 2026-05-14 | — | Initial version. | Pin the user-preferences and account-deletion data model before the settings UI ships so a future contributor can find the decision next to the code change instead of digging through commit messages. |
 
 ---
@@ -54,9 +55,27 @@ ALTER TABLE users ADD COLUMN deleted_at timestamp;
   (next-intl `defaultLocale: "es"`).
 - Read by the settings page's Preferences panel and surfaced as
   a dropdown.
+- **Seeded on account creation** from the locale the user signed
+  in with the first time. The sign-in client sends that locale in
+  the signed `cursats_locale` tag; `POST /api/auth/nostr` passes it
+  to `ensureUserForPubkey`, which writes it onto the new row. A
+  brand-new English visitor therefore gets `locale = 'en'`, not the
+  `'es'` column default. The seed runs only on insert — a returning
+  user's row already exists, so the value they saved in Preferences
+  is never overwritten by the locale they happen to sign in from.
+- The row is the **source of truth** for preferred language.
+  `POST /api/auth/nostr` reads it back after ensure/refresh and
+  returns it as the *effective locale*; the session JWT is minted
+  with that value too.
 - Applied on **next sign-in**, not immediately — the navbar's
   locale switch is the session-only override and we don't want
   saving Preferences to yank the URL out from under the user.
+  Concretely, after a successful sign-in the client redirects to
+  the effective locale (`router.push(next, { locale })`), and the
+  already-signed-in `/sign-in` bounce reads `users.locale` (newer
+  than the JWT when Preferences changed mid-session) before
+  redirecting. So a seller who saved `en` lands on `/en/…` even
+  when they open the Spanish sign-in URL.
 
 ### `notification_prefs`
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { redirect } from "@/i18n/routing";
 import { getSession } from "@/lib/auth";
+import { getUserByPubkey } from "@/lib/creator/users";
 import { alternatesFor } from "@/lib/seo";
 import { SignInClient } from "./signin-client";
 
@@ -37,9 +38,17 @@ export default async function SignInPage({
   if (session) {
     // Already signed in — bounce to the next path (validated
     // client-side too, but the server-side call honors the same
-    // whitelist) or to the order history default.
+    // whitelist) or to the order history default. Honor the stored
+    // language preference (ADR 0021) over the URL locale: the row is
+    // the source of truth and may be newer than the session JWT (a
+    // /settings change doesn't re-mint the cookie).
     const { next } = await searchParams;
-    redirect({ href: safeNext(next), locale });
+    const user = await getUserByPubkey(session.pubkey);
+    const preferred =
+      user?.locale === "en" || user?.locale === "es"
+        ? user.locale
+        : session.locale;
+    redirect({ href: safeNext(next), locale: preferred });
   }
 
   return <SignInClient locale={locale === "en" ? "en" : "es"} />;

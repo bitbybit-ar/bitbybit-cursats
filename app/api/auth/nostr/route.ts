@@ -100,7 +100,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const event = validation.event;
   const pubkey = event.pubkey;
   const signerType = readSignerType(event.tags);
-  const locale = readLocale(event.tags);
+  // The locale carried in the signed envelope — the one the user is
+  // looking at as they sign in. It seeds a *brand-new* row's default
+  // language; for a returning user the stored preference wins below.
+  const signinLocale = readLocale(event.tags);
 
   // Auto-create the user row at sign-in (ADRs 0014, 0016), seeded
   // from the user's kind:0 metadata when available so the storefront
@@ -116,16 +119,27 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // display_name forever otherwise (issue #30). So follow up with
   // `refreshUserFromKind0`, which fills placeholder/empty fields on the
   // existing row without clobbering anything the user has edited.
+  //
+  // The row's `locale` is the source of truth for the user's preferred
+  // language (ADR 0021): seed it from `signinLocale` on creation, then
+  // read it back as the *effective* locale we apply to the session and
+  // hand to the client to redirect to. A returning user who saved a
+  // different preference in /settings is bounced to that preference,
+  // not to whichever locale URL they happened to sign in from.
+  let effectiveLocale: Locale = signinLocale;
   try {
     const profile = await fetchKind0Profile(pubkey);
-    await ensureUserForPubkey(pubkey, {
+    const user = await ensureUserForPubkey(pubkey, {
       display_name: profile.display_name ?? profile.name,
       avatar_url: profile.picture,
       banner_url: profile.banner,
       bio: profile.about,
       nostr_lightning_address: profile.lud16,
+      locale: signinLocale,
     });
     await refreshUserFromKind0(pubkey, profile);
+    const stored = LocaleSchema.safeParse(user.locale);
+    if (stored.success) effectiveLocale = stored.data;
   } catch (err) {
     console.warn(
       `[auth/nostr] ensureUserForPubkey failed for ${pubkey}:`,
@@ -135,7 +149,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const token = await createSession({
     pubkey,
-    locale,
+    locale: effectiveLocale,
     signer_type: signerType,
   });
 
@@ -152,5 +166,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     path: "/",
   });
 
-  return NextResponse.json({ pubkey, locale, signer_type: signerType });
+  return NextResponse.json({
+    pubkey,
+    locale: effectiveLocale,
+    signer_type: signerType,
+  });
 }
