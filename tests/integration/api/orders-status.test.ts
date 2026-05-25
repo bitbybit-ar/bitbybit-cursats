@@ -1,9 +1,9 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { testDb, cleanDb, seedUser } from "../setup";
-import { offerings } from "@/lib/db/schema";
+import { offerings, orders } from "@/lib/db/schema";
 import { createOrder, getOrder } from "@/lib/orders";
 import {
   MockLightningClient,
@@ -134,6 +134,46 @@ describe("GET /api/orders/[orderId] — direct_lightning rail", () => {
       }),
     });
     expect(res.status).toBe(404);
+  });
+});
+
+// Read-time expiry sweep (issue #57): an expired pending order is failed
+// before the upstream poll, with no settle side-effects.
+describe("GET /api/orders/[orderId] — expiry", () => {
+  it("fails an expired pending order before polling, even if the invoice would settle", async () => {
+    const { ln, orderId } = await seedLightningOrder();
+    // Force the persisted expiry into the past.
+    await testDb
+      .update(orders)
+      .set({ expires_at: new Date(Date.now() - 60_000) })
+      .where(eq(orders.id, orderId));
+    // Arm the mock to report settled — the expiry short-circuit must win.
+    const before = await getOrder(orderId);
+    ln.markPaid(before!.lnurl_verify_url!);
+
+    const res = await GET(buildStatusRequest(), {
+      params: Promise.resolve({ orderId }),
+    });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({
+      order_id: orderId,
+      status: "failed",
+    });
+
+    const after = await getOrder(orderId);
+    expect(after?.status).toBe("failed");
+    // No settle effects: no code drawn, no paid_at.
+    expect(after?.redemption_code).toBeNull();
+    expect(after?.paid_at).toBeNull();
+  });
+
+  it("keeps polling a not-yet-expired pending order", async () => {
+    // createOrder persists an expiry ~600s out, so the sweep is a no-op.
+    const { orderId } = await seedLightningOrder();
+    const res = await GET(buildStatusRequest(), {
+      params: Promise.resolve({ orderId }),
+    });
+    expect(await res.json()).toMatchObject({ status: "pending" });
   });
 });
 

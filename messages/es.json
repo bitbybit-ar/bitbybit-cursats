@@ -277,7 +277,7 @@
     }
   },
   "checkout": {
-    "title": "Pagá tu compra",
+    "title": "Tu compra",
     "instructions": "Escaneá el código con tu wallet Lightning, o copiá el invoice y pegalo en tu app de pago.",
     "amount": "Total",
     "copyInvoice": "Copiar invoice",
@@ -747,7 +747,8 @@
     "pending": "Pendiente",
     "paid": "Pagado",
     "failed": "Fallido",
-    "refunded": "Reembolsado"
+    "refunded": "Reembolsado",
+    "expired": "Vencido"
   },
   "orderLabel": {
     "all": "Todos",

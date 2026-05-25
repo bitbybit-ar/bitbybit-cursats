@@ -9,7 +9,7 @@ import { SuggestedForYou } from "@/components/catalog/suggested-for-you";
 import { PurchasesSearch } from "@/components/account/purchases-search";
 import { getSession } from "@/lib/auth";
 import { alternatesFor } from "@/lib/seo";
-import { listPurchasesPaged } from "@/lib/orders";
+import { failExpiredOrders, listPurchasesPaged } from "@/lib/orders";
 import {
   PURCHASES_PAGE_SIZE,
   buildPurchasesHref,
@@ -63,6 +63,10 @@ export default async function PurchasesPage({
 
   const t = await getTranslations("account");
   const tStatus = await getTranslations("orderStatus");
+
+  // Reconcile any of this buyer's expired pending orders to `failed`
+  // before listing, so stale rows never linger as "Pending" (issue #57).
+  await failExpiredOrders({ pubkey: session.pubkey });
 
   const { rows, total } = await listPurchasesPaged({
     pubkey: session.pubkey,

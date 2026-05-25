@@ -63,6 +63,59 @@
   font-size: $font-size-sm;
   text-align: center;
   font-style: italic;
+  text-decoration: none;
+
+  &:hover {
+    color: $color-text-primary;
+    text-decoration: underline;
+  }
+}
+
+// Status pill, mirroring the badge on /orders and /purchases. The card
+// is a centered column, so the pill centers itself.
+.status {
+  align-self: center;
+  display: inline-block;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  text-transform: uppercase;
+  letter-spacing: $letter-spacing-wide;
+  padding: $spacing-4 $spacing-8;
+  border-radius: $border-radius-sm;
+  background: $color-bg-2;
+  color: $color-text-secondary;
+}
+
+.status-paid {
+  background: color-mix(in srgb, $color-success 15%, transparent);
+  color: $color-success;
+}
+
+.status-pending {
+  background: color-mix(in srgb, $color-warning 18%, transparent);
+  color: $color-warning;
+}
+
+.status-failed,
+.status-refunded,
+.status-expired {
+  background: color-mix(in srgb, $color-error 15%, transparent);
+  color: $color-error;
+}
+
+// Terminal (expired/failed) panel shown instead of the QR + live poller.
+.terminal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $spacing-16;
+  text-align: center;
+}
+
+.terminalMessage {
+  margin: 0;
+  color: $color-text-secondary;
+  line-height: $line-height-base;
 }
 
 .errorCard {

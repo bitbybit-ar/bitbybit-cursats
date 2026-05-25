@@ -22,8 +22,22 @@
 
 .statusFailed,
 .statusExpired {
+  // Stack the message above the "back to the course" link.
+  flex-direction: column;
+  align-items: flex-start;
+  gap: $spacing-8;
   border-color: $color-error;
   background-color: color-mix(in srgb, $color-error 8%, $color-bg-2);
+}
+
+.courseLink {
+  color: $color-primary;
+  font-weight: $font-weight-semibold;
+  text-decoration: underline;
+
+  &:hover {
+    opacity: 0.85;
+  }
 }
 
 .message {

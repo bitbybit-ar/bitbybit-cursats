@@ -6,6 +6,9 @@ import { offerings, orders } from "@/lib/db/schema";
 import {
   createOrder,
   markOrderPaid,
+  markOrderFailed,
+  failExpiredOrder,
+  failExpiredOrders,
   getOrder,
   getOrderByPubkeyAndOffering,
   listOrdersByPubkey,
@@ -88,7 +91,11 @@ async function seedOffering(slug = "bono-4-clases") {
 // funding is proven by the gated real-staging test above.
 async function seedPendingOrder(
   offering: { id: string; user_id: string; price_amount: number },
-  opts: { pubkey?: string | null; createdAt?: Date } = {}
+  opts: {
+    pubkey?: string | null;
+    createdAt?: Date;
+    expiresAt?: Date | null;
+  } = {}
 ): Promise<{ order_id: string }> {
   const values: typeof orders.$inferInsert = {
     pubkey: opts.pubkey ?? null,
@@ -99,6 +106,7 @@ async function seedPendingOrder(
     rail: "wapu_ars",
   };
   if (opts.createdAt) values.created_at = opts.createdAt;
+  if (opts.expiresAt !== undefined) values.expires_at = opts.expiresAt;
   const [row] = await testDb.insert(orders).values(values).returning();
   return { order_id: row.id };
 }
@@ -201,6 +209,12 @@ describe("orders/createOrder — direct_lightning rail", () => {
     // Wapu fields stay null on this rail.
     expect(row?.wapu_deposit_tx_id).toBeNull();
     expect(row?.wapu_withdrawal_tx_id).toBeNull();
+    // The invoice's expiry is persisted (issue #57): the MockLightning
+    // client mints a 10-minute TTL, so expires_at lands ~600s out.
+    expect(row?.expires_at).toBeTruthy();
+    const ttlSec = (row!.expires_at!.getTime() - Date.now()) / 1000;
+    expect(ttlSec).toBeGreaterThan(540);
+    expect(ttlSec).toBeLessThanOrEqual(600);
   });
 
   it("rejects with seller_lightning_address_missing when sats rail is set but the address is null", async () => {
@@ -295,6 +309,97 @@ describe("orders/markOrderPaid", () => {
     const after = await getOrder(order_id);
     expect(Number(after?.amount_usdt)).toBeCloseTo(10, 2);
     expect(after?.paid_at?.getTime()).toBe(firstPaidAt.getTime());
+  });
+});
+
+const PAST = () => new Date(Date.now() - 60_000);
+const FUTURE = () => new Date(Date.now() + 60_000);
+
+describe("orders/failExpiredOrder", () => {
+  it("flips a pending order whose expiry has passed", async () => {
+    const offering = await seedOffering();
+    const { order_id } = await seedPendingOrder(offering, {
+      expiresAt: PAST(),
+    });
+    const result = await failExpiredOrder(order_id);
+    expect(result.updated).toBe(true);
+    expect((await getOrder(order_id))?.status).toBe("failed");
+  });
+
+  it("is a no-op for a pending order that has not expired yet", async () => {
+    const offering = await seedOffering();
+    const { order_id } = await seedPendingOrder(offering, {
+      expiresAt: FUTURE(),
+    });
+    const result = await failExpiredOrder(order_id);
+    expect(result.updated).toBe(false);
+    expect((await getOrder(order_id))?.status).toBe("pending");
+  });
+
+  it("is a no-op when expires_at is null (legacy row)", async () => {
+    const offering = await seedOffering();
+    const { order_id } = await seedPendingOrder(offering, { expiresAt: null });
+    const result = await failExpiredOrder(order_id);
+    expect(result.updated).toBe(false);
+    expect((await getOrder(order_id))?.status).toBe("pending");
+  });
+
+  it("never touches a paid order, even past expiry", async () => {
+    const offering = await seedOffering();
+    const { order_id } = await seedPendingOrder(offering, {
+      expiresAt: PAST(),
+    });
+    await markOrderPaid({ order_id, paid_at: new Date() });
+    const result = await failExpiredOrder(order_id);
+    expect(result.updated).toBe(false);
+    expect((await getOrder(order_id))?.status).toBe("paid");
+  });
+
+  it("is idempotent on an already-failed order", async () => {
+    const offering = await seedOffering();
+    const { order_id } = await seedPendingOrder(offering, {
+      expiresAt: PAST(),
+    });
+    await markOrderFailed({ order_id });
+    const second = await failExpiredOrder(order_id);
+    expect(second.updated).toBe(false);
+    expect((await getOrder(order_id))?.status).toBe("failed");
+  });
+});
+
+describe("orders/failExpiredOrders (bulk)", () => {
+  it("fails only the buyer's expired pending orders, scoped by pubkey", async () => {
+    const offering = await seedOffering();
+    const expired = await seedPendingOrder(offering, {
+      pubkey: HEX_PUBKEY,
+      expiresAt: PAST(),
+    });
+    const live = await seedPendingOrder(offering, {
+      pubkey: HEX_PUBKEY,
+      expiresAt: FUTURE(),
+    });
+    // A different buyer's expired order must be left untouched.
+    const other = await seedPendingOrder(offering, {
+      pubkey: "b".repeat(64),
+      expiresAt: PAST(),
+    });
+
+    const result = await failExpiredOrders({ pubkey: HEX_PUBKEY });
+    expect(result.updated).toBe(1);
+    expect((await getOrder(expired.order_id))?.status).toBe("failed");
+    expect((await getOrder(live.order_id))?.status).toBe("pending");
+    expect((await getOrder(other.order_id))?.status).toBe("pending");
+  });
+
+  it("fails the seller's expired pending orders, scoped by userId", async () => {
+    const offering = await seedOffering();
+    const expired = await seedPendingOrder(offering, { expiresAt: PAST() });
+    const live = await seedPendingOrder(offering, { expiresAt: FUTURE() });
+
+    const result = await failExpiredOrders({ userId: offering.user_id });
+    expect(result.updated).toBe(1);
+    expect((await getOrder(expired.order_id))?.status).toBe("failed");
+    expect((await getOrder(live.order_id))?.status).toBe("pending");
   });
 });
 

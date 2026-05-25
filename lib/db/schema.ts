@@ -338,6 +338,13 @@ export const orders = pgTable(
     download_count: integer("download_count").notNull().default(0),
     created_at: timestamp("created_at").notNull().defaultNow(),
     paid_at: timestamp("paid_at"),
+    // When the buyer's BOLT11 expires, copied from the upstream invoice
+    // at funding time (deposit/invoice `expires_at`). Nullable: the row
+    // is inserted before the rail-specific funder sets it, and legacy
+    // pre-0017 rows that were already terminal carry NULL. The status
+    // poller and the /purchases & /orders read paths fail a `pending`
+    // order once `now() > expires_at` — there is no expiry cron. Issue #57.
+    expires_at: timestamp("expires_at"),
     updated_at: timestamp("updated_at").notNull().defaultNow(),
   },
   (table) => [

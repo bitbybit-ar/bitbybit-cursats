@@ -1,5 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { drawAndAssignCode, getOrder, markOrderPaid } from "@/lib/orders";
+import {
+  drawAndAssignCode,
+  failExpiredOrder,
+  getOrder,
+  markOrderPaid,
+} from "@/lib/orders";
 import {
   pollWapuDeposit,
   emitOrderPaidNotifications,
@@ -61,6 +66,21 @@ export async function GET(
   const order = await getOrder(orderId);
   if (!order) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+
+  // Read-time expiry sweep (issue #57): an expired BOLT11 can no longer
+  // settle, so fail it before spending an upstream poll on a dead
+  // invoice. The guard is atomic and pending-only, so a payment that
+  // landed in the same instant (already flipped to paid) is untouched.
+  if (order.status === "pending") {
+    const { updated } = await failExpiredOrder(orderId);
+    if (updated) {
+      return NextResponse.json({
+        order_id: order.id,
+        status: "failed",
+        paid_at: null,
+      });
+    }
   }
 
   if (order.status === "pending" && order.rail === "wapu_ars") {

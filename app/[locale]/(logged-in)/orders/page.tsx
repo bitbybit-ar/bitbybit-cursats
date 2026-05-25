@@ -10,6 +10,7 @@ import {
   listCreatorOrdersPaged,
   orderDisplayStatus,
 } from "@/lib/creator/orders";
+import { failExpiredOrders } from "@/lib/orders";
 import {
   ORDERS_PAGE_SIZE,
   buildOrdersHref,
@@ -48,6 +49,9 @@ export default async function PanelOrdersPage({
   const sp = await searchParams;
   const parsed = parseOrdersParams(sp);
   const { user } = await requirePageUser();
+  // Reconcile this seller's expired pending orders to `failed` before
+  // listing, so the "pending payment" bucket reflects reality (issue #57).
+  await failExpiredOrders({ userId: user.id });
   const { rows, total } = await listCreatorOrdersPaged(user.id, {
     offeringSlug: parsed.course || undefined,
     status: parsed.status,

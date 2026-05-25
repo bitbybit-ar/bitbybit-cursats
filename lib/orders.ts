@@ -1,4 +1,13 @@
-import { and, eq, desc, ilike, lt, sql, type SQL } from "drizzle-orm";
+import {
+  and,
+  eq,
+  desc,
+  ilike,
+  isNotNull,
+  lt,
+  sql,
+  type SQL,
+} from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { orders, offerings, users } from "@/lib/db/schema";
 import { getWapuClient } from "@/lib/wapu";
@@ -217,6 +226,9 @@ async function fundWapuOrder(opts: {
       wapu_deposit_tx_id: deposit.transaction_id,
       bolt11: deposit.bolt11,
       transfer_speed: opts.seller.transfer_speed,
+      // Persist the deposit's real expiry so the status poller and the
+      // dashboards can fail the order once it lapses (issue #57).
+      expires_at: new Date(deposit.expires_at * 1000),
       updated_at: new Date(),
     })
     .where(eq(orders.id, opts.order_id));
@@ -270,6 +282,8 @@ async function fundDirectLightningOrder(opts: {
       payment_hash: invoice.payment_hash,
       bolt11: invoice.bolt11,
       lnurl_verify_url: invoice.verify_url,
+      // Persist the invoice's real expiry (issue #57).
+      expires_at: new Date(invoice.expires_at * 1000),
       updated_at: new Date(),
     })
     .where(eq(orders.id, opts.order_id));
@@ -327,6 +341,8 @@ async function fundNwcOrder(opts: {
       bolt11: invoice.bolt11,
       // No lnurl_verify_url: that null is the NWC discriminator the
       // status poller keys on (schema comment on orders).
+      // Persist the invoice's real expiry (issue #57).
+      expires_at: new Date(invoice.expires_at * 1000),
       updated_at: new Date(),
     })
     .where(eq(orders.id, opts.order_id));
@@ -437,6 +453,74 @@ export async function markOrderFailed(opts: {
     .set({ status: "failed", updated_at: new Date() })
     .where(eq(orders.id, opts.order_id));
   return { updated: true };
+}
+
+// Guard shared by every expiry sweep: a `pending` row whose persisted
+// invoice expiry is in the past. `expires_at IS NOT NULL` keeps legacy
+// pre-0017 rows (and any pending row that never got funded) out of the
+// net — NULL never expires.
+function expiredPendingGuard(): SQL {
+  return and(
+    eq(orders.status, "pending"),
+    isNotNull(orders.expires_at),
+    lt(orders.expires_at, new Date())
+  )!;
+}
+
+/**
+ * Fail a single order if (and only if) it is a `pending` order whose
+ * invoice has expired. Read-time replacement for an expiry cron (issue
+ * #57): the status poller calls this before polling upstream — an
+ * expired BOLT11 can no longer settle, and the persisted `expires_at`
+ * is the invoice's own TTL so this never fails a still-payable order.
+ *
+ * Atomic: the `status = 'pending'` guard lives in the UPDATE's WHERE, so
+ * a concurrent settle poll that just flipped the row to `paid` makes
+ * this a no-op (zero rows updated) rather than clobbering the payment.
+ * Idempotent for the same reason. Returns whether it flipped the row.
+ */
+export async function failExpiredOrder(
+  orderId: string
+): Promise<{ updated: boolean }> {
+  const db = getDb();
+  const updated = await db
+    .update(orders)
+    .set({ status: "failed", updated_at: new Date() })
+    .where(and(eq(orders.id, orderId), expiredPendingGuard()))
+    .returning({ id: orders.id });
+  return { updated: updated.length > 0 };
+}
+
+/**
+ * Bulk variant of {@link failExpiredOrder}, scoped to one buyer
+ * (`pubkey`) or one seller (`userId`). One guarded UPDATE flips every
+ * expired pending order in scope — the /purchases and /orders pages call
+ * this before listing so stale rows are reconciled in the same request,
+ * without an N+1 of per-row reads. Returns the number of rows failed.
+ */
+export async function failExpiredOrders(
+  scope: { pubkey: string } | { userId: string }
+): Promise<{ updated: number }> {
+  const scopeCondition =
+    "pubkey" in scope
+      ? eq(orders.pubkey, scope.pubkey)
+      : eq(orders.user_id, scope.userId);
+  try {
+    const db = getDb();
+    const updated = await db
+      .update(orders)
+      .set({ status: "failed", updated_at: new Date() })
+      .where(and(scopeCondition, expiredPendingGuard()))
+      .returning({ id: orders.id });
+    return { updated: updated.length };
+  } catch (err) {
+    // Best-effort reconciliation: this runs before the (defensively
+    // wrapped) list query on /purchases and /orders. A failure here must
+    // not crash the page — the worst case is a stale "Pending" row that
+    // the next view will sweep. Mirrors listPurchasesPaged's posture.
+    console.error("failExpiredOrders failed", err);
+    return { updated: 0 };
+  }
 }
 
 export async function getOrder(orderId: string) {

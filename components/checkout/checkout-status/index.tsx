@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useTranslations } from "next-intl";
-import { useRouter } from "@/i18n/routing";
+import { useRouter, Link } from "@/i18n/routing";
 import styles from "./checkout-status.module.scss";
 
 interface CheckoutStatusProps {
@@ -11,6 +11,8 @@ interface CheckoutStatusProps {
   initialStatus: "pending" | "paid" | "failed" | "refunded";
   /** Unix seconds — when the BOLT11 invoice expires. */
   expiresAt: number;
+  /** Storefront URL of the course, for the "back to the course" CTA. */
+  courseHref: string;
 }
 
 interface OrderStatusResponse {
@@ -31,6 +33,7 @@ export function CheckoutStatus({
   orderId,
   initialStatus,
   expiresAt,
+  courseHref,
 }: CheckoutStatusProps) {
   const t = useTranslations("checkout");
   const router = useRouter();
@@ -104,6 +107,9 @@ export function CheckoutStatus({
     return (
       <div className={styles.statusExpired}>
         <p className={styles.message}>{t("expired")}</p>
+        <Link href={courseHref} className={styles.courseLink}>
+          {t("expiredCta")}
+        </Link>
       </div>
     );
   }
@@ -112,6 +118,9 @@ export function CheckoutStatus({
     return (
       <div className={styles.statusFailed}>
         <p className={styles.message}>{t("status.failed")}</p>
+        <Link href={courseHref} className={styles.courseLink}>
+          {t("expiredCta")}
+        </Link>
       </div>
     );
   }
