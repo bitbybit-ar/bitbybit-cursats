@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | Session shape | Added "Preferred locale at sign-in"; corrected the cookie to SameSite=Strict and the JWT payload to list signer type + effective locale (it carries more than "the pubkey and expiry"). | ADR 0021 — the sign-in flow now seeds `users.locale` on account creation and redirects to the stored preference; the session-shape bullet was also stale on what the JWT carries. |
 | 2026-05-24 | — | Initial version. Split out of `nostr-identity.md`: the sign-in surface, the mobile `nostrconnect://` deep link, the session shape, and the payment-destination re-sign discipline now live here. Expanded the sign-in surface to spell out the NIP-46 attach modes, and added the previously-undocumented mobile flow from ADR 0025. | `nostr-identity.md` was carrying two concerns at once — *who you are on Nostr* (profile) and *how you log in* (signers/sessions). The login half deserves its own doc, and the mobile deep-link flow was only in an ADR. |
 
 ---
@@ -122,9 +123,12 @@ already works cross-platform. Decision in ADR
 ## Session shape
 
 - `jose`-signed JWT.
-- Stored in an httpOnly, Secure, SameSite=Lax cookie.
-- Carries the pubkey, the session expiry, and nothing else (never a
-  private key, never the kind:0 metadata, never the payout fields).
+- Stored in an httpOnly, Secure, SameSite=Strict cookie.
+- Carries the pubkey, the session expiry, the signer type, and the
+  user's effective locale — nothing more (never a private key, never
+  the kind:0 metadata, never the payout fields). The `users` row is
+  the source of truth for everything else and is looked up at request
+  time, so deactivation takes effect immediately.
 - Verified on every panel-gated request by the edge middleware in
   `proxy.ts`; anonymous requests bounce to
   `/sign-in?next=<original>`.
@@ -132,6 +136,24 @@ already works cross-platform. Decision in ADR
 The JWT signing key lives in env vars and never reaches the client.
 Rotating it invalidates every active session at once; that is the
 intended trade-off versus per-user revocation lists.
+
+### Preferred locale at sign-in
+
+The client sends the locale the user is viewing in the signed
+`cursats_locale` tag. `POST /api/auth/nostr` uses it two ways:
+
+- **New account** — it seeds `users.locale`, so a first-time
+  English visitor's row is created as `en`, not the `es` default.
+- **Returning account** — it is ignored in favor of the locale the
+  user saved in `/settings`; the route reads `users.locale` back and
+  returns it as the *effective locale*.
+
+The sign-in client then redirects to that effective locale
+(`router.push(next, { locale })`), and the already-signed-in
+`/sign-in` bounce reads `users.locale` directly. The net effect: you
+always land in your preferred language, regardless of which locale
+URL you signed in from. The navbar toggle remains a session-only
+override (ADR 0021).
 
 ## Re-sign on payment-destination fields
 

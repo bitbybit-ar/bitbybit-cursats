@@ -144,6 +144,14 @@ export interface InitialUserProfile {
   bio?: string;
   /** Public Nostr Lightning Address (kind:0 lud16). ADR 0030. */
   nostr_lightning_address?: string;
+  /**
+   * Default UI locale to seed on *creation* — the locale the user
+   * signed in with the first time. Applied only when the row is
+   * inserted; a returning user keeps the preference they saved in
+   * /settings (ensureUserForPubkey short-circuits on existing rows).
+   * Falls back to the column default ("es") when omitted. ADR 0021.
+   */
+  locale?: "es" | "en";
 }
 
 /**
@@ -199,6 +207,9 @@ export async function ensureUserForPubkey(
           banner_url: initial?.banner_url ?? null,
           bio: initial?.bio ?? null,
           nostr_lightning_address: initial?.nostr_lightning_address ?? null,
+          // Seed the preferred locale from the sign-in locale; the
+          // column default ("es") covers callers that omit it.
+          ...(initial?.locale ? { locale: initial.locale } : {}),
         })
         .returning();
       return row;

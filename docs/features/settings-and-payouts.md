@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | What lives in `/settings` | Spelled out that the Preferences locale default is seeded from the sign-in locale on account creation and that the next sign-in redirects the user to their preferred language. | ADR 0021 — the "applied on next sign-in" behavior is now actually wired; the doc only described the dropdown. |
 | 2026-05-24 | What lives in `/settings`, Two tiers of fields, The re-sign flow, Save-time probes, Switching payout methods, By design | Documented NWC (NIP-47) as the third `payout_method` value: added `nwc_uri` to the Payout fields and the Tier-2 re-sign list, the NWC connection probe alongside the LUD-21 probe, the encrypted-at-rest credential, and corrected "Switching payout methods" from two values to three (both sats methods map to `direct_lightning`). | ADR 0029 — most wallets the audience uses fail LUD-21, so NWC is the alternative way onto the sats rail, and its URI is a stored secret. |
 | 2026-05-24 | What lives in `/settings`, Two tiers of fields, The LUD-21 probe | Split the public Nostr Lightning Address (`nostr_lightning_address`, a free Identity-tier field) from the payout `lightning_address`; the LUD-21 probe now runs only on the payout one. | ADR 0030 — the shared column made the LUD-21 probe block profile saves (issue #30). |
 | 2026-05-23 | By design | Reframed the scope section (formerly "What we deliberately do not do") as "By design", leading each point with the strength (Nostr re-sign as the second factor, atomic saves, one-shot purchases). | The "what we don't do" framing read as incompleteness, but each item is a deliberate design strength — the section should sell it, not apologize for it. |
@@ -46,7 +47,13 @@ The seller's single configuration surface at
 3. **Preferences** — locale default plus the notification toggles
    (buyer `order.paid`, seller `sale.received`, and the Wapu payout
    states `payout.pending` / `payout.released` / `payout.failed`),
-   saved together with one Save. Theme is **not** here — it lives in
+   saved together with one Save. The **locale default** (`users.locale`)
+   is the user's preferred language: it is seeded on account creation
+   from the language they first signed in with, and the next sign-in
+   redirects them to it (the navbar toggle stays a session-only
+   override — saving Preferences does not move the URL mid-session).
+   See [ADR 0021](../architecture/decisions/0021-settings-preferences-and-soft-delete.md#locale).
+   Theme is **not** here — it lives in
    the navbar toggle and persists per-device. Account deletion lives in
    its own **Danger zone** tab.
 

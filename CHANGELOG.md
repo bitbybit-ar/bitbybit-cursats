@@ -329,6 +329,16 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **Your language preference is honored at sign-in.** The "Default
+  language" you pick in Settings now takes effect the next time you
+  sign in: you land on the site in that language regardless of which
+  language URL you signed in from. New accounts also start in the
+  language you signed up with — a first-time English visitor's account
+  is created in English instead of defaulting to Spanish. Previously
+  the preference was saved but never applied, and every new account
+  defaulted to Spanish. The navbar toggle still switches language for
+  the current session only. Decision in ADR
+  [0021](docs/architecture/decisions/0021-settings-preferences-and-soft-delete.md).
 - **Expired orders no longer linger as "Pending" forever.** A Lightning
   invoice that is never paid now flips its order to "Failed" once it
   expires — checked whenever the order is viewed (the checkout page, the

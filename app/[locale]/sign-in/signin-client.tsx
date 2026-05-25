@@ -130,7 +130,10 @@ export function SignInClient({ locale }: SignInClientProps) {
       if (msg) setErrorMessage(msg);
       return;
     }
-    router.push(nextPath);
+    // Land the user in their preferred locale (ADR 0021), not the URL
+    // they signed in from — a returning seller who saved "en" in
+    // /settings gets /en/… even if they hit the Spanish sign-in page.
+    router.push(nextPath, { locale: result.locale });
   };
 
   const handleError = (err: AuthError) => {

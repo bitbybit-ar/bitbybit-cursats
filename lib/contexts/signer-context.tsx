@@ -31,7 +31,7 @@ import {
 import type { ReactNode } from "react";
 import { type SignerHandle, makeExtensionSigner } from "@/lib/nostr/signers";
 import type { NostrEvent, UnsignedNostrEvent } from "@/lib/nostr/types";
-import type { SignerType, Locale } from "@/lib/schemas/auth";
+import { LocaleSchema, type SignerType, type Locale } from "@/lib/schemas/auth";
 
 export interface SessionUserSummary {
   id: string;
@@ -69,7 +69,11 @@ export interface SessionUser {
  *                     (`isSignerCancellation`) or surface it.
  */
 export type LoginResult =
-  | { ok: true }
+  // `locale` is the user's effective preferred locale, resolved
+  // server-side from their row (ADR 0021). Callers redirect to it so
+  // a returning user lands in their saved language, not the URL they
+  // signed in from.
+  | { ok: true; locale: Locale }
   | { ok: false; reason: "network" }
   | { ok: false; reason: "rate_limited" }
   | { ok: false; reason: "api"; code?: string }
@@ -276,9 +280,19 @@ export function SignerProvider({
         return { ok: false, reason: "api", code: json?.error };
       }
 
+      // The route echoes the user's effective preferred locale (their
+      // stored row preference for returning users, the just-seeded
+      // sign-in locale for new accounts). Fall back to the locale we
+      // signed with if the body is missing/garbled.
+      const body = (await authRes.json().catch(() => null)) as {
+        locale?: unknown;
+      } | null;
+      const parsed = LocaleSchema.safeParse(body?.locale);
+      const effectiveLocale = parsed.success ? parsed.data : locale;
+
       setSigner(next);
       await refresh();
-      return { ok: true };
+      return { ok: true, locale: effectiveLocale };
     },
     [setSigner, refresh]
   );
