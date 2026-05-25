@@ -28,12 +28,27 @@ export function RevealGrid({ className, children }: Props) {
     },
   };
 
+  // Both branches must declare the *same* animated keys (opacity, x, y,
+  // filter). `useIsMobileViewport` is SSR-safe — it returns `false` on the
+  // server and the first client render, so framer-motion bakes the desktop
+  // `hidden` (x: -90, blur) into the initial DOM, then the post-mount effect
+  // swaps in the mobile variant. Any key the mobile variant omits keeps its
+  // stale desktop motion value, which left phone cards parked 90px to the
+  // left and permanently blurred. Declaring every key in both branches lets
+  // the swap reset x/filter cleanly.
   const card: Variants = isMobile
     ? {
-        hidden: { opacity: 0, y: reduceMotion ? 0 : 16 },
+        hidden: {
+          opacity: 0,
+          x: 0,
+          y: reduceMotion ? 0 : 16,
+          filter: "blur(0px)",
+        },
         visible: {
           opacity: 1,
+          x: 0,
           y: 0,
+          filter: "blur(0px)",
           transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
         },
       }
@@ -41,11 +56,13 @@ export function RevealGrid({ className, children }: Props) {
         hidden: {
           opacity: 0,
           x: reduceMotion ? 0 : -90,
+          y: 0,
           filter: reduceMotion ? "blur(0px)" : "blur(6px)",
         },
         visible: {
           opacity: 1,
           x: 0,
+          y: 0,
           filter: "blur(0px)",
           transition: { duration: 0.9, ease: [0.22, 1, 0.36, 1] },
         },
