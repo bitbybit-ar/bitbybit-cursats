@@ -3,6 +3,7 @@ import { eq, isNull, desc, isNotNull, and, count } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/lib/db";
 import { offerings, orders } from "@/lib/db/schema";
+import { isValidRedeemUrl } from "./redeem-url";
 import { writeAuditLog } from "./audit";
 
 /**
@@ -122,6 +123,16 @@ const HttpsUrlSchema = z
     }
   }, "url must use https://");
 
+// `redeem_url` is rendered as a link on the receipt's "Contact the
+// teacher" card, so it must use a safe protocol. We allow https plus
+// mailto:/tel: (contact channels), and reject everything else —
+// http: is a downgrade vector, javascript:/data: are XSS vectors.
+// The shared `isValidRedeemUrl` keeps this rule identical to the
+// create-course form's client-side check. ADR-free; issue #60.
+const RedeemUrlSchema = z
+  .string()
+  .refine(isValidRedeemUrl, "redeem_url must use https://, mailto:, or tel:");
+
 const OfferingCommonFields = z.object({
   slug: SlugSchema,
   type: z.enum(["code", "download"]),
@@ -131,6 +142,7 @@ const OfferingCommonFields = z.object({
   price_currency: z.enum(["ars", "sats"]),
   image_url: z.string().url(),
   download_url: HttpsUrlSchema.nullable().optional(),
+  redeem_url: RedeemUrlSchema.nullable().optional(),
   tags: TagsSchema,
 });
 
@@ -158,6 +170,14 @@ export const CreateOfferingSchema = OfferingCommonFields.extend({
         message: "code_count is required when type is code",
       });
     }
+    const redeem = data.redeem_url;
+    if (!redeem || redeem.trim().length === 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["redeem_url"],
+        message: "redeem_url is required when type is code",
+      });
+    }
   }
 });
 
@@ -175,6 +195,16 @@ export const UpdateOfferingSchema = OfferingCommonFields.partial().superRefine(
           code: "custom",
           path: ["download_url"],
           message: "download_url is required when type is download",
+        });
+      }
+    }
+    if (data.type === "code") {
+      const redeem = data.redeem_url;
+      if (!redeem || redeem.trim().length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["redeem_url"],
+          message: "redeem_url is required when type is code",
         });
       }
     }
@@ -283,6 +313,7 @@ export async function createOfferingForCreator(
       image_url: input.image_url,
       code_pool: initialPool,
       download_url: input.download_url ?? null,
+      redeem_url: input.redeem_url ?? null,
       tags: normalizeTags(input.tags),
     })
     .returning();
@@ -347,6 +378,10 @@ export async function updateOfferingForCreator(
         patch.download_url === undefined
           ? existing.download_url
           : patch.download_url,
+      redeem_url:
+        patch.redeem_url === undefined
+          ? existing.redeem_url
+          : patch.redeem_url,
       tags:
         patch.tags === undefined ? existing.tags : normalizeTags(patch.tags),
       updated_at: new Date(),

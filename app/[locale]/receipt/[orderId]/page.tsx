@@ -9,6 +9,7 @@ import { CheckIcon, ArrowLeftIcon } from "@/components/icons";
 import { ReceiptCode } from "@/components/receipt/receipt-code";
 import { ReceiptDownload } from "@/components/receipt/receipt-download";
 import { NostrPromptCard } from "@/components/receipt/nostr-prompt-card";
+import { ContactTeacherCard } from "@/components/receipt/contact-teacher-card";
 import { getOrder } from "@/lib/orders";
 import { getOfferingById } from "@/lib/offerings";
 import { getUserById } from "@/lib/creator/users";
@@ -94,6 +95,14 @@ export default async function ReceiptPage({ params }: Props) {
 
           {offering?.type === "code" ? (
             <ReceiptCode code={order.redemption_code} />
+          ) : null}
+
+          {offering?.type === "code" && seller ? (
+            <ContactTeacherCard
+              teacherName={seller.display_name}
+              href={offering.redeem_url || `/${seller.slug}`}
+              isExternal={Boolean(offering.redeem_url)}
+            />
           ) : null}
 
           {offering?.type === "download" ? (

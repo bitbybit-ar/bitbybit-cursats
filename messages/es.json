@@ -323,6 +323,11 @@
       "title": "¿Querés guardar este pedido en tu Nostr?",
       "body": "Conectando tu identidad Nostr vas a poder ver este recibo desde cualquier dispositivo y recibir el código por DM.",
       "cta": "Conectar Nostr"
+    },
+    "contactTeacher": {
+      "title": "Siguiente paso",
+      "body": "Mostrale tu código de canje a {teacherName} para acceder al curso. Usá el enlace de abajo para canjearlo o ponerte en contacto.",
+      "cta": "Canjear con {teacherName}"
     }
   },
   "pricing": {
@@ -430,6 +435,7 @@
       "priceAmountExample": "12000 (en ARS) o 50000 (en sats)",
       "codeCountExample": "50 códigos = hasta 50 ventas antes de tener que generar más.",
       "downloadUrlExample": "https://drive.google.com/uc?export=download&id=…",
+      "redeemUrlExample": "Una página web (https://…), WhatsApp (https://wa.me/54911…), Telegram (https://t.me/tuusuario), email (mailto:vos@ejemplo.com) o teléfono (tel:+54911…).",
       "imageUrlTooltip": "JPG, PNG o WebP, hasta 5 MB. Se sube firmado por Nostr a un servidor Blossom.",
       "type": "Tipo",
       "typeCode": "Código de canje",
@@ -470,6 +476,10 @@
       "downloadUrl": "URL del archivo",
       "downloadUrlHint": "URL donde está alojado el archivo. La servimos detrás de un proxy con control de acceso.",
       "downloadUrlRequired": "Tenés que indicar la URL del archivo antes de guardar.",
+      "redeemUrl": "Enlace de canje / contacto",
+      "redeemUrlHint": "Adónde va el comprador para usar su código: una página, un chat o un canal de contacto. El comprador lo ve en su comprobante.",
+      "redeemUrlRequired": "Indicá un enlace de canje o contacto antes de guardar.",
+      "redeemUrlInvalid": "Usá un enlace que empiece con https://, mailto: o tel:.",
       "invalidPriceAmount": "El precio tiene que ser un número entero positivo.",
       "invalidCodeCount": "La cantidad de códigos tiene que estar entre 1 y 10.000.",
       "imageRequired": "Subí o pegá una imagen de portada antes de guardar.",

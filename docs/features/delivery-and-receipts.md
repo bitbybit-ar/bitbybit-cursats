@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-05-24 | Receipt page (code offerings) | Documented the receipt's "Contact the teacher" card, which links to the offering's new `redeem_url` (web page, WhatsApp/Telegram, email, or phone) and falls back to the storefront for legacy code offerings. | Code buyers previously got a code with no guidance on where to use it; the receipt now points them to the teacher's redeem/contact link (issue #60). |
 | 2026-05-24 | Receipt page, Download proxy | Documented the download access bounds: a paid download order may fetch the file up to five times within 30 days of payment, enforced by the proxy, with the receipt card surfacing the remaining count and expiry date. | The proxy now enforces a per-order fetch cap and a post-payment window (`lib/download-limits.ts`); the doc must describe that bound instead of stating downloads are unlimited and never expire. |
 | 2026-05-23 | By design | Reframed the scope section (formerly "What we deliberately do not do") as "By design", leading each point with the strength (receipt-only delivery, secret-by-construction receipts, no email). | The "what we don't do" framing read as incompleteness, but each item is a deliberate design strength — the section should sell it, not apologize for it. |
 | 2026-05-23 | Receipt page, Download proxy | Switched the Spanish "Descargar" label to "Download file" and reframed the proxy access model in present tense (what it does, not what is deferred). | Docs must match the English-only UI and read as a complete, shipped system. |
@@ -57,8 +58,12 @@ What renders depends on the offering type:
   shows to the seller).
 - The offering title, seller display name, and the date paid.
 - A "Copy code" button.
-- A small note explaining how to redeem (the seller's
-  instructions, if they configured any).
+- A **"Contact the teacher" card** ("Next step") naming the seller
+  and linking to the offering's `redeem_url` — the page or contact
+  channel (web page, WhatsApp/Telegram, email, or phone) where the
+  buyer presents the code. The link opens in a new tab. For a legacy
+  code offering created before `redeem_url` existed, the card falls
+  back to the seller's storefront.
 
 ### For `download` offerings
 

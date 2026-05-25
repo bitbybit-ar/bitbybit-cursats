@@ -230,6 +230,11 @@ export const offerings = pgTable(
     // For type=download: source URL signed at delivery time. For
     // type=code: null.
     download_url: text("download_url"),
+    // For type=code: the page or contact channel where a buyer
+    // presents their redemption code (a web page, WhatsApp/Telegram
+    // link, mailto:, or tel:). Shown on the receipt's "Contact the
+    // teacher" card. For type=download: null. Issue #60.
+    redeem_url: text("redeem_url"),
     archived_at: timestamp("archived_at"),
     created_at: timestamp("created_at").notNull().defaultNow(),
     updated_at: timestamp("updated_at").notNull().defaultNow(),

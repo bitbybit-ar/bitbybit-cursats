@@ -18,6 +18,7 @@ import {
 } from "@/components/courses/payout-setup-modal";
 import { useSignerContext } from "@/lib/contexts/signer-context";
 import { MAX_TAGS_PER_OFFERING, type Offering } from "@/lib/creator/offerings";
+import { isValidRedeemUrl } from "@/lib/creator/redeem-url";
 import { WAPU_MIN_NET_ARS } from "@/lib/wapu-limits";
 import styles from "./offering-form.module.scss";
 
@@ -64,6 +65,8 @@ interface OfferingPayload {
   price_currency: "ars" | "sats";
   image_url: string;
   download_url: string | null;
+  /** For type=code: where the buyer redeems the code. Null for download. */
+  redeem_url: string | null;
   tags: string[];
   /** Only sent on create — minting more codes on edit is a separate flow. */
   code_count?: number;
@@ -193,6 +196,9 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
   const [imageUrl, setImageUrl] = useState(offering?.image_url ?? "");
   const [codeCount, setCodeCount] = useState("10");
   const [downloadUrl, setDownloadUrl] = useState(offering?.download_url ?? "");
+  // For code offerings: the page/contact where buyers redeem the code.
+  // Editable on create and edit (unlike the create-only code count).
+  const [redeemUrl, setRedeemUrl] = useState(offering?.redeem_url ?? "");
   const [tags, setTags] = useState<string[]>(offering?.tags ?? []);
   const [tagDraft, setTagDraft] = useState("");
 
@@ -323,6 +329,19 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
       return null;
     }
 
+    // Code offerings must carry a redeem/contact link, validated to
+    // the same accepted protocols the API enforces (issue #60).
+    if (type === "code") {
+      if (redeemUrl.trim() === "") {
+        showToast(t("redeemUrlRequired"), "error");
+        return null;
+      }
+      if (!isValidRedeemUrl(redeemUrl)) {
+        showToast(t("redeemUrlInvalid"), "error");
+        return null;
+      }
+    }
+
     // Commit any tag still sitting in the draft input so a seller
     // who typed a tag and hit Save (instead of Enter) doesn't lose
     // it silently.
@@ -341,6 +360,7 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
       price_currency: priceCurrency,
       image_url: imageUrl.trim(),
       download_url: type === "download" ? downloadUrl.trim() : null,
+      redeem_url: type === "code" ? redeemUrl.trim() : null,
       tags: finalTags,
       code_count: codeCountNum,
     };
@@ -763,6 +783,31 @@ export function OfferingForm({ offering, payoutState }: OfferingFormProps) {
                   count: offering.code_pool?.length ?? 0,
                 })}
               </p>
+            </div>
+          ) : null}
+
+          {type === "code" ? (
+            <div className={styles.field}>
+              <label htmlFor="redeemUrl" className={styles.label}>
+                {t("redeemUrl")}
+                <Tooltip
+                  text={t("redeemUrlHint")}
+                  example={t("redeemUrlExample")}
+                  label={tCommon("tooltipLabel")}
+                />
+              </label>
+              {/* type="text" + inputMode (not type="url") so an empty or
+                  malformed value triggers our toast in buildPayload
+                  rather than a native bubble that blocks submit. */}
+              <input
+                id="redeemUrl"
+                type="text"
+                inputMode="url"
+                className={styles.input}
+                value={redeemUrl}
+                onChange={(e) => setRedeemUrl(e.target.value)}
+                placeholder="https://…"
+              />
             </div>
           ) : null}
 

@@ -12,6 +12,12 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Tell code buyers how to redeem.** Redemption-code courses now carry
+  a "Redeem / contact link" — a web page, WhatsApp/Telegram link, email,
+  or phone — set in the create-course form's "Content & delivery"
+  section. The buyer's receipt shows a "Next step" card with the
+  teacher's name and a button that opens that link, so they know where
+  to present their code. Download courses are unchanged.
 - **Download links are limited per purchase.** A paid download grants
   up to five file fetches, available for 30 days after payment. The
   receipt's download card shows how many downloads are left and the
