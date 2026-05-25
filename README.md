@@ -180,4 +180,4 @@ Repo-root references:
 
 ## License
 
-Open source. See `LICENSE` (TBD).
+MIT — see [`LICENSE`](./LICENSE).
