@@ -334,6 +334,17 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   expires — checked whenever the order is viewed (the checkout page, the
   buyer's Purchases list, and the seller's Orders list), so stuck
   pending rows stop piling up. No background job is involved.
+- **The "Share on Nostr" popup only celebrates a real publish.** After
+  you create a course, the share popup now confirms "Published!" only
+  once at least one relay has acknowledged the note — previously it
+  showed success even when every relay rejected or timed out, so a post
+  that never landed looked sent. Declining the signature in your wallet
+  (or closing the re-sign prompt) no longer surfaces a "couldn't
+  publish" error — the popup just returns to its editable state so you
+  can retry or skip. The Publish button also stays locked through the
+  brief success state, so a fast double-click can't sign and post the
+  same note twice (`lib/nostr/publish.ts`,
+  `components/share/share-on-nostr-modal`).
 - **Shared course and store links now preview their own image.** A
   course (or creator store) shared to WhatsApp, Discord, or any social
   app now shows that course image — not the generic brand card — and
