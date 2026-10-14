@@ -10,6 +10,13 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- The footer credits the studio with a "Un proyecto de BitByBit" /
+  "A BitByBit project" link to bitbybit.com.ar.
+- The browser-tab favicon is now the BitByBit "B." mark, with a
+  `/favicon.ico` for clients that request it directly.
+
 ## [1.0.0] - 2026-05-24
 
 First public release of Cursats — Lightning checkout for Argentine

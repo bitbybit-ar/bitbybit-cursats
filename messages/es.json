@@ -99,7 +99,9 @@
       "arenaLink": "BitByBit Arena",
       "faqLink": "Preguntas frecuentes",
       "github": "GitHub",
-      "githubAriaLabel": "Cursats en GitHub"
+      "githubAriaLabel": "Cursats en GitHub",
+      "credit": "Un proyecto de <link>BitByBit</link>",
+      "creditHref": "https://bitbybit.com.ar/es"
     }
   },
   "howItWorks": {

@@ -1,7 +1,7 @@
 # Architecture overview
 
 > **Status:** Active
-> **Last updated:** 2026-05-24
+> **Last updated:** 2026-10-14
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-10-14 | SEO surface | Swapped the tab favicon to the BitByBit "B." mark (`public/icons/favicon.svg` + `public/favicon.ico`), keeping `public/icons/icon.svg` for the manifest and JSON-LD logo; documented the footer credit link to bitbybit.com.ar. | A favicon that matches the studio brand, and a followed backlink so search engines connect Cursats to the studio domain. |
 | 2026-05-24 | Offering types | Replaced the `download` type's "short-lived signed URL" description with the proxy's actual behavior: it serves the file behind a per-order fetch cap and post-payment expiry window (`lib/download-limits.ts`). | The download proxy gained access limits; the prior "signed URL" phrasing never matched the implementation. |
 | 2026-05-24 | Creator surfaces | Dropped the "read-only in v1" qualifier from the `/orders` route row and relabeled the access-model bullet from "Read-only" to "No mutations" (the substance — orders/payments/buyers are immutable views — is unchanged). | The "read-only in v1" wording was surfaced to sellers as a meaningless UI hint and removed product-wide; the docs are aligned with that copy cleanup. |
 | 2026-05-24 | SEO surface | `buildPageMetadata` now emits **exactly one** `og:image` per page: a page with its own `image` (course image / store banner) shows only that; a page without one falls back to the single localized `opengraph-image` brand card. Dropped the stacked `og.png` twin from the shared builder (`og.png` stays only as the inherited-layout fallback). | Stacking the page image plus both brand cards produced three `og:image` tags on course/store pages: WhatsApp showed the *last* (the fallback) instead of the course image, and Discord rendered all three. |
@@ -277,9 +278,19 @@ Routes inventory and request shapes live in
 - `lib/env.ts` centralises the `NEXT_PUBLIC_BASE_URL` lookup —
   every SEO surface uses it via `getBaseUrl()` and throws at boot
   if the env var is missing.
-- The placeholder favicon at `public/icons/icon.svg` is the
-  BitByBit family logo. Replace it with Cursats's own mark when
-  brand work lands.
+- The browser-tab favicon is the BitByBit studio "B." mark:
+  `public/icons/favicon.svg` (linked from `app/[locale]/layout.tsx`;
+  it switches colors with `prefers-color-scheme`) plus
+  `public/favicon.ico` (16/32/48 px) for crawlers and clients that
+  request `/favicon.ico` directly. `public/icons/icon.svg` stays the
+  app's own logo: the manifest icon and the Organization JSON-LD
+  `logo`.
+- The footer carries a "Un proyecto de BitByBit" / "A BitByBit
+  project" credit (`landing.footer.credit`, URL in
+  `landing.footer.creditHref`) linking to the studio site in the
+  visitor's language (`/es` or `/en`). It is a normal followed link
+  (`rel="noopener"`, no `nofollow`/`noreferrer`) so the studio
+  domain gets the backlink and the referral.
 
 ## Theming
 

@@ -191,7 +191,7 @@ export default async function LocaleLayout({
       suppressHydrationWarning
     >
       <head>
-        <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml" />
         {/* eslint-disable react/no-danger -- The only legitimate
             dangerouslySetInnerHTML in the app: JSON-LD sinks fed
             exclusively by server config + i18n (no user input), and

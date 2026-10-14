@@ -27,6 +27,18 @@
   }
 }
 
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-8;
+}
+
+.credit {
+  margin: 0;
+  color: $color-text-secondary;
+  font-size: $font-size-sm;
+}
+
 .brand {
   display: flex;
   align-items: center;
