@@ -11,9 +11,25 @@ export function Footer() {
   return (
     <footer className={styles.footer}>
       <div className={styles.inner}>
-        <div className={styles.brand}>
-          <LogoBlocks />
-          <Wordmark />
+        <div className={styles.identity}>
+          <div className={styles.brand}>
+            <LogoBlocks />
+            <Wordmark />
+          </div>
+          <p className={styles.credit}>
+            {t.rich("credit", {
+              link: (chunks) => (
+                <a
+                  href={t("creditHref")}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.link}
+                >
+                  {chunks}
+                </a>
+              ),
+            })}
+          </p>
         </div>
 
         <nav className={styles.links} aria-label={t("ariaLabel")}>
