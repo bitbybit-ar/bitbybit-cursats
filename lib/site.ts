@@ -17,7 +17,7 @@ import type { Locale } from "@/lib/schemas/auth";
 export interface SiteIdentity {
   /** Human-readable name shown in titles and OG tags. */
   name: string;
-  /** Public host (no scheme, no path). Used for canonical hints. */
+  /** Public host (no scheme, no path). The one source for `SITE_URL`. */
   domain: string;
   /** Default locale shown to the buyer when there is no Accept-Language match. */
   default_locale: Locale;
@@ -36,3 +36,11 @@ export const SITE: SiteIdentity = {
   default_locale: "es",
   social: {},
 };
+
+/**
+ * Absolute origin for every canonical, hreflang, sitemap, robots,
+ * Open Graph, JSON-LD and share link. Derived from code rather than an
+ * env var so a per-environment value can never point search engines at
+ * another host.
+ */
+export const SITE_URL = `https://${SITE.domain}`;

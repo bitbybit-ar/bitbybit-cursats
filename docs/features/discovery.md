@@ -1,7 +1,7 @@
 # Discovery
 
 > **Status:** Active
-> **Last updated:** 2026-05-21
+> **Last updated:** 2026-10-22
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-10-22 | SEO surface | Described the per-page canonical and `x-default` hreflang, the storefront `noindex` rule, the sitemap's offering and storefront entries, and robots.txt no longer blocking `/_next/`. | The SEO fix for Google indexing changed all four. |
 | 2026-05-21 | — | Initial version. | Hackathon documentation pass — describe the three discovery surfaces, the tag system, the exchange-rate display, and the SEO surface. |
 
 ---
@@ -170,18 +171,22 @@ plumbing for that lives in the app shell, not in this feature
 folder, but it shows up on every discovery surface:
 
 - **`generateMetadata`** in `app/[locale]/layout.tsx` produces
-  per-locale title, description, OG, Twitter, robots, canonical,
-  and `hreflang` alternates.
+  the per-locale defaults (title, description, OG, Twitter,
+  robots). Each page sets its own absolute canonical and `es`/`en`/
+  `x-default` hreflang through `buildPageMetadata` (`lib/seo.ts`),
+  all on `SITE_URL` from `lib/site.ts`. `/explore` canonicalises to
+  `/explore` whatever its query string.
 - **JSON-LD** — `Organization` and `WebSite` blocks in `<head>`,
   with `parentOrganization` set to BitByBit so search engines
   associate Cursats with the wider org.
 - **Dynamic OG image** rendered via `next/og` at
   `app/[locale]/opengraph-image.tsx`. Headline and tagline come
   from `messages/{locale}.json`.
-- **`app/sitemap.ts`** lists `/es` and `/en` with hreflang
-  alternates so search engines crawl both locales.
-- **`app/robots.ts`** allows everything except `/api/` and
-  `/_next/`.
+- **`app/sitemap.ts`** lists the static pages, every public
+  offering and every storefront with at least one offering, in both
+  locales with hreflang alternates. A storefront with no offerings
+  is `noindex` and stays out of the sitemap.
+- **`app/robots.ts`** allows everything except `/api/`.
 - **`app/manifest.ts`** declares the standalone PWA shell.
 
 Per-offering and per-storefront metadata extends these defaults

@@ -85,8 +85,6 @@ cp .env.example .env.local
 Edit `.env.local` — the fields that matter for the checkout flow:
 
 ```env
-NEXT_PUBLIC_BASE_URL=http://localhost:3000
-
 DATABASE_URL=postgresql://…                    # your Neon/Postgres URL
 
 AUTH_SECRET=<run: openssl rand -base64 32>     # JWT signing key

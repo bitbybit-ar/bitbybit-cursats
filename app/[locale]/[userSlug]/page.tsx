@@ -29,6 +29,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: data.seller.display_name,
     description: data.seller.bio?.slice(0, 160) ?? data.seller.display_name,
     socialTitle: `${data.seller.display_name} · CURSATS`,
+    // Every sign-in creates a storefront; one with nothing for sale is
+    // an empty shell, so only stores with offerings are indexed.
+    robots:
+      data.offerings.length > 0 ? undefined : { index: false, follow: true },
     image: storeImage
       ? { url: storeImage, alt: data.seller.display_name }
       : undefined,

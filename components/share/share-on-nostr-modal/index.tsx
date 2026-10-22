@@ -9,7 +9,7 @@ import { publishSignedEvent } from "@/lib/nostr/publish";
 import { isSignerCancellation } from "@/lib/nostr/auth-errors";
 import type { NostrEvent } from "@/lib/nostr/types";
 import { useSignerContext } from "@/lib/contexts/signer-context";
-import { getBaseUrl } from "@/lib/env";
+import { SITE_URL } from "@/lib/site";
 import styles from "./share-on-nostr-modal.module.scss";
 
 /**
@@ -48,15 +48,11 @@ export function ShareOnNostrModal({
   const { signWithPrompt } = useSignerContext();
 
   const link = useMemo(() => {
-    // Strip a trailing slash so a NEXT_PUBLIC_BASE_URL of
-    // "https://cursats.bitbybit.com.ar/" doesn't produce
-    // "//es/<userSlug>/c/<offeringSlug>".
-    const base = getBaseUrl().replace(/\/+$/, "");
     // English is the prefixed locale; Spanish is the unprefixed
     // default. Mirror the routing config so the link a Nostr
     // reader clicks doesn't bounce through an unnecessary redirect.
     const localePrefix = locale === "es" ? "" : `/${locale}`;
-    return `${base}${localePrefix}/${context.course.userSlug}/c/${context.course.offeringSlug}`;
+    return `${SITE_URL}${localePrefix}/${context.course.userSlug}/c/${context.course.offeringSlug}`;
   }, [locale, context.course.userSlug, context.course.offeringSlug]);
 
   const initialContent = useMemo(() => {

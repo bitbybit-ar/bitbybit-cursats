@@ -11,15 +11,30 @@ export function localizedPath(locale: string, path: string): string {
   return normalized === "/" ? `/${locale}` : `/${locale}${normalized}`;
 }
 
+/**
+ * One URL per locale for `path`, plus `x-default` on the default
+ * locale. Shared by page metadata and the sitemap so both emit the
+ * same hreflang set.
+ */
+export function languageAlternates(
+  path: string,
+  toUrl: (localized: string) => string = (p) => p
+): Record<string, string> {
+  return {
+    ...Object.fromEntries(
+      routing.locales.map((l) => [l, toUrl(localizedPath(l, path))])
+    ),
+    "x-default": toUrl(localizedPath(routing.defaultLocale, path)),
+  };
+}
+
 export function alternatesFor(
   locale: string,
   path: string
 ): { canonical: string; languages: Record<string, string> } {
   return {
     canonical: localizedPath(locale, path),
-    languages: Object.fromEntries(
-      routing.locales.map((l) => [l, localizedPath(l, path)])
-    ),
+    languages: languageAlternates(path),
   };
 }
 
@@ -52,7 +67,8 @@ function brandOgImage(locale: string, alt: string): OgImage {
  * description), keeping the card consistent everywhere.
  *
  * `title` is the document title; the locale layout's title template
- * appends "· CURSATS". `socialTitle` is what shows on the share card
+ * appends "· CURSATS" unless it is passed as `{ absolute }` (the home
+ * page). `socialTitle` is what shows on the share card
  * and defaults to "CURSATS — <title>" so cards stay brand-led and
  * distinct per page; pass it explicitly when the page title already
  * reads well on its own (e.g. a creator store or an offering).
@@ -77,13 +93,15 @@ export function buildPageMetadata({
 }: {
   locale: string;
   path: string;
-  title: string;
+  title: string | { absolute: string };
   description?: string;
   socialTitle?: string;
   robots?: Metadata["robots"];
   image?: { url: string; alt?: string };
 }): Metadata {
-  const ogTitle = socialTitle ?? `${SITE_NAME} — ${title}`;
+  const ogTitle =
+    socialTitle ??
+    `${SITE_NAME} — ${typeof title === "string" ? title : title.absolute}`;
   const images: OgImage[] = image
     ? [{ url: image.url, alt: image.alt ?? ogTitle }]
     : [brandOgImage(locale, ogTitle)];

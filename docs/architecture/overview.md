@@ -1,7 +1,7 @@
 # Architecture overview
 
 > **Status:** Active
-> **Last updated:** 2026-10-14
+> **Last updated:** 2026-10-22
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-10-22 | SEO surface | Every absolute URL now comes from `SITE_URL` in `lib/site.ts` (the `NEXT_PUBLIC_BASE_URL` env var and `getBaseUrl()` are gone); hreflang carries `x-default`; the home page sets its own canonical and the layout no longer does; checkout and receipt are `noindex`, storefronts without offerings are `noindex`; the sitemap adds `/explore`, storefronts with offerings and every public offering; robots.txt only disallows `/api/` and drops `Host:`. | Production canonicals, hreflang, sitemap and robots pointed at a host that only redirects; `/_next/` was blocked so Google could not render pages; noindex pages inherited the home canonical; course pages were missing from the sitemap. |
 | 2026-10-14 | SEO surface | Swapped the tab favicon to the BitByBit "B." mark (`public/icons/favicon.svg` + `public/favicon.ico`), keeping `public/icons/icon.svg` for the manifest and JSON-LD logo; documented the footer credit link to bitbybit.com.ar. | A favicon that matches the studio brand, and a followed backlink so search engines connect Cursats to the studio domain. |
 | 2026-05-24 | Offering types | Replaced the `download` type's "short-lived signed URL" description with the proxy's actual behavior: it serves the file behind a per-order fetch cap and post-payment expiry window (`lib/download-limits.ts`). | The download proxy gained access limits; the prior "signed URL" phrasing never matched the implementation. |
 | 2026-05-24 | Creator surfaces | Dropped the "read-only in v1" qualifier from the `/orders` route row and relabeled the access-model bullet from "Read-only" to "No mutations" (the substance — orders/payments/buyers are immutable views — is unchanged). | The "read-only in v1" wording was surfaced to sellers as a meaningless UI hint and removed product-wide; the docs are aligned with that copy cleanup. |
@@ -228,11 +229,20 @@ Routes inventory and request shapes live in
 
 ## SEO surface
 
+- Every absolute URL (`metadataBase`, sitemap, robots.txt, JSON-LD,
+  the share-on-Nostr link) comes from `SITE_URL` in `lib/site.ts`,
+  built from `SITE.domain` (`cursats.bitbybit.com.ar`). It is code,
+  not an env var, so no environment can point canonicals at another
+  host; local and preview builds also canonicalise to production.
 - Per-locale `generateMetadata` in `app/[locale]/layout.tsx`
-  produces title, description, keywords, OG, Twitter, robots,
-  canonical, and `hreflang` alternates for the home page. Every
-  other page builds its metadata through `buildPageMetadata` in
-  `lib/seo.ts`, which emits **exactly one** `og:image` per page
+  produces the default title, description, keywords, OG, Twitter
+  and `robots: index` that every page inherits. It sets no
+  canonical, so a page that does not set its own has none rather
+  than inheriting the home page's. Every indexable page, the home
+  page included, builds its metadata through `buildPageMetadata` in
+  `lib/seo.ts`, which sets a self-referencing canonical and `es`,
+  `en` and `x-default` (the unprefixed Spanish URL) hreflang for
+  its own path, and which emits **exactly one** `og:image` per page
   under its **own** per-page title and description. A page that
   passes an optional `image` (a course image / store banner) shows
   only that image; a page without one falls back to the single
@@ -271,13 +281,22 @@ Routes inventory and request shapes live in
   pages); shared content pages emit a single image via
   `buildPageMetadata`. Regenerate it (`curl …/opengraph-image >
   public/og.png`) whenever the route's design changes.
-- `app/sitemap.ts` lists `/es` and `/en` with hreflang alternates.
-- `app/robots.ts` allows everything except `/api/` and `/_next/`.
+- Indexing: the public content pages (home, `/explore`,
+  `/how-it-works`, `/features`, `/faq`, storefronts with at least
+  one offering, offering detail pages) are indexable. `/explore`
+  canonicalises to itself without its query string. Storefronts
+  without offerings (every sign-in creates one), sign-in, checkout,
+  claim, receipt and every logged-in page are `noindex`.
+- `app/sitemap.ts` lists every indexable page in both locales with
+  `es`/`en`/`x-default` alternates: the static routes plus each
+  active seller's unarchived offerings
+  (`listPublicOfferingPaths` in `lib/offerings.ts`) and their
+  storefronts. It revalidates hourly.
+- `app/robots.ts` allows everything except `/api/` and points at the
+  sitemap. `/_next/` stays crawlable so Google can fetch the CSS, JS
+  and fonts it needs to render pages.
 - `app/manifest.ts` declares the standalone PWA shell with
   Cursats's name, short name, theme color (yellow), and icon.
-- `lib/env.ts` centralises the `NEXT_PUBLIC_BASE_URL` lookup —
-  every SEO surface uses it via `getBaseUrl()` and throws at boot
-  if the env var is missing.
 - The browser-tab favicon is the BitByBit studio "B." mark:
   `public/icons/favicon.svg` (linked from `app/[locale]/layout.tsx`;
   it switches colors with `prefers-color-scheme`) plus

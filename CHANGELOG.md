@@ -16,6 +16,12 @@ versioning follows [SemVer](https://semver.org/spec/v2.0.0.html).
   "A BitByBit project" link to bitbybit.com.ar.
 - The browser-tab favicon is now the BitByBit "B." mark, with a
   `/favicon.ico` for clients that request it directly.
+- Search engines can index the site: canonicals, hreflang (with
+  `x-default`), the sitemap and robots.txt all point at
+  `cursats.bitbybit.com.ar`; robots.txt no longer blocks the assets
+  Google needs to render pages; the sitemap lists every public
+  course and the storefronts that sell them; checkout, receipt and
+  empty storefronts are `noindex`.
 
 ## [1.0.0] - 2026-05-24
 

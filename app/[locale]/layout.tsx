@@ -8,9 +8,8 @@ import {
 } from "next-intl/server";
 import { Nunito, Nunito_Sans } from "next/font/google";
 import { routing } from "@/i18n/routing";
-import { alternatesFor } from "@/lib/seo";
 import { serializeJsonLd } from "@/lib/jsonld";
-import { getBaseUrl } from "@/lib/env";
+import { SITE_URL } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/lib/contexts/theme-context";
 import { SignerProviderClient } from "@/components/auth/signer-provider-client";
@@ -70,12 +69,11 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "metadata" });
-  const baseUrl = getBaseUrl();
   const ogLocale = locale === "es" ? "es_AR" : "en_US";
   const altLocale = locale === "es" ? "en_US" : "es_AR";
 
   return {
-    metadataBase: new URL(baseUrl),
+    metadataBase: new URL(SITE_URL),
     title: {
       default: t("siteTitle"),
       template: `%s · ${t("siteName")}`,
@@ -87,13 +85,11 @@ export async function generateMetadata({
     publisher: "BitByBit",
     applicationName: t("siteName"),
     category: "finance",
-    alternates: alternatesFor(locale, "/"),
     openGraph: {
       type: "website",
       siteName: t("siteName"),
       title: t("siteTitle"),
       description: t("description"),
-      url: locale === "es" ? baseUrl : `${baseUrl}/${locale}`,
       locale: ogLocale,
       alternateLocale: altLocale,
       // Fallback brand card for routes that inherit this layout's
@@ -147,7 +143,6 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
   const messages = await getMessages();
   const t = await getTranslations({ locale, namespace: "metadata" });
-  const baseUrl = getBaseUrl();
   const initialSession = await resolveInitialSession();
   // Per-request CSP nonce minted in proxy.ts. Stamped on the inline
   // JSON-LD scripts and the next-themes script so they survive the
@@ -160,8 +155,8 @@ export default async function LocaleLayout({
     "@type": "Organization",
     name: "BitByBit Cursats",
     alternateName: "Cursats",
-    url: baseUrl,
-    logo: `${baseUrl}/icons/icon.svg`,
+    url: SITE_URL,
+    logo: `${SITE_URL}/icons/icon.svg`,
     description: t("description"),
     foundingLocation: {
       "@type": "Country",
@@ -180,7 +175,7 @@ export default async function LocaleLayout({
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: t("siteName"),
-    url: baseUrl,
+    url: SITE_URL,
     inLanguage: routing.locales,
   };
 
