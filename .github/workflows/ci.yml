@@ -77,4 +77,3 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
           AUTH_SECRET: ${{ secrets.TEST_AUTH_SECRET }}
-          NEXT_PUBLIC_BASE_URL: http://localhost:3000

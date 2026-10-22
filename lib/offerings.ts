@@ -306,6 +306,33 @@ export async function getOfferingByUserAndSlug(
   }
 }
 
+/**
+ * Every public offering URL for the sitemap: active sellers'
+ * unarchived offerings, the same filter the storefront and detail
+ * pages apply before rendering. Empty on DB error so the sitemap still
+ * serves its static routes.
+ */
+export async function listPublicOfferingPaths(): Promise<
+  { userSlug: string; offeringSlug: string; updatedAt: Date }[]
+> {
+  try {
+    const db = getDb();
+    return await db
+      .select({
+        userSlug: users.slug,
+        offeringSlug: offerings.slug,
+        updatedAt: offerings.updated_at,
+      })
+      .from(offerings)
+      .innerJoin(users, eq(offerings.user_id, users.id))
+      .where(and(eq(users.active, true), isNull(offerings.archived_at)))
+      .orderBy(asc(users.slug), asc(offerings.created_at));
+  } catch (err) {
+    console.error("listPublicOfferingPaths failed", err);
+    return [];
+  }
+}
+
 export async function getOfferingById(id: string): Promise<Offering | null> {
   const db = getDb();
   const [row] = await db

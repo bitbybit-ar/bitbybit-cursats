@@ -21,6 +21,7 @@ import {
   parseBunkerInput,
   createNostrConnectURI,
 } from "nostr-tools/nip46";
+import { SITE_URL } from "@/lib/site";
 
 // Mobile signers (Amber over nostrconnect://) round-trip through
 // public relays that can take a while to connect on cellular links;
@@ -107,10 +108,7 @@ export function createConnectSession(): NostrConnectSession {
     relays: NIP46_CONNECT_RELAYS,
     secret,
     name: "BitByBit Cursats",
-    url:
-      typeof window !== "undefined"
-        ? window.location.origin
-        : process.env.NEXT_PUBLIC_BASE_URL || "https://cursats.bitbybit.com.ar",
+    url: typeof window !== "undefined" ? window.location.origin : SITE_URL,
   });
 
   return { uri, clientSecretKey };

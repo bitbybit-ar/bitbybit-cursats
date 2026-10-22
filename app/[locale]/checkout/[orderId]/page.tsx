@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { redirect, Link } from "@/i18n/routing";
@@ -18,6 +19,10 @@ type Props = {
 };
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function CheckoutPage({ params }: Props) {
   const { locale, orderId } = await params;

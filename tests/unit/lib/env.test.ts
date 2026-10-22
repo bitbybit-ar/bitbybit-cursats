@@ -1,26 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { getBaseUrl, getDatabaseUrl, getAuthSecret } from "@/lib/env";
+import { getDatabaseUrl, getAuthSecret } from "@/lib/env";
 
 const originalEnv = { ...process.env };
 
 afterEach(() => {
   vi.unstubAllEnvs();
   process.env = { ...originalEnv };
-});
-
-describe("env/getBaseUrl", () => {
-  beforeEach(() => {
-    delete process.env.NEXT_PUBLIC_BASE_URL;
-  });
-
-  it("throws when NEXT_PUBLIC_BASE_URL is unset", () => {
-    expect(() => getBaseUrl()).toThrow(/NEXT_PUBLIC_BASE_URL/);
-  });
-
-  it("returns the configured value", () => {
-    process.env.NEXT_PUBLIC_BASE_URL = "https://example.test";
-    expect(getBaseUrl()).toBe("https://example.test");
-  });
 });
 
 describe("env/getDatabaseUrl", () => {

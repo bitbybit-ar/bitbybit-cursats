@@ -4,16 +4,6 @@
 // rather than reading `process.env` directly so the failure mode is
 // predictable.
 
-export function getBaseUrl(): string {
-  const url = process.env.NEXT_PUBLIC_BASE_URL;
-  if (!url) {
-    throw new Error(
-      "NEXT_PUBLIC_BASE_URL is not set. Configure it in .env.local (or your hosting environment) before running the app."
-    );
-  }
-  return url;
-}
-
 export function getDatabaseUrl(): string {
   const url = process.env.DATABASE_URL;
   if (!url) {
