@@ -1,7 +1,7 @@
 # Architecture overview
 
 > **Status:** Active
-> **Last updated:** 2026-10-22
+> **Last updated:** 2026-10-28
 
 ---
 
@@ -9,6 +9,7 @@
 
 | Date | Section | Change | Reason |
 |---|---|---|---|
+| 2026-10-28 | Stack | The Vercel line now says only `main` deploys (`git.deploymentEnabled` in `vercel.json`) and deployments are kept 1 day. | Every deployment's function counts toward the team's Vercel storage, and branch previews filled the Hobby limit. |
 | 2026-10-22 | SEO surface | Every absolute URL now comes from `SITE_URL` in `lib/site.ts` (the `NEXT_PUBLIC_BASE_URL` env var and `getBaseUrl()` are gone); hreflang carries `x-default`; the home page sets its own canonical and the layout no longer does; checkout and receipt are `noindex`, storefronts without offerings are `noindex`; the sitemap adds `/explore`, storefronts with offerings and every public offering; robots.txt only disallows `/api/` and drops `Host:`. | Production canonicals, hreflang, sitemap and robots pointed at a host that only redirects; `/_next/` was blocked so Google could not render pages; noindex pages inherited the home canonical; course pages were missing from the sitemap. |
 | 2026-10-14 | SEO surface | Swapped the tab favicon to the BitByBit "B." mark (`public/icons/favicon.svg` + `public/favicon.ico`), keeping `public/icons/icon.svg` for the manifest and JSON-LD logo; documented the footer credit link to bitbybit.com.ar. | A favicon that matches the studio brand, and a followed backlink so search engines connect Cursats to the studio domain. |
 | 2026-05-24 | Offering types | Replaced the `download` type's "short-lived signed URL" description with the proxy's actual behavior: it serves the file behind a per-order fetch cap and post-payment expiry window (`lib/download-limits.ts`). | The download proxy gained access limits; the prior "signed URL" phrasing never matched the implementation. |
@@ -138,6 +139,9 @@ also trigger it on demand from `/orders`.
 - **`jose`** — signs the session JWT held in an httpOnly cookie.
 - **Vercel** — Hobby plan; a daily Vercel Cron
   (`/api/cron/wapu-settlements`) settles the Wapu ARS payout leg.
+  Only `main` deploys (`git.deploymentEnabled` in `vercel.json`), so a
+  pushed branch gets no preview, and the project keeps a deployment 1
+  day: every deployment's function counts toward the team's storage.
 
 ## Routing
 
